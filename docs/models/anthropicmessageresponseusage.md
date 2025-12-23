@@ -1,0 +1,11 @@
+# AnthropicMessageResponseUsage
+
+
+## Fields
+
+| Field                                                                                        | Type                                                                                         | Required                                                                                     | Description                                                                                  |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `input_tokens`                                                                               | *int*                                                                                        | :heavy_check_mark:                                                                           | Number of input tokens used                                                                  |
+| `cache_creation_input_tokens`                                                                | *Optional[int]*                                                                              | :heavy_minus_sign:                                                                           | Number of input tokens used to create cache entries (only present if prompt caching is used) |
+| `cache_read_input_tokens`                                                                    | *Optional[int]*                                                                              | :heavy_minus_sign:                                                                           | Number of input tokens read from cache (only present if prompt caching is used)              |
+| `output_tokens`                                                                              | *int*                                                                                        | :heavy_check_mark:                                                                           | Number of output tokens generated                                                            |

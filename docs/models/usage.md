@@ -1,0 +1,12 @@
+# Usage
+
+
+## Fields
+
+| Field                                                                            | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `prompt_tokens`                                                                  | *int*                                                                            | :heavy_check_mark:                                                               | Number of tokens in the prompt (input)                                           |
+| `prompt_tokens_details`                                                          | [Optional[models.PromptTokensDetails]](../models/prompttokensdetails.md)         | :heavy_minus_sign:                                                               | Details about prompt tokens                                                      |
+| `completion_tokens`                                                              | *int*                                                                            | :heavy_check_mark:                                                               | Number of tokens in the completion (output)                                      |
+| `completion_tokens_details`                                                      | [Optional[models.CompletionTokensDetails]](../models/completiontokensdetails.md) | :heavy_minus_sign:                                                               | Details about completion tokens                                                  |
+| `total_tokens`                                                                   | *int*                                                                            | :heavy_check_mark:                                                               | Total number of tokens (prompt + completion)                                     |

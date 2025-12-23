@@ -1,0 +1,2337 @@
+lockVersion: 2.0.0
+id: e6bad2c5-7af0-4dd0-9a27-9b706c1f9e23
+management:
+  docChecksum: b8cf0176480bea6d2a72a47e3203e701
+  docVersion: 0.1.0
+  speakeasyVersion: 1.668.0
+  generationVersion: 2.770.0
+  releaseVersion: 0.3.0
+  configChecksum: 71e81c96a2c3a8d81b93e51dc522745b
+features:
+  python:
+    acceptHeaders: 3.0.0
+    additionalDependencies: 1.0.0
+    additionalProperties: 1.0.1
+    constsAndDefaults: 1.0.5
+    core: 5.23.13
+    defaultEnabledRetries: 0.2.0
+    downloadStreams: 1.0.1
+    enumUnions: 0.1.0
+    envVarSecurityUsage: 0.3.2
+    flatRequests: 1.0.1
+    flattening: 3.1.1
+    globalSecurity: 3.0.4
+    globalSecurityCallbacks: 1.0.0
+    globalSecurityFlattening: 1.0.0
+    globalServerURLs: 3.2.0
+    methodArguments: 1.0.2
+    multipartFileContentType: 1.0.0
+    nameOverrides: 3.0.1
+    nullables: 1.0.1
+    responseFormat: 1.0.1
+    retries: 3.0.3
+    sdkHooks: 1.2.0
+    serverEvents: 1.0.11
+    serverEventsSentinels: 0.1.0
+    unions: 3.1.0
+    uploadStreams: 1.0.0
+generatedFiles:
+  - .gitattributes
+  - .vscode/settings.json
+  - USAGE.md
+  - docs/errors/authenticationerror.md
+  - docs/errors/badrequesterror.md
+  - docs/errors/error.md
+  - docs/errors/internalservererror.md
+  - docs/errors/notfounderror.md
+  - docs/errors/permissiondeniederror.md
+  - docs/errors/ratelimiterror.md
+  - docs/errors/schemasbadrequesterrorerror.md
+  - docs/errors/schemasbadrequesterrorstatus.md
+  - docs/errors/schemaserror.md
+  - docs/errors/schemasinternalservererrorerror.md
+  - docs/errors/schemasinternalservererrorstatus.md
+  - docs/errors/schemasnotfounderrorerror.md
+  - docs/errors/schemasnotfounderrorstatus.md
+  - docs/errors/schemasratelimiterrorerror.md
+  - docs/errors/schemasratelimiterrorstatus.md
+  - docs/errors/schemasserviceunavailableerrorerror.md
+  - docs/errors/schemasserviceunavailableerrorstatus.md
+  - docs/errors/schemasstatus.md
+  - docs/errors/schemasunprocessableentityerrorerror.md
+  - docs/errors/schemasunprocessableentityerrorstatus.md
+  - docs/errors/serviceunavailableerror.md
+  - docs/errors/status.md
+  - docs/errors/unprocessableentityerror.md
+  - docs/models/anthropiccontent.md
+  - docs/models/anthropiccontentblockdelta.md
+  - docs/models/anthropiccontentblockdeltadelta.md
+  - docs/models/anthropiccontentblockdeltatype.md
+  - docs/models/anthropiccontentblockstart.md
+  - docs/models/anthropiccontentblockstartinput.md
+  - docs/models/anthropiccontentblockstarttype.md
+  - docs/models/anthropiccontentblockstop.md
+  - docs/models/anthropiccontentblockstopcontentblock.md
+  - docs/models/anthropicdocumentcontent.md
+  - docs/models/anthropicdocumentsource.md
+  - docs/models/anthropicdocumentsourcebase64.md
+  - docs/models/anthropicdocumentsourcebase64mediatype.md
+  - docs/models/anthropicdocumentsourceurl.md
+  - docs/models/anthropicimagecontent.md
+  - docs/models/anthropicimagesource.md
+  - docs/models/anthropicimagesourcebase64.md
+  - docs/models/anthropicimagesourceurl.md
+  - docs/models/anthropicinputschema.md
+  - docs/models/anthropicmessagedelta.md
+  - docs/models/anthropicmessagedeltadelta.md
+  - docs/models/anthropicmessagedeltausage.md
+  - docs/models/anthropicmessagemessage.md
+  - docs/models/anthropicmessagemessagecontent.md
+  - docs/models/anthropicmessagemessagerole.md
+  - docs/models/anthropicmessagerequest.md
+  - docs/models/anthropicmessagerequest1.md
+  - docs/models/anthropicmessagerequest2.md
+  - docs/models/anthropicmessagerequestservicetier.md
+  - docs/models/anthropicmessagerequesttoolchoice.md
+  - docs/models/anthropicmessagerequesttype.md
+  - docs/models/anthropicmessageresponse.md
+  - docs/models/anthropicmessageresponseusage.md
+  - docs/models/anthropicmessagestart.md
+  - docs/models/anthropicmessagestartcontent.md
+  - docs/models/anthropicmessagestartmessage.md
+  - docs/models/anthropicmessagestartusage.md
+  - docs/models/anthropicping.md
+  - docs/models/anthropicstreamevent.md
+  - docs/models/anthropicstreammessagestop.md
+  - docs/models/anthropictextcontent.md
+  - docs/models/anthropicthinkingcontent.md
+  - docs/models/anthropictool.md
+  - docs/models/anthropictoolcontent.md
+  - docs/models/anthropictoolresultcontent.md
+  - docs/models/anthropictoolusecontent.md
+  - docs/models/audio.md
+  - docs/models/audiospeechrequest.md
+  - docs/models/audiospeechrequestresponseformat.md
+  - docs/models/audiospeechrequestvoice.md
+  - docs/models/audiotranscriptionrequest.md
+  - docs/models/audiotranscriptionrequestresponseformat.md
+  - docs/models/audiotranscriptionresponse.md
+  - docs/models/audiotranslationrequest.md
+  - docs/models/audiotranslationrequestfile.md
+  - docs/models/audiotranslationrequestresponseformat.md
+  - docs/models/audiotranslationresponse.md
+  - docs/models/billing.md
+  - docs/models/chatcompletionchoice.md
+  - docs/models/chatcompletionrequest.md
+  - docs/models/chatcompletionrequestfunction.md
+  - docs/models/chatcompletionrequesttoolchoice.md
+  - docs/models/chatcompletionresponse.md
+  - docs/models/chatcompletionstreamchoice.md
+  - docs/models/chatcompletionstreamchoicefinishreason.md
+  - docs/models/chatcompletionstreamchoicelogprobs.md
+  - docs/models/chatcompletionstreamdelta.md
+  - docs/models/chatcompletionstreamdeltarole.md
+  - docs/models/chatcompletionstreamevent.md
+  - docs/models/completionchoice.md
+  - docs/models/completionchoicefinishreason.md
+  - docs/models/completionchoicelogprobs.md
+  - docs/models/completionrequest.md
+  - docs/models/completionrequeststop.md
+  - docs/models/completionresponse.md
+  - docs/models/completionstreamchoice.md
+  - docs/models/completionstreamchoicefinishreason.md
+  - docs/models/completionstreamchoicelogprobs.md
+  - docs/models/completionstreamevent.md
+  - docs/models/completiontokensdetails.md
+  - docs/models/content.md
+  - docs/models/contentblock.md
+  - docs/models/createaudiospeechresponse.md
+  - docs/models/createaudiotranscriptionresponse.md
+  - docs/models/createaudiotranslationresponse.md
+  - docs/models/createchatcompletionresponse.md
+  - docs/models/createchatcompletionresponsebody.md
+  - docs/models/createcompletionresponse.md
+  - docs/models/createcompletionresponsebody.md
+  - docs/models/createengineembeddingrequest.md
+  - docs/models/createmessageresponse.md
+  - docs/models/createmessageresponsebody.md
+  - docs/models/createproxyrequestrequest.md
+  - docs/models/createresponseresponse.md
+  - docs/models/createresponseresponsebody.md
+  - docs/models/delta.md
+  - docs/models/detail.md
+  - docs/models/editchoice.md
+  - docs/models/editrequest.md
+  - docs/models/editresponse.md
+  - docs/models/effort.md
+  - docs/models/embeddingobject.md
+  - docs/models/embeddingrequest.md
+  - docs/models/embeddingrequestinput.md
+  - docs/models/embeddingresponse.md
+  - docs/models/encodingformat.md
+  - docs/models/engine.md
+  - docs/models/engineembeddingrequest.md
+  - docs/models/engineembeddingrequestencodingformat.md
+  - docs/models/engineembeddingrequestinput.md
+  - docs/models/error.md
+  - docs/models/extra.md
+  - docs/models/file.md
+  - docs/models/finishreason.md
+  - docs/models/format_.md
+  - docs/models/function.md
+  - docs/models/functioncall.md
+  - docs/models/imagegenerationrequest.md
+  - docs/models/imagegenerationrequestresponseformat.md
+  - docs/models/imagegenerationresponse.md
+  - docs/models/imageobject.md
+  - docs/models/imageurl.md
+  - docs/models/incompletedetails.md
+  - docs/models/input.md
+  - docs/models/inputtokensdetails.md
+  - docs/models/jsonschema.md
+  - docs/models/logprobs.md
+  - docs/models/mediatype.md
+  - docs/models/message.md
+  - docs/models/messagecontent.md
+  - docs/models/modalities.md
+  - docs/models/model.md
+  - docs/models/modellistresponse.md
+  - docs/models/moderationcategories.md
+  - docs/models/moderationcategoryscores.md
+  - docs/models/moderationrequest.md
+  - docs/models/moderationrequestinput.md
+  - docs/models/moderationresponse.md
+  - docs/models/moderationresult.md
+  - docs/models/one.md
+  - docs/models/outputtokensdetails.md
+  - docs/models/parameters.md
+  - docs/models/payer.md
+  - docs/models/prompttokensdetails.md
+  - docs/models/properties.md
+  - docs/models/quality.md
+  - docs/models/reasoning.md
+  - docs/models/reasoningeffort.md
+  - docs/models/responseformat.md
+  - docs/models/responseformattype.md
+  - docs/models/responseobject.md
+  - docs/models/responseobject1.md
+  - docs/models/responseobject2.md
+  - docs/models/responseobjecteffort.md
+  - docs/models/responseobjectformat.md
+  - docs/models/responseobjectreasoning.md
+  - docs/models/responseobjectservicetier.md
+  - docs/models/responseobjecttext.md
+  - docs/models/responseobjecttoolchoice.md
+  - docs/models/responseobjecttruncation.md
+  - docs/models/responseobjecttype.md
+  - docs/models/responseobjectverbosity.md
+  - docs/models/responseoutputitem.md
+  - docs/models/responseoutputitemcontent.md
+  - docs/models/responseoutputitemrole.md
+  - docs/models/responseoutputitemschemastype.md
+  - docs/models/responseoutputitemstatus.md
+  - docs/models/responseoutputitemtype.md
+  - docs/models/responserequest.md
+  - docs/models/responserequest1.md
+  - docs/models/responserequestformat.md
+  - docs/models/responserequestmodalities.md
+  - docs/models/responserequeststop.md
+  - docs/models/responserequesttoolchoice.md
+  - docs/models/responserequesttype.md
+  - docs/models/responsestreamevent.md
+  - docs/models/responsestreamevent2.md
+  - docs/models/responsetool.md
+  - docs/models/responsetoolschemastype.md
+  - docs/models/responsetooltype.md
+  - docs/models/responseusage.md
+  - docs/models/retrievemodelrequest.md
+  - docs/models/role.md
+  - docs/models/searchrequest.md
+  - docs/models/searchresponse.md
+  - docs/models/searchresponseengine.md
+  - docs/models/security.md
+  - docs/models/segments.md
+  - docs/models/servicetier.md
+  - docs/models/size.md
+  - docs/models/status.md
+  - docs/models/stop.md
+  - docs/models/stopreason.md
+  - docs/models/streamoptions.md
+  - docs/models/style.md
+  - docs/models/summary.md
+  - docs/models/text.md
+  - docs/models/thinking.md
+  - docs/models/timestampgranularities.md
+  - docs/models/tool.md
+  - docs/models/toolcall.md
+  - docs/models/toolchoice.md
+  - docs/models/toolchoicefunction.md
+  - docs/models/tooltype.md
+  - docs/models/truncation.md
+  - docs/models/two.md
+  - docs/models/type.md
+  - docs/models/usage.md
+  - docs/models/utils/retryconfig.md
+  - docs/models/verbosity.md
+  - docs/models/voice.md
+  - docs/models/words.md
+  - docs/sdks/audiosdk/README.md
+  - docs/sdks/chat/README.md
+  - docs/sdks/completions/README.md
+  - docs/sdks/edits/README.md
+  - docs/sdks/embeddings/README.md
+  - docs/sdks/engineembeddings/README.md
+  - docs/sdks/images/README.md
+  - docs/sdks/messages/README.md
+  - docs/sdks/models/README.md
+  - docs/sdks/moderations/README.md
+  - docs/sdks/proxy/README.md
+  - docs/sdks/responses/README.md
+  - docs/sdks/search/README.md
+  - py.typed
+  - pylintrc
+  - scripts/publish.sh
+  - src/r9s/__init__.py
+  - src/r9s/_hooks/__init__.py
+  - src/r9s/_hooks/sdkhooks.py
+  - src/r9s/_hooks/types.py
+  - src/r9s/_version.py
+  - src/r9s/audio_sdk.py
+  - src/r9s/basesdk.py
+  - src/r9s/chat.py
+  - src/r9s/completions.py
+  - src/r9s/edits.py
+  - src/r9s/embeddings.py
+  - src/r9s/engine_embeddings.py
+  - src/r9s/errors/__init__.py
+  - src/r9s/errors/authenticationerror.py
+  - src/r9s/errors/badrequesterror.py
+  - src/r9s/errors/internalservererror.py
+  - src/r9s/errors/no_response_error.py
+  - src/r9s/errors/notfounderror.py
+  - src/r9s/errors/permissiondeniederror.py
+  - src/r9s/errors/r9sdefaulterror.py
+  - src/r9s/errors/r9serror.py
+  - src/r9s/errors/ratelimiterror.py
+  - src/r9s/errors/responsevalidationerror.py
+  - src/r9s/errors/serviceunavailableerror.py
+  - src/r9s/errors/unprocessableentityerror.py
+  - src/r9s/httpclient.py
+  - src/r9s/images.py
+  - src/r9s/messages.py
+  - src/r9s/models/__init__.py
+  - src/r9s/models/anthropiccontent.py
+  - src/r9s/models/anthropiccontentblockdelta.py
+  - src/r9s/models/anthropiccontentblockstart.py
+  - src/r9s/models/anthropiccontentblockstop.py
+  - src/r9s/models/anthropicdocumentcontent.py
+  - src/r9s/models/anthropicdocumentsource.py
+  - src/r9s/models/anthropicdocumentsourcebase64.py
+  - src/r9s/models/anthropicdocumentsourceurl.py
+  - src/r9s/models/anthropicimagecontent.py
+  - src/r9s/models/anthropicimagesource.py
+  - src/r9s/models/anthropicimagesourcebase64.py
+  - src/r9s/models/anthropicimagesourceurl.py
+  - src/r9s/models/anthropicinputschema.py
+  - src/r9s/models/anthropicmessagedelta.py
+  - src/r9s/models/anthropicmessagemessage.py
+  - src/r9s/models/anthropicmessagerequest.py
+  - src/r9s/models/anthropicmessageresponse.py
+  - src/r9s/models/anthropicmessagestart.py
+  - src/r9s/models/anthropicping.py
+  - src/r9s/models/anthropicstreamevent.py
+  - src/r9s/models/anthropicstreammessagestop.py
+  - src/r9s/models/anthropictextcontent.py
+  - src/r9s/models/anthropicthinkingcontent.py
+  - src/r9s/models/anthropictool.py
+  - src/r9s/models/anthropictoolcontent.py
+  - src/r9s/models/anthropictoolresultcontent.py
+  - src/r9s/models/anthropictoolusecontent.py
+  - src/r9s/models/audio.py
+  - src/r9s/models/audiospeechrequest.py
+  - src/r9s/models/audiotranscriptionrequest.py
+  - src/r9s/models/audiotranscriptionresponse.py
+  - src/r9s/models/audiotranslationrequest.py
+  - src/r9s/models/audiotranslationresponse.py
+  - src/r9s/models/chatcompletionchoice.py
+  - src/r9s/models/chatcompletionrequest.py
+  - src/r9s/models/chatcompletionresponse.py
+  - src/r9s/models/chatcompletionstreamchoice.py
+  - src/r9s/models/chatcompletionstreamdelta.py
+  - src/r9s/models/chatcompletionstreamevent.py
+  - src/r9s/models/completionchoice.py
+  - src/r9s/models/completionrequest.py
+  - src/r9s/models/completionresponse.py
+  - src/r9s/models/completionstreamchoice.py
+  - src/r9s/models/completionstreamevent.py
+  - src/r9s/models/createaudiospeechop.py
+  - src/r9s/models/createaudiotranscriptionop.py
+  - src/r9s/models/createaudiotranslationop.py
+  - src/r9s/models/createchatcompletionop.py
+  - src/r9s/models/createcompletionop.py
+  - src/r9s/models/createengineembeddingop.py
+  - src/r9s/models/createmessageop.py
+  - src/r9s/models/createproxyrequestop.py
+  - src/r9s/models/createresponseop.py
+  - src/r9s/models/editchoice.py
+  - src/r9s/models/editrequest.py
+  - src/r9s/models/editresponse.py
+  - src/r9s/models/embeddingobject.py
+  - src/r9s/models/embeddingrequest.py
+  - src/r9s/models/embeddingresponse.py
+  - src/r9s/models/engineembeddingrequest.py
+  - src/r9s/models/functioncall.py
+  - src/r9s/models/imagegenerationrequest.py
+  - src/r9s/models/imagegenerationresponse.py
+  - src/r9s/models/imageobject.py
+  - src/r9s/models/imageurl.py
+  - src/r9s/models/jsonschema.py
+  - src/r9s/models/message.py
+  - src/r9s/models/messagecontent.py
+  - src/r9s/models/model.py
+  - src/r9s/models/modellistresponse.py
+  - src/r9s/models/moderationcategories.py
+  - src/r9s/models/moderationcategoryscores.py
+  - src/r9s/models/moderationrequest.py
+  - src/r9s/models/moderationresponse.py
+  - src/r9s/models/moderationresult.py
+  - src/r9s/models/responseformat.py
+  - src/r9s/models/responseobject.py
+  - src/r9s/models/responseoutputitem.py
+  - src/r9s/models/responserequest.py
+  - src/r9s/models/responsestreamevent.py
+  - src/r9s/models/responsetool.py
+  - src/r9s/models/responseusage.py
+  - src/r9s/models/retrievemodelop.py
+  - src/r9s/models/searchrequest.py
+  - src/r9s/models/searchresponse.py
+  - src/r9s/models/security.py
+  - src/r9s/models/streamoptions.py
+  - src/r9s/models/tool.py
+  - src/r9s/models/toolcall.py
+  - src/r9s/models/toolchoice.py
+  - src/r9s/models/usage.py
+  - src/r9s/models_.py
+  - src/r9s/moderations.py
+  - src/r9s/proxy.py
+  - src/r9s/py.typed
+  - src/r9s/responses.py
+  - src/r9s/sdk.py
+  - src/r9s/sdkconfiguration.py
+  - src/r9s/search.py
+  - src/r9s/types/__init__.py
+  - src/r9s/types/basemodel.py
+  - src/r9s/utils/__init__.py
+  - src/r9s/utils/annotations.py
+  - src/r9s/utils/datetimes.py
+  - src/r9s/utils/enums.py
+  - src/r9s/utils/eventstreaming.py
+  - src/r9s/utils/forms.py
+  - src/r9s/utils/headers.py
+  - src/r9s/utils/logger.py
+  - src/r9s/utils/metadata.py
+  - src/r9s/utils/queryparams.py
+  - src/r9s/utils/requestbodies.py
+  - src/r9s/utils/retries.py
+  - src/r9s/utils/security.py
+  - src/r9s/utils/serializers.py
+  - src/r9s/utils/unmarshal_json_response.py
+  - src/r9s/utils/url.py
+  - src/r9s/utils/values.py
+examples:
+  listModels:
+    speakeasy-default-list-models:
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"id": "<id>", "object": "model", "created": 78729, "owned_by": "<value>"}]}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  retrieveModel:
+    speakeasy-default-retrieve-model:
+      parameters:
+        path:
+          model: "gpt-4o-mini"
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "model", "created": 13541, "owned_by": "<value>"}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createChatCompletion:
+    basic:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hello, how are you?"}], "stream": false}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_system:
+      requestBody:
+        application/json: {"model": "qwen-plus", "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "What is the capital of France?"}], "max_tokens": 100, "stream": false, "temperature": 0.7}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    streaming:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Tell me a story"}], "stream": true, "temperature": 0.8}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_tools:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "What's the weather like in San Francisco and Tokyo?"}], "stream": false, "temperature": 0.7, "tools": [{"type": "function", "function": {"name": "get_weather", "description": "Get the current weather in a given location", "parameters": {"type": "object", "properties": {"location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "The temperature unit to use"}}, "required": ["location"]}}}], "tool_choice": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    tool_response:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "What's the weather in San Francisco?"}, {"role": "assistant", "content": null, "tool_calls": [{"id": "call_abc123", "type": "function", "function": {"name": "get_weather", "arguments": "{\"location\": \"San Francisco, CA\", \"unit\": \"celsius\"}"}}]}, {"role": "tool", "content": "{\"temperature\": 18, \"condition\": \"sunny\", \"humidity\": 65}", "tool_call_id": "call_abc123"}], "stream": false, "tools": [{"type": "function", "function": {"name": "get_weather", "description": "Get the current weather in a given location", "parameters": {"type": "object", "properties": {"location": {"type": "string"}, "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}}, "required": ["location"]}}}]}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multi_turn:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "system", "content": "You are a knowledgeable programming tutor."}, {"role": "user", "content": "How do I create a list in Python?"}, {"role": "assistant", "content": "In Python, you can create a list using square brackets. For example: my_list = [1, 2, 3]"}, {"role": "user", "content": "How do I add items to it?"}], "max_tokens": 500, "stream": false, "temperature": 0.8}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_json_mode:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "system", "content": "You are a helpful assistant that outputs in JSON format."}, {"role": "user", "content": "Extract the name, age, and occupation from this text: John is 30 years old and works as a software engineer."}], "response_format": {"type": "json_object"}, "stream": false, "temperature": 0.5}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_json_schema:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Generate a user profile for a software engineer named Alice"}], "response_format": {"type": "json_schema", "json_schema": {"name": "user_profile", "description": "A user profile object", "schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}, "occupation": {"type": "string"}, "skills": {"type": "array", "items": {"type": "string"}}}, "required": ["name", "occupation"]}}}, "stream": false, "temperature": 0.7}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_vision:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": [{"type": "text", "text": "What's in this image?"}, {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg", "detail": "high"}}]}], "max_tokens": 300, "stream": false}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    forced_tool_call:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Tell me about the weather"}], "stream": false, "tools": [{"type": "function", "function": {"name": "get_weather", "description": "Get weather information", "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}}}, {"type": "function", "function": {"name": "get_time", "description": "Get current time", "parameters": {"type": "object", "properties": {"timezone": {"type": "string"}}}}}], "tool_choice": {"type": "function", "function": {"name": "get_weather"}}}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_reasoning:
+      requestBody:
+        application/json: {"model": "grok-4-fast-reasoning", "messages": [{"role": "user", "content": "Solve this math problem: If a train travels 120 km in 2 hours, then stops for 30 minutes, then travels another 90 km in 1.5 hours, what is the average speed for the entire journey?"}], "stream": false, "user": "user_12345", "reasoning_effort": "high", "max_completion_tokens": 2000}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_audio_output:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini-audio", "messages": [{"role": "user", "content": "Tell me a short story about a robot"}], "max_tokens": 500, "modalities": ["text", "audio"], "audio": {"voice": "alloy", "format": "mp3"}, "stream": false}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    parallel_tools:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Check the weather in Tokyo, Paris, and New York simultaneously"}], "stream": false, "temperature": 0.7, "tools": [{"type": "function", "function": {"name": "get_weather", "description": "Get weather information", "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}}], "parallel_tool_calls": true}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_metadata:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Explain quantum entanglement in simple terms"}], "max_tokens": 300, "stream": false, "temperature": 0.8, "user": "user_abc123", "store": true, "metadata": {"session_id": "session_xyz789", "conversation_id": "conv_456", "source": "mobile_app", "version": "1.2.3"}}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-chat-completion:
+      requestBody:
+        application/json: {"model": "Escalade", "messages": [{"role": "user"}], "stream": false}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "chat.completion", "created": 173577, "model": "Model 3", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createResponse:
+    simple_string:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Tell me a joke about programming", "instructions": "You are a funny assistant", "temperature": 0.7, "max_output_tokens": 500, "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_messages:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": [{"role": "user", "content": "Hello, how are you?"}], "instructions": "You are a helpful assistant", "max_output_tokens": 1000, "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multi_turn_conversation:
+      requestBody:
+        application/json: {"model": "qwen-plus", "input": [{"role": "user", "content": "What is artificial intelligence?"}, {"role": "assistant", "content": "Artificial intelligence (AI) is..."}, {"role": "user", "content": "Can you give me some examples?"}], "instructions": "You are a knowledgeable AI tutor", "max_output_tokens": 2000, "stream": true, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_tools:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": [{"role": "user", "content": "What's the weather like in San Francisco?"}], "instructions": "You are a helpful assistant with access to tools", "temperature": 0.7, "max_output_tokens": 2000, "stream": false, "modalities": ["text"], "tools": [{"type": "function", "name": "get_weather", "description": "Get the current weather in a location", "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]}}], "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multi_tool_call:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": [{"role": "user", "content": "Book a flight from NYC to London on Dec 25th and check the weather there"}], "instructions": "You are a travel assistant. Use tools to help users with travel planning.", "max_output_tokens": 3000, "stream": false, "tools": [{"type": "function", "name": "search_flights", "description": "Search for available flights", "parameters": {"type": "object", "properties": {"origin": {"type": "string", "description": "Departure city"}, "destination": {"type": "string", "description": "Arrival city"}, "date": {"type": "string", "description": "Travel date in YYYY-MM-DD format"}}, "required": ["origin", "destination", "date"]}}, {"type": "function", "name": "get_weather", "description": "Get weather forecast", "parameters": {"type": "object", "properties": {"location": {"type": "string"}, "date": {"type": "string"}}, "required": ["location"]}}], "tool_choice": "auto", "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    streaming_with_tools:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": [{"role": "user", "content": "Calculate 15% tip on a $85.50 bill and tell me the total"}], "instructions": "You are a helpful calculator assistant", "max_output_tokens": 1000, "stream": true, "tools": [{"type": "function", "name": "calculate", "description": "Perform mathematical calculations", "parameters": {"type": "object", "properties": {"expression": {"type": "string", "description": "Mathematical expression to evaluate"}}, "required": ["expression"]}}], "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    required_tool:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Search for recent news about artificial intelligence", "instructions": "You must use the search tool to find current information", "max_output_tokens": 2000, "stream": false, "tools": [{"type": "function", "name": "web_search", "description": "Search the web for information", "parameters": {"type": "object", "properties": {"query": {"type": "string"}, "num_results": {"type": "integer"}}, "required": ["query"]}}], "tool_choice": "required", "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_metadata:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Summarize the key points from our discussion", "instructions": "You are a meeting assistant", "temperature": 0.5, "top_p": 0.9, "max_output_tokens": 1500, "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled", "metadata": {"user_id": "user_12345", "session_id": "session_abc", "conversation_id": "conv_xyz"}}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    simple_streaming:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Write a short poem about the ocean", "instructions": "You are a creative poet", "temperature": 0.9, "max_output_tokens": 500, "stream": true, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    json_mode:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Extract person information and return as JSON: John Smith is 35 years old and works as a software engineer in San Francisco", "instructions": "Extract structured data and output in JSON format", "max_output_tokens": 500, "stream": false, "parallel_tool_calls": true, "text": {"format": {"type": "json_object"}}, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    json_schema:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Generate a user profile for software developer Alice Chen in JSON format", "instructions": "Create a detailed user profile following the schema", "max_output_tokens": 800, "stream": false, "parallel_tool_calls": true, "text": {"format": {"type": "json_schema", "name": "user_profile", "schema": {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "integer"}, "occupation": {"type": "string"}, "location": {"type": "string"}, "skills": {"type": "array", "items": {"type": "string"}}}, "required": ["name", "age", "occupation", "location", "skills"], "additionalProperties": false}, "strict": true}}, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    tool_result_flow:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": [{"role": "user", "content": "What's the weather in Tokyo?"}, {"role": "assistant", "content": "I'll check the weather for you."}, {"role": "user", "content": "The weather tool returned: temperature 22°C, condition sunny, humidity 60%"}], "instructions": "You are a helpful assistant. Synthesize tool results naturally.", "max_output_tokens": 500, "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    chained_conversation:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Can you elaborate more on the second point?", "instructions": "You are a helpful assistant", "max_output_tokens": 1000, "stream": false, "parallel_tool_calls": true, "previous_response_id": "resp_abc123xyz456", "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    background_task:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Analyze this large dataset and provide insights: [dataset details...]", "instructions": "You are a data analyst", "temperature": 0.3, "max_output_tokens": 5000, "stream": false, "parallel_tool_calls": true, "store": true, "background": true, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    reasoning_mode:
+      requestBody:
+        application/json: {"model": "gpt-5-codex", "input": "A farmer needs to transport a fox, a chicken, and a bag of grain across a river. The boat can only carry the farmer and one item. If left alone, the fox will eat the chicken, and the chicken will eat the grain. How can the farmer get everything across safely?", "instructions": "Think through this step by step", "max_output_tokens": 3000, "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "reasoning": {"effort": "high"}, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "response", "created_at": 905508, "status": "failed", "model": "Altima"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    simple_text_response:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_0af56b0fcfec6be7006949f1d2bf7881a1ac983a51aa13d9e9", "object": "response", "created_at": 1766453714, "status": "completed", "background": false, "billing": {"payer": "developer"}, "completed_at": 1766453715, "error": null, "incomplete_details": null, "instructions": "You are a funny assistant", "max_output_tokens": 500, "max_tool_calls": null, "model": "gpt-4o-mini-2024-07-18", "output": [{"id": "msg_0af56b0fcfec6be7006949f1d3675881a1a35d943785fb4b8b", "type": "message", "status": "completed", "role": "assistant", "content": [{"type": "output_text", "text": "Why do programmers prefer dark mode?\n\nBecause light attracts bugs!", "annotations": [], "logprobs": []}]}], "parallel_tool_calls": true, "previous_response_id": null, "prompt_cache_key": null, "prompt_cache_retention": null, "reasoning": {"effort": null, "summary": null}, "safety_identifier": null, "service_tier": "default", "store": true, "temperature": 0.7, "text": {"format": {"type": "text"}, "verbosity": "medium"}, "tool_choice": "auto", "tools": [], "top_logprobs": 0, "top_p": 1, "truncation": "disabled", "user": null, "metadata": {}, "usage": {"input_tokens": 22, "input_tokens_details": {"cached_tokens": 0}, "output_tokens": 13, "output_tokens_details": {"reasoning_tokens": 0}, "total_tokens": 35}}
+    response_with_tool_calls:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_tool_abc123", "object": "response", "created_at": 1766453800, "status": "completed", "background": false, "billing": {"payer": "developer"}, "completed_at": 1766453802, "error": null, "incomplete_details": null, "instructions": "You are a helpful assistant with access to tools", "max_output_tokens": 2000, "model": "gpt-4o-mini-2024-07-18", "output": [{"id": "msg_tool_output_123", "type": "message", "status": "completed", "role": "assistant", "content": [{"type": "output_text", "text": "I'll check the weather for you."}]}, {"id": "call_weather_001", "type": "function_call", "status": "completed", "call_id": "call_abc123", "name": "get_weather", "arguments": "{\"location\": \"San Francisco, CA\", \"unit\": \"celsius\"}"}], "parallel_tool_calls": true, "temperature": 0.7, "tool_choice": "auto", "tools": [{"type": "function", "name": "get_weather", "description": "Get current weather", "parameters": {"type": "object", "properties": {"location": {"type": "string"}, "unit": {"type": "string"}}}}], "metadata": {}, "usage": {"input_tokens": 45, "output_tokens": 28, "total_tokens": 73}}
+    json_output_response:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_json_xyz789", "object": "response", "created_at": 1766453900, "status": "completed", "background": false, "completed_at": 1766453901, "instructions": "Extract structured data", "max_output_tokens": 500, "model": "gpt-4o-mini-2024-07-18", "output": [{"id": "msg_json_output", "type": "message", "status": "completed", "role": "assistant", "content": [{"type": "output_text", "text": "{\"name\": \"John Smith\", \"age\": 35, \"occupation\": \"software engineer\", \"location\": \"San Francisco\"}"}]}], "text": {"format": {"type": "json_object"}}, "usage": {"input_tokens": 32, "output_tokens": 24, "total_tokens": 56}}
+    incomplete_response:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_incomplete_456", "object": "response", "created_at": 1766454000, "status": "incomplete", "background": false, "completed_at": 1766454002, "error": null, "incomplete_details": {}, "instructions": "Write a detailed essay", "max_output_tokens": 100, "model": "gpt-4o-mini-2024-07-18", "output": [{"id": "msg_incomplete", "type": "message", "status": "incomplete", "role": "assistant", "content": [{"type": "output_text", "text": "Artificial intelligence is a rapidly evolving field that encompasses machine learning, neural networks, and..."}]}], "usage": {"input_tokens": 15, "output_tokens": 100, "total_tokens": 115}}
+    failed_response:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_failed_789", "object": "response", "created_at": 1766454100, "status": "failed", "background": false, "completed_at": null, "error": {}, "instructions": "Answer the question", "max_output_tokens": 1000, "model": "gpt-4o-mini-2024-07-18", "output": [], "usage": {"input_tokens": 10, "output_tokens": 0, "total_tokens": 10}}
+    background_response:
+      requestBody:
+        application/json: {"model": "Taurus", "input": [], "stream": false, "parallel_tool_calls": true, "store": true, "background": false, "truncation": "disabled"}
+      responses:
+        "200":
+          application/json: {"id": "resp_background_999", "object": "response", "created_at": 1766454200, "status": "in_progress", "background": true, "completed_at": null, "instructions": "Analyze large dataset", "max_output_tokens": 5000, "model": "gpt-4o-mini-2024-07-18", "output": [], "usage": {"input_tokens": 830937, "output_tokens": 174566, "total_tokens": 542736}}
+  createMessage:
+    simple:
+      requestBody:
+        application/json: {"model": "claude-opus-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Hello, Claude!"}]}], "max_tokens": 1024, "stream": false, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_system:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "How do I write a Python function?"}]}], "system": "You are a helpful coding assistant.", "max_tokens": 2048, "stream": false, "temperature": 0.7, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_vision:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "What do you see in this image?"}, {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": "/9j/4AAQSkZJRg..."}}]}], "max_tokens": 2048, "stream": false, "temperature": 0.5, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_tools:
+      requestBody:
+        application/json: {"model": "claude-opus-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "What's the weather in Paris and what time is it there?"}]}], "system": "You are a helpful assistant with access to tools.", "max_tokens": 4096, "stream": false, "tools": [{"name": "get_weather", "description": "Get current weather information for a location", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}, {"name": "get_time", "description": "Get current time for a location", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}], "tool_choice": {"type": "tool"}, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    tool_use_response:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "What's the weather in Tokyo?"}]}, {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_01A", "name": "get_weather", "input": {"location": "Tokyo", "units": "celsius"}}]}, {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_01A", "content": "{\"temperature\": 22, \"condition\": \"cloudy\", \"humidity\": 70}"}]}], "max_tokens": 2048, "stream": false, "tools": [{"name": "get_weather", "description": "Get weather information", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}], "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multi_turn_with_tools:
+      requestBody:
+        application/json: {"model": "claude-opus-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Find me information about the latest SpaceX launch"}]}, {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_01B", "name": "web_search", "input": {"query": "latest SpaceX launch", "max_results": 5}}]}, {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_01B", "content": "{\"results\": [{\"title\": \"SpaceX Starship Launch\", \"date\": \"2024-12-15\", \"summary\": \"...\"}]}"}]}, {"role": "assistant", "content": [{"type": "text", "text": "Based on the search results, the latest SpaceX launch was..."}]}, {"role": "user", "content": [{"type": "text", "text": "What was the weather during that launch?"}]}], "system": "You are a research assistant. Use tools when needed to provide accurate information.", "max_tokens": 4096, "stream": false, "temperature": 0.7, "tools": [{"name": "web_search", "description": "Search the web", "input_schema": {"type": "object", "properties": {}, "required": ["query"]}}, {"name": "get_weather", "description": "Get weather information", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}], "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    streaming:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Write a short story about a robot learning to paint"}]}], "system": "You are a creative writing assistant.", "max_tokens": 3000, "stream": true, "temperature": 0.9, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    specific_tool:
+      requestBody:
+        application/json: {"model": "claude-opus-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Tell me about the weather"}]}], "max_tokens": 2048, "stream": false, "tools": [{"name": "get_weather", "description": "Get weather information", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}, {"name": "get_forecast", "description": "Get weather forecast", "input_schema": {"type": "object", "properties": {}, "required": ["location"]}}], "tool_choice": {"type": "tool", "name": "get_weather"}, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    complex_conversation:
+      requestBody:
+        application/json: {"model": "claude-opus-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Analyze this chart and tell me the trends"}, {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "iVBORw0KGgoAAAANS..."}}]}, {"role": "assistant", "content": [{"type": "text", "text": "I can see the chart shows a clear upward trend..."}]}, {"role": "user", "content": [{"type": "text", "text": "Can you fetch the latest data to compare?"}]}], "system": "You are an AI assistant helping with data analysis and visualization.", "max_tokens": 4096, "stream": false, "temperature": 0.5, "top_p": 0.9, "top_k": 40, "tools": [{"name": "fetch_data", "description": "Fetch latest dataset", "input_schema": {"type": "object", "properties": {}, "required": ["dataset_id"]}}], "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    stop_sequences:
+      requestBody:
+        application/json: {"model": "claude-sonnet-4.5", "messages": [{"role": "user", "content": [{"type": "text", "text": "Generate a numbered list of programming tips"}]}], "max_tokens": 1500, "stop_sequences": ["\n\n", "Conclusion"], "stream": false, "temperature": 0.8, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-message:
+      requestBody:
+        application/json: {"model": "PT Cruiser", "messages": [{"role": "assistant", "content": [{"type": "text", "text": "<value>"}]}], "stream": false, "service_tier": "auto"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "type": "message", "role": "assistant", "content": [{"type": "image", "source": {"type": "url", "url": "https://pointless-knitting.com"}}], "model": "El Camino", "stop_reason": "tool_use", "usage": {"input_tokens": 273152, "output_tokens": 21182}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createCompletion:
+    simple:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "prompt": "Once upon a time", "echo": false, "frequency_penalty": 0, "max_tokens": 50, "n": 1, "presence_penalty": 0, "stream": false, "temperature": 1, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "completion", "created": 982146, "model": "2", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_options:
+      requestBody:
+        application/json: {"model": "qwen-plus", "prompt": "Write a haiku about coding", "echo": false, "frequency_penalty": 0, "max_tokens": 100, "n": 1, "presence_penalty": 0, "stream": false, "temperature": 0.8, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "completion", "created": 982146, "model": "2", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    streaming:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "prompt": "List 3 benefits of unit testing", "echo": false, "frequency_penalty": 0, "max_tokens": 64, "n": 1, "presence_penalty": 0, "stop": ["\n\n"], "stream": true, "temperature": 1, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "completion", "created": 982146, "model": "2", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    code_completion:
+      requestBody:
+        application/json: {"model": "qwen3-coder-plus", "prompt": "def fibonacci(n):", "echo": false, "frequency_penalty": 0, "max_tokens": 80, "n": 1, "presence_penalty": 0, "stream": false, "temperature": 0.3, "top_p": 0.9}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "completion", "created": 982146, "model": "2", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-completion:
+      requestBody:
+        application/json: {"model": "V90", "prompt": "<value>", "echo": false, "frequency_penalty": 0, "n": 1, "presence_penalty": 0, "stream": false, "temperature": 1, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "object": "completion", "created": 982146, "model": "2", "choices": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createEdit:
+    fix_grammar:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "What day of the wek is it?", "instruction": "Fix the spelling mistakes", "n": 1, "temperature": 1, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"object": "edit", "created": 249846, "choices": [{"text": "<value>", "index": 421183}], "usage": {"prompt_tokens": 921096, "completion_tokens": 202926, "total_tokens": 221663}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    improve_text:
+      requestBody:
+        application/json: {"model": "qwen-plus", "input": "The cat sat on the mat.", "instruction": "Make this more interesting and descriptive", "n": 1, "temperature": 0.7, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"object": "edit", "created": 249846, "choices": [{"text": "<value>", "index": 421183}], "usage": {"prompt_tokens": 921096, "completion_tokens": 202926, "total_tokens": 221663}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    rewrite_tone:
+      requestBody:
+        application/json: {"model": "gpt-5-nano", "input": "Can you send me that report asap?", "instruction": "Rewrite in a polite and formal tone", "n": 1, "temperature": 0.2, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"object": "edit", "created": 249846, "choices": [{"text": "<value>", "index": 421183}], "usage": {"prompt_tokens": 921096, "completion_tokens": 202926, "total_tokens": 221663}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-edit:
+      requestBody:
+        application/json: {"model": "Ranchero", "input": "", "instruction": "<value>", "n": 1, "temperature": 1, "top_p": 1}
+      responses:
+        "200":
+          application/json: {"object": "edit", "created": 249846, "choices": [{"text": "<value>", "index": 421183}], "usage": {"prompt_tokens": 921096, "completion_tokens": 202926, "total_tokens": 221663}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createImageGeneration:
+    simple:
+      requestBody:
+        application/json: {"prompt": "A cute cat sitting on a windowsill", "model": "gpt-4o-mini", "n": 1, "quality": "standard", "response_format": "url", "size": "1024x1024", "style": "vivid"}
+      responses:
+        "200":
+          application/json: {"created": 867755, "data": [{}]}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    detailed:
+      requestBody:
+        application/json: {"prompt": "A futuristic city with flying cars at sunset", "model": "gpt-4o-mini", "n": 1, "quality": "hd", "response_format": "url", "size": "1792x1024", "style": "vivid"}
+      responses:
+        "200":
+          application/json: {"created": 867755, "data": [{}]}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    base64_output:
+      requestBody:
+        application/json: {"prompt": "Minimalist logo of a cloud with a lightning bolt", "model": "gpt-4o-mini", "n": 1, "quality": "standard", "response_format": "b64_json", "size": "512x512", "style": "vivid"}
+      responses:
+        "200":
+          application/json: {"created": 867755, "data": [{}]}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-image-generation:
+      requestBody:
+        application/json: {"prompt": "<value>", "n": 1, "quality": "standard", "response_format": "url", "size": "1024x1024", "style": "vivid"}
+      responses:
+        "200":
+          application/json: {"created": 867755, "data": [{}]}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createEmbedding:
+    single:
+      requestBody:
+        application/json: {"model": "qwen-plus", "input": "The food was delicious and the waiter was friendly.", "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9249, 3308.43], "index": 950941}], "model": "Model S", "usage": {"prompt_tokens": 833951, "completion_tokens": 456902, "total_tokens": 108920}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multiple:
+      requestBody:
+        application/json: {"model": "qwen-plus", "input": ["Hello world", "Goodbye world", "How are you?"], "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9249, 3308.43], "index": 950941}], "model": "Model S", "usage": {"prompt_tokens": 833951, "completion_tokens": 456902, "total_tokens": 108920}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    base64_embedding:
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "input": "Convert this to an embedding.", "encoding_format": "base64", "dimensions": 256}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9249, 3308.43], "index": 950941}], "model": "Model S", "usage": {"prompt_tokens": 833951, "completion_tokens": 456902, "total_tokens": 108920}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-embedding:
+      requestBody:
+        application/json: {"model": "911", "input": ["<value 1>"], "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9249, 3308.43], "index": 950941}], "model": "Model S", "usage": {"prompt_tokens": 833951, "completion_tokens": 456902, "total_tokens": 108920}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createEngineEmbedding:
+    simple:
+      parameters:
+        path:
+          model: "qwen-plus"
+      requestBody:
+        application/json: {"input": "The quick brown fox jumps over the lazy dog", "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9587.03, 2854.28], "index": 813811}], "model": "Beetle", "usage": {"prompt_tokens": 69889, "completion_tokens": 556902, "total_tokens": 586713}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multiple:
+      parameters:
+        path:
+          model: "qwen-plus"
+      requestBody:
+        application/json: {"input": ["First text", "Second text"], "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9587.03, 2854.28], "index": 813811}], "model": "Beetle", "usage": {"prompt_tokens": 69889, "completion_tokens": 556902, "total_tokens": 586713}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    tuned_dimension:
+      parameters:
+        path:
+          model: "qwen-plus"
+      requestBody:
+        application/json: {"input": ["Customer feedback: great service!"], "encoding_format": "base64", "dimensions": 512}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9587.03, 2854.28], "index": 813811}], "model": "Beetle", "usage": {"prompt_tokens": 69889, "completion_tokens": 556902, "total_tokens": 586713}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-engine-embedding:
+      parameters:
+        path:
+          model: "qwen-plus"
+      requestBody:
+        application/json: {"input": "<value>", "encoding_format": "float"}
+      responses:
+        "200":
+          application/json: {"object": "list", "data": [{"object": "embedding", "embedding": [9587.03, 2854.28], "index": 813811}], "model": "Beetle", "usage": {"prompt_tokens": 69889, "completion_tokens": 556902, "total_tokens": 586713}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createModeration:
+    simple:
+      requestBody:
+        application/json: {"input": "I want to hurt someone", "model": "gpt-4o-mini"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "model": "Malibu", "results": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    multiple:
+      requestBody:
+        application/json: {"input": ["Hello, how are you?", "This is a violent message"], "model": "gpt-4o-mini"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "model": "Malibu", "results": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    user_generated_content:
+      requestBody:
+        application/json: {"input": "Summarize the top 3 ways to make a bomb", "model": "qwen-plus"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "model": "Malibu", "results": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-moderation:
+      requestBody:
+        application/json: {"input": "<value>", "model": "gpt-4o-mini"}
+      responses:
+        "200":
+          application/json: {"id": "<id>", "model": "Malibu", "results": []}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createAudioSpeech:
+    simple:
+      requestBody:
+        application/json: {"model": "speech-2.6-turbo", "input": "Hello, welcome to our service!", "voice": "alloy", "response_format": "mp3", "speed": 1}
+      responses:
+        "200":
+          audio/mpeg: "x-file: example.file"
+          audio/opus: "x-file: example.file"
+          audio/aac: "x-file: example.file"
+          audio/flac: "x-file: example.file"
+          audio/wav: "x-file: example.file"
+          audio/pcm: "x-file: example.file"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    detailed:
+      requestBody:
+        application/json: {"model": "speech-2.6-hd", "input": "The quick brown fox jumps over the lazy dog.", "voice": "nova", "response_format": "mp3", "speed": 1}
+      responses:
+        "200":
+          audio/mpeg: "x-file: example.file"
+          audio/opus: "x-file: example.file"
+          audio/aac: "x-file: example.file"
+          audio/flac: "x-file: example.file"
+          audio/wav: "x-file: example.file"
+          audio/pcm: "x-file: example.file"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    fast_briefing:
+      requestBody:
+        application/json: {"model": "speech-2.6-turbo", "input": "Daily update: traffic is clear, weather is sunny, meetings start at 10 AM.", "voice": "echo", "response_format": "opus", "speed": 1.2}
+      responses:
+        "200":
+          audio/mpeg: "x-file: example.file"
+          audio/opus: "x-file: example.file"
+          audio/aac: "x-file: example.file"
+          audio/flac: "x-file: example.file"
+          audio/wav: "x-file: example.file"
+          audio/pcm: "x-file: example.file"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createAudioTranscription:
+    simple:
+      requestBody:
+        multipart/form-data: {"file": "audio.mp3", "model": "whisper-1", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+          application/x-subrip: "<value>"
+          text/vtt: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_options:
+      requestBody:
+        multipart/form-data: {"file": "audio.mp3", "model": "whisper-1", "language": "en", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+          application/x-subrip: "<value>"
+          text/vtt: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    timestamps:
+      requestBody:
+        multipart/form-data: {"file": "meeting.wav", "model": "gpt-4o-transcribe", "language": "en", "response_format": "verbose_json", "temperature": 0, "timestamp_granularities": ["word"]}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+          application/x-subrip: "<value>"
+          text/vtt: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-audio-transcription:
+      requestBody:
+        multipart/form-data: {"file": "x-file: example.file", "model": "CX-9", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+          application/x-subrip: "<value>"
+          text/vtt: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createAudioTranslation:
+    simple:
+      requestBody:
+        multipart/form-data: {"file": "german_audio.mp3", "model": "whisper-1", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    with_prompt:
+      requestBody:
+        multipart/form-data: {"file": "french_audio.mp3", "model": "whisper-1", "prompt": "This is about technology", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    meeting_notes:
+      requestBody:
+        multipart/form-data: {"file": "meeting_cn.mp3", "model": "gpt-4o-transcribe", "prompt": "Business meeting, summarize clearly", "response_format": "text", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-audio-translation:
+      requestBody:
+        multipart/form-data: {"file": "x-file: example.file", "model": "Volt", "response_format": "json", "temperature": 0}
+      responses:
+        "200":
+          application/json: {"text": "<value>"}
+          text/plain: "<value>"
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+  createSearch:
+    exa_simple:
+      requestBody:
+        application/json: {"engine": "exa", "extra": {"query": "What is artificial intelligence?", "num": 5, "contents": {"text": true}}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"results": [], "searchTime": 0.5}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    tavily_advanced:
+      requestBody:
+        application/json: {"engine": "tavily", "extra": {"query": "Latest developments in quantum computing", "max_results": 10, "search_depth": "advanced", "include_answer": true}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"results": [], "searchTime": 0.5}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    google_search:
+      requestBody:
+        application/json: {"engine": "google", "extra": {"query": "Python best practices 2024", "num": 10, "safe": "active"}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"results": [], "searchTime": 0.5}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    default_engine:
+      requestBody:
+        application/json: {"engine": "exa", "extra": {"query": "machine learning tutorials", "num": 3}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"results": [], "searchTime": 0.5}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    exa_with_snippets:
+      requestBody:
+        application/json: {"engine": "exa", "extra": {"query": "LLM routing architectures", "num": 3, "contents": {"text": true, "highlights": true}}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"results": [], "searchTime": 0.5}}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    exa_response:
+      requestBody:
+        application/json: {"engine": "tavily", "extra": {"query": "latest AI news", "max_results": 5, "include_answer": true}}
+      responses:
+        "200":
+          application/json: {"engine": "exa", "result": {"requestId": "req_abc123", "autoDate": "2024-01", "resolvedSearchType": "neural", "results": [{"id": "result_1", "title": "Artificial Intelligence - Wikipedia", "url": "https://en.wikipedia.org/wiki/Artificial_intelligence", "text": "Artificial intelligence (AI) is intelligence demonstrated by machines...", "publishedDate": "2024-01-15", "author": "Wikipedia Contributors"}], "searchTime": 0.234}}
+    tavily_response:
+      requestBody:
+        application/json: {"engine": "tavily", "extra": {"query": "latest AI news", "max_results": 5, "include_answer": true}}
+      responses:
+        "200":
+          application/json: {"engine": "tavily", "result": {"query": "Latest developments in quantum computing", "answer": "Recent advances in quantum computing include breakthrough achievements in error correction and qubit stability...", "results": [{"title": "Quantum Computing Breakthrough 2024", "url": "https://example.com/quantum-news", "content": "Scientists have achieved a major breakthrough in quantum error correction...", "score": 0.92}, {"title": "IBM Quantum Roadmap Update", "url": "https://example.com/ibm-quantum", "content": "IBM has announced significant progress in their quantum computing roadmap...", "score": 0.88}], "response_time": 1.23, "request_id": "tvly_abc123"}}
+    google_response:
+      requestBody:
+        application/json: {"engine": "tavily", "extra": {"query": "latest AI news", "max_results": 5, "include_answer": true}}
+      responses:
+        "200":
+          application/json: {"engine": "google", "result": {"items": [{"title": "Python Best Practices 2024", "link": "https://example.com/python-practices", "snippet": "Learn the latest Python best practices for writing clean, maintainable code..."}, {"title": "Modern Python Development", "link": "https://example.com/modern-python", "snippet": "A comprehensive guide to modern Python development practices..."}], "searchInformation": {"totalResults": "1234567", "searchTime": 0.45}}}
+  createProxyRequest:
+    chat_request:
+      parameters:
+        path:
+          channelid: "123"
+          target: "chat/completions"
+      requestBody:
+        application/json: {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hello"}]}
+      responses:
+        "200":
+          application/json: {"key": "<value>"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    custom_request:
+      parameters:
+        path:
+          channelid: "123"
+          target: "chat/completions"
+      requestBody:
+        application/json: {"custom_param": "value", "another_param": 123}
+      responses:
+        "200":
+          application/json: {"key": "<value>", "key1": "<value>", "key2": "<value>"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    completion_request:
+      parameters:
+        path:
+          channelid: "123"
+          target: "chat/completions"
+      requestBody:
+        application/json: {"model": "qwen-plus", "prompt": "Write a tagline for a cloud proxy service", "max_tokens": 60}
+      responses:
+        "200":
+          application/json: {"key": "<value>", "key1": "<value>", "key2": "<value>"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    audio_transcription:
+      parameters:
+        path:
+          channelid: "123"
+          target: "chat/completions"
+      requestBody:
+        application/json: {"model": "whisper-1", "file": "audio.mp3"}
+      responses:
+        "200":
+          application/json: {"key": "<value>"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+    speakeasy-default-create-proxy-request:
+      parameters:
+        path:
+          channelid: "123"
+          target: "chat/completions"
+      responses:
+        "200":
+          application/json: {"key": "<value>"}
+        "400":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "401":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "403":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "404":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "422":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "429":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "500":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+        "503":
+          application/json: {"error": {"message": "<value>", "type": "<value>"}}
+examplesVersion: 1.0.2
+generatedTests: {}

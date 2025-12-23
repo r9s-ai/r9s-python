@@ -1,0 +1,11 @@
+# ChatCompletionStreamDelta
+
+
+## Fields
+
+| Field                                                                                        | Type                                                                                         | Required                                                                                     | Description                                                                                  |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `role`                                                                                       | [Optional[models.ChatCompletionStreamDeltaRole]](../models/chatcompletionstreamdeltarole.md) | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| `content`                                                                                    | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| `tool_calls`                                                                                 | List[[models.ToolCall](../models/toolcall.md)]                                               | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| `reasoning_content`                                                                          | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |

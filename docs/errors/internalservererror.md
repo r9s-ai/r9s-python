@@ -1,0 +1,9 @@
+# InternalServerError
+
+
+## Fields
+
+| Field                                                                                              | Type                                                                                               | Required                                                                                           | Description                                                                                        |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `error`                                                                                            | [errors.SchemasInternalServerErrorError](../errors/schemasinternalservererrorerror.md)             | :heavy_check_mark:                                                                                 | N/A                                                                                                |
+| `status`                                                                                           | [Optional[errors.SchemasInternalServerErrorStatus]](../errors/schemasinternalservererrorstatus.md) | :heavy_minus_sign:                                                                                 | N/A                                                                                                |
