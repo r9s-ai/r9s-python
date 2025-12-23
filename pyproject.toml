@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.2.5"
+version = "0.2.6"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.9.2"
@@ -24,9 +24,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/routertokens/r9s-python"
-Repository = "https://github.com/routertokens/r9s-python"
-Issues = "https://github.com/routertokens/r9s-python/issues"
+Homepage = "https://github.com/r9s-ai/r9s-python"
+Repository = "https://github.com/r9s-ai/r9s-python"
+Issues = "https://github.com/r9s-ai/r9s-python/issues"
 
 [project.scripts]
 r9s = "r9s.cli:main"
