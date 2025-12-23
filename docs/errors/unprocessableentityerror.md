@@ -1,0 +1,9 @@
+# UnprocessableEntityError
+
+
+## Fields
+
+| Field                                                                                                        | Type                                                                                                         | Required                                                                                                     | Description                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `error`                                                                                                      | [errors.SchemasUnprocessableEntityErrorError](../errors/schemasunprocessableentityerrorerror.md)             | :heavy_check_mark:                                                                                           | N/A                                                                                                          |
+| `status`                                                                                                     | [Optional[errors.SchemasUnprocessableEntityErrorStatus]](../errors/schemasunprocessableentityerrorstatus.md) | :heavy_minus_sign:                                                                                           | N/A                                                                                                          |

@@ -1,0 +1,11 @@
+# CompletionChoice
+
+
+## Fields
+
+| Field                                                                                      | Type                                                                                       | Required                                                                                   | Description                                                                                |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `text`                                                                                     | *str*                                                                                      | :heavy_check_mark:                                                                         | N/A                                                                                        |
+| `index`                                                                                    | *int*                                                                                      | :heavy_check_mark:                                                                         | N/A                                                                                        |
+| `logprobs`                                                                                 | [OptionalNullable[models.CompletionChoiceLogprobs]](../models/completionchoicelogprobs.md) | :heavy_minus_sign:                                                                         | N/A                                                                                        |
+| `finish_reason`                                                                            | [models.CompletionChoiceFinishReason](../models/completionchoicefinishreason.md)           | :heavy_check_mark:                                                                         | N/A                                                                                        |

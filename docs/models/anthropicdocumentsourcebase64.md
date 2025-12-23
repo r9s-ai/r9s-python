@@ -1,0 +1,10 @@
+# AnthropicDocumentSourceBase64
+
+
+## Fields
+
+| Field                                                                                                | Type                                                                                                 | Required                                                                                             | Description                                                                                          |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `type`                                                                                               | *Literal["base64"]*                                                                                  | :heavy_check_mark:                                                                                   | N/A                                                                                                  |
+| `media_type`                                                                                         | [models.AnthropicDocumentSourceBase64MediaType](../models/anthropicdocumentsourcebase64mediatype.md) | :heavy_check_mark:                                                                                   | Document MIME type                                                                                   |
+| `data`                                                                                               | *str*                                                                                                | :heavy_check_mark:                                                                                   | Base64-encoded document data                                                                         |

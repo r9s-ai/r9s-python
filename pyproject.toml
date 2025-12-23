@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.2.6"
+version = "0.3.0"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.9.2"
@@ -21,7 +21,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = []
+dependencies = [
+    "httpcore >=1.0.9",
+    "httpx >=0.28.1",
+    "pydantic >=2.11.2",
+]
 
 [project.urls]
 Homepage = "https://github.com/r9s-ai/r9s-python"
@@ -29,7 +33,48 @@ Repository = "https://github.com/r9s-ai/r9s-python"
 Issues = "https://github.com/r9s-ai/r9s-python/issues"
 
 [project.scripts]
-r9s = "r9s.cli:main"
+r9s = "r9s.cli_tools.cli:main"
 
-[tool.setuptools]
-packages = ["r9s", "r9s.tools"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+]
+dev = [
+    "mypy ==1.15.0",
+    "pylint ==3.2.3",
+    "pyright ==1.1.398",
+]
+
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["src"]
+
+
+[tool.mypy]
+disable_error_code = "misc"
+explicit_package_bases = true
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = "typing_inspect"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "jsonpath"
+ignore_missing_imports = true
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

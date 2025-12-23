@@ -1,0 +1,9 @@
+# ServiceUnavailableError
+
+
+## Fields
+
+| Field                                                                                                      | Type                                                                                                       | Required                                                                                                   | Description                                                                                                |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `error`                                                                                                    | [errors.SchemasServiceUnavailableErrorError](../errors/schemasserviceunavailableerrorerror.md)             | :heavy_check_mark:                                                                                         | N/A                                                                                                        |
+| `status`                                                                                                   | [Optional[errors.SchemasServiceUnavailableErrorStatus]](../errors/schemasserviceunavailableerrorstatus.md) | :heavy_minus_sign:                                                                                         | N/A                                                                                                        |
