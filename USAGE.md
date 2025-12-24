@@ -45,7 +45,7 @@ asyncio.run(main())
 echo "hello" | r9s chat --model "$R9S_MODEL"
 
 # 2) Interactive multi-turn
-r9s chat --model "$R9S_MODEL" --system-prompt "You are a translator"
+r9s chat --model "$R9S_MODEL" --system-prompt "Your task is translate user input to Simplified Chinese, keep the orginal typography"
 
 # 3) History (default: saved under ~/.r9s/chat/)
 r9s chat --model "$R9S_MODEL"
@@ -58,4 +58,8 @@ r9s chat --model "$R9S_MODEL" --ext example/chat_extension.py
 
 # 6) Switch UI language (default: en)
 r9s chat --lang zh-CN --model "$R9S_MODEL"
+
+# 7) Use a saved bot profile (local)
+r9s bot create mybot --model "$R9S_MODEL" --system-prompt "You are a helpful assistant"
+r9s chat --bot mybot
 ```

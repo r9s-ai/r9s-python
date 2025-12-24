@@ -12,6 +12,7 @@ from typing import Any, List, Optional
 
 from r9s import models
 from r9s.models.message import Role
+from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.cli_tools.chat_extensions import (
     ChatContext,
     load_extensions,
@@ -169,15 +170,6 @@ def _build_messages(
     return messages
 
 
-def _print_help() -> None:
-    # Deprecated: kept for compatibility, but prefer _print_help_lang.
-    info("Commands:")
-    print("  /exit   Exit")
-    print("  /clear  Clear session history (does not delete history-file)")
-    print("  /help   Show help")
-    print("  other /xxx  Handled by extensions (--ext)")
-
-
 def _print_help_lang(lang: str) -> None:
     info(t("chat.commands.title", lang))
     print(t("chat.commands.exit", lang))
@@ -277,6 +269,30 @@ def handle_chat(args: argparse.Namespace) -> None:
     if not api_key:
         raise SystemExit(t("chat.err.missing_api_key", lang))
 
+    bot: Optional[BotConfig] = None
+    if getattr(args, "bot", None):
+        try:
+            bot = load_bot(args.bot)
+        except FileNotFoundError as exc:
+            raise SystemExit(f"Bot not found: {args.bot}") from exc
+        except Exception as exc:
+            raise SystemExit(f"Failed to load bot: {args.bot} ({exc})") from exc
+
+        if getattr(args, "lang", None) is None and bot.lang:
+            lang = resolve_lang(bot.lang)
+        if getattr(args, "base_url", None) is None and bot.base_url:
+            args.base_url = bot.base_url
+        if getattr(args, "model", None) is None and bot.model:
+            args.model = bot.model
+        if getattr(args, "system_prompt", None) is None and getattr(args, "system_prompt_file", None) is None:
+            if bot.system_prompt_file:
+                args.system_prompt_file = bot.system_prompt_file
+            elif bot.system_prompt:
+                args.system_prompt = bot.system_prompt
+        if bot.extensions:
+            # bot defaults first, CLI --ext overrides later by appending
+            args.ext = [*bot.extensions, *list(getattr(args, "ext", []) or [])]
+
     if getattr(args, "action", None) == "resume":
         if not sys.stdin.isatty():
             raise SystemExit(t("chat.err.resume_requires_tty", lang))
@@ -287,9 +303,6 @@ def handle_chat(args: argparse.Namespace) -> None:
 
     base_url = _resolve_base_url(args.base_url)
     model = _resolve_model(args.model)
-    if not model:
-        raise SystemExit(t("chat.err.missing_model", lang))
-
     system_prompt = _resolve_system_prompt(args.system_prompt, args.system_prompt_file)
 
     history_path: Optional[str]
@@ -323,14 +336,25 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages=[],
         )
     else:
-        # Fill missing meta fields if old file format or partial meta
-        if not record.meta.base_url:
+        # Resume can derive base_url/model/system_prompt from saved session when not specified.
+        if not base_url and record.meta.base_url:
+            base_url = record.meta.base_url
+        if not model and record.meta.model:
+            model = record.meta.model
+        if system_prompt is None and record.meta.system_prompt is not None:
+            system_prompt = record.meta.system_prompt
+
+        # Fill meta if still missing (backward compatible)
+        if not record.meta.base_url and base_url:
             record.meta.base_url = base_url
-        if not record.meta.model:
+        if not record.meta.model and model:
             record.meta.model = model
         if record.meta.system_prompt is None:
             record.meta.system_prompt = system_prompt
         record.meta.updated_at = _utc_now_iso()
+
+    if not model:
+        raise SystemExit(t("chat.err.missing_model", lang))
 
     ctx = ChatContext(
         base_url=base_url,

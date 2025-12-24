@@ -9,6 +9,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from r9s.cli_tools.bot_cli import (
+    handle_bot_create,
+    handle_bot_delete,
+    handle_bot_list,
+    handle_bot_show,
+)
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.terminal import (
@@ -223,7 +229,7 @@ def handle_reset(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="r9s",
-        description="r9s CLI: chat + configure local tools to use the r9s API.",
+        description="r9s CLI: chat, manage bots, and configure local tools to use the r9s API.",
     )
     parser.add_argument(
         "--lang",
@@ -247,6 +253,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
     chat_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
+    chat_parser.add_argument("--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.json)")
     chat_parser.add_argument("--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)")
     chat_parser.add_argument("--system-prompt-file", help="Load system prompt from file")
     chat_parser.add_argument(
@@ -270,6 +277,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable streaming output",
     )
     chat_parser.set_defaults(func=handle_chat)
+
+    bot_parser = subparsers.add_parser("bot", help="Manage local bots (~/.r9s/bots)")
+    bot_sub = bot_parser.add_subparsers(dest="bot_command")
+
+    bot_create = bot_sub.add_parser("create", help="Create or update a bot")
+    bot_create.add_argument("name", help="Bot name")
+    bot_create.add_argument("--model", help="Model name")
+    bot_create.add_argument("--base-url", help="Base URL")
+    bot_create.add_argument("--system-prompt", help="System prompt text")
+    bot_create.add_argument("--system-prompt-file", help="System prompt file path")
+    bot_create.add_argument("--lang", help="Default UI language (en, zh-CN)")
+    bot_create.add_argument("--ext", action="append", default=[], help="Default chat extension (repeatable)")
+    bot_create.set_defaults(func=handle_bot_create)
+
+    bot_list = bot_sub.add_parser("list", help="List bots")
+    bot_list.set_defaults(func=handle_bot_list)
+
+    bot_show = bot_sub.add_parser("show", help="Show bot config")
+    bot_show.add_argument("name", help="Bot name")
+    bot_show.set_defaults(func=handle_bot_show)
+
+    bot_delete = bot_sub.add_parser("delete", help="Delete bot")
+    bot_delete.add_argument("name", help="Bot name")
+    bot_delete.set_defaults(func=handle_bot_delete)
 
     set_parser = subparsers.add_parser("set", help="Write r9s config for a tool")
     set_parser.add_argument(
@@ -310,6 +341,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             print(t("cli.examples.chat_interactive", lang))
             print()
             print(t("cli.examples.chat_pipe", lang))
+            print()
+            print(t("cli.examples.resume", lang))
+            print()
+            print(t("cli.examples.bots", lang))
             print()
             print(t("cli.examples.configure", lang))
             print()
