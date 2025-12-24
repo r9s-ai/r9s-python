@@ -140,12 +140,3 @@ def run_after_response_extensions(
         if isinstance(result, str):
             out = result
     return out
-
-
-def run_command_extensions(exts: Iterable[ChatExtension], command: str, ctx: ChatContext) -> bool:
-    handled = False
-    for ext in exts:
-        result = _maybe_call(ext, "on_command", command, ctx)
-        if result is True:
-            handled = True
-    return handled

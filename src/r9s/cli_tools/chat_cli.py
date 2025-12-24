@@ -15,7 +15,6 @@ from r9s.cli_tools.chat_extensions import (
     parse_extension_specs,
     run_after_response_extensions,
     run_before_request_extensions,
-    run_command_extensions,
     run_stream_delta_extensions,
     run_user_input_extensions,
 )
@@ -106,7 +105,6 @@ def _print_help_lang(lang: str) -> None:
     print(t("chat.commands.exit", lang))
     print(t("chat.commands.clear", lang))
     print(t("chat.commands.help", lang))
-    print(t("chat.commands.other", lang))
 
 
 def _is_piped_stdin() -> bool:
@@ -278,8 +276,6 @@ def handle_chat(args: argparse.Namespace) -> None:
                 if cmd == "/clear":
                     ctx.history.clear()
                     info(t("chat.msg.history_cleared", lang))
-                    continue
-                if run_command_extensions(exts, cmd, ctx):
                     continue
                 error(t("chat.err.unknown_command", lang, cmd=cmd))
                 continue

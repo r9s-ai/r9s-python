@@ -11,8 +11,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from r9s.cli_tools.chat_extensions import ChatContext, ChatExtensionRegistry
 
 
@@ -28,13 +26,6 @@ class DemoExtension:
     def after_response(self, text: str, ctx: ChatContext) -> str:
         return text
 
-    def on_command(self, command: str, ctx: ChatContext) -> bool:
-        if command == "/time":
-            print(datetime.now().isoformat(timespec="seconds"))
-            return True
-        return False
-
 
 def register(registry: ChatExtensionRegistry) -> None:
     registry.add(DemoExtension())
-

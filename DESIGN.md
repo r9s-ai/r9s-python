@@ -14,7 +14,7 @@ model: 可通过环境变量设置，如：export R9S_MODEL=xxx
 - **交互模式**：直接运行 `r9s chat --model xxx`，逐行输入，多轮对话自动携带上下文
 - **system prompt**：`--system-prompt` / `--system-prompt-file` / `R9S_SYSTEM_PROMPT`
 - **会话历史**：`--history-file path/to/history.json`（可跨进程继续对话）
-- **对话扩展（extensions）**：通过 `--ext` 或 `R9S_CHAT_EXTENSIONS` 加载扩展模块/脚本，实现输入/输出/请求前后处理、以及自定义 `/命令`
+- **对话扩展（extensions）**：通过 `--ext` 或 `R9S_CHAT_EXTENSIONS` 加载扩展模块/脚本，实现输入/输出/请求前后处理
 
 #### 扩展点约定（最小接口）
 扩展模块需提供 `register(registry)` / `get_extension()` / `EXTENSION` / `extension` 之一，并可选实现：
@@ -22,7 +22,6 @@ model: 可通过环境变量设置，如：export R9S_MODEL=xxx
 - `before_request(messages, ctx) -> list[dict]`
 - `on_stream_delta(delta, ctx) -> str`
 - `after_response(text, ctx) -> str`
-- `on_command(command, ctx) -> bool`
 ### 一键设置应用接入r9s
 ```
 r9s set/reset [app]
