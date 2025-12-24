@@ -32,8 +32,14 @@ class ToolIntegration:
     # Additional names that should resolve to this tool, e.g. ["claude", "claude_code"]
     aliases: List[str]
 
-    def set_config(self, *, base_url: str, api_key: str, model: str) -> ToolConfigSetResult:
+    def set_config(self, *, base_url: str, api_key: str, model: str, small_model: str) -> ToolConfigSetResult:
         """Apply r9s configuration for this tool and return where it was written.
+
+        Args:
+            base_url: API base URL
+            api_key: Authentication token
+            model: Primary model name (ANTHROPIC_MODEL)
+            small_model: Small/fast model name (ANTHROPIC_SMALL_FAST_MODEL)
 
         Subclasses must implement this.
         """

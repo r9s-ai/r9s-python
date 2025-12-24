@@ -13,7 +13,12 @@ class ClaudeCodeIntegration(ToolIntegration):
         self._settings_path = Path.home() / ".claude" / "settings.json"
         self._backup_dir = Path.home() / ".r9s" / "backup" / "claude-code"
 
-    def set_config(self, *, base_url: str, api_key: str, model: str) -> ToolConfigSetResult:
+    def set_config(self, *, base_url: str, api_key: str, model: str, small_model: str) -> ToolConfigSetResult:
+        # 标准化base_url：移除尾部斜杠和/v1后缀（Claude Code会自动添加API路径）
+        normalized_base_url = base_url.rstrip('/')
+        if normalized_base_url.endswith('/v1'):
+            normalized_base_url = normalized_base_url[:-3]
+
         backup_path = self._create_backup_if_exists()
         data = self._read_settings()
         env = data.get("env")
@@ -21,12 +26,12 @@ class ClaudeCodeIntegration(ToolIntegration):
             env = {}
         env.update(
             {
-                "ANTHROPIC_BASE_URL": base_url,
+                "ANTHROPIC_BASE_URL": normalized_base_url,
                 "ANTHROPIC_AUTH_TOKEN": api_key,
                 "API_TIMEOUT_MS": "3000000",
                 "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
                 "ANTHROPIC_MODEL": model,
-                "ANTHROPIC_SMALL_FAST_MODEL": model,
+                "ANTHROPIC_SMALL_FAST_MODEL": small_model,
             }
         )
         data["env"] = env

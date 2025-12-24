@@ -3,6 +3,8 @@ import json
 import os
 import shutil
 import sys
+import threading
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -21,6 +23,8 @@ from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.terminal import (
     FG_RED,
     FG_CYAN,
+    FG_PURPLE,
+    FG_PURPLE_LIGHT,
     ToolName,
     _style,
     error,
@@ -68,9 +72,45 @@ def masked_key(key: str, visible: int = 4) -> str:
     return f"{key[:visible]}***{key[-visible:]}"
 
 
-def prompt_choice(prompt: str, options: List[str]) -> str:
-    for idx, value in enumerate(options, start=1):
-        print(_style(f"{idx})", FG_CYAN), value)
+class LoadingSpinner:
+    """Context manager for displaying a loading animation."""
+    def __init__(self, message: str = "Loading"):
+        self.message = message
+        self.running = False
+        self.thread = None
+
+    def _animate(self):
+        dots = 0
+        while self.running:
+            # Print message with animated dots (0-3 dots)
+            sys.stdout.write(f"\r{self.message}{'.' * dots}   ")
+            sys.stdout.flush()
+            dots = (dots + 1) % 4
+            time.sleep(0.5)
+        # Clear the line when done
+        sys.stdout.write("\r" + " " * (len(self.message) + 10) + "\r")
+        sys.stdout.flush()
+
+    def __enter__(self):
+        self.running = True
+        self.thread = threading.Thread(target=self._animate, daemon=True)
+        self.thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.running = False
+        if self.thread:
+            self.thread.join(timeout=1)
+
+
+def prompt_choice(prompt: str, options: List[str], show_options: bool = True) -> str:
+    # Calculate width needed for numbers (e.g., "10)" needs 3 chars)
+    max_num_width = len(f"{len(options)})")
+    if show_options:
+        for idx, value in enumerate(options, start=1):
+            num_str = f"{idx})"
+            # Right-align the number part for consistent spacing
+            print(_style(num_str.rjust(max_num_width), FG_CYAN), value)
     while True:
         selection = prompt_text(f"{prompt} (enter number): ")
         if not selection.isdigit():
@@ -94,24 +134,26 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
     url = base_url.rstrip("/") + "/models"
     headers = {"Authorization": f"Bearer {api_key}"}
     req = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            payload = resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        error(
-            f"Failed to fetch model list from {url} ({exc}). "
-            "You can enter a model manually."
-        )
-        return []
 
-    try:
-        data = json.loads(payload.decode("utf-8"))
-    except json.JSONDecodeError:
-        error("Model list response is not valid JSON. Skipping automatic selection.")
-        return []
+    with LoadingSpinner("Fetching models"):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                payload = resp.read()
+        except (urllib.error.URLError, TimeoutError) as exc:
+            error(
+                f"Failed to fetch model list from {url} ({exc}). "
+                "You can enter a model manually."
+            )
+            return []
+
+        try:
+            data = json.loads(payload.decode("utf-8"))
+        except json.JSONDecodeError:
+            error("Model list response is not valid JSON. Skipping automatic selection.")
+            return []
 
     if isinstance(data, list) and all(isinstance(item, str) for item in data):
-        return data
+        return sorted(data)
     if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
         models = []
         for item in data["data"]:
@@ -119,21 +161,40 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
                 models.append(str(item["id"]))
             elif isinstance(item, str):
                 models.append(item)
-        return models
+        return sorted(models)
     error("Could not parse model list from response. Please enter a model manually.")
     return []
 
 
-def choose_model(base_url: str, api_key: str, preset: Optional[str]) -> str:
+def choose_model(base_url: str, api_key: str, preset: Optional[str], lang: str) -> tuple[str, List[str]]:
+    """Choose a model and return both the choice and the fetched model list."""
     if preset:
-        return preset
+        return preset, []
     models = fetch_models(base_url, api_key)
     if models:
-        choice = prompt_choice("Select model", models)
-        return choice
-    manual = prompt_text("Enter model name: ")
+        info(t("set.available_models", lang))
+        choice = prompt_choice(t("set.select_model", lang), models)
+        return choice, models
+    manual = prompt_text(t("set.enter_model", lang))
     while not manual:
-        manual = prompt_text("Model name cannot be empty. Enter model name: ", color=FG_RED)
+        manual = prompt_text(t("set.enter_model_empty", lang), color=FG_RED)
+    return manual, []
+
+
+def choose_small_model(base_url: str, api_key: str, main_model: str, cached_models: List[str], lang: str) -> str:
+    """Choose small/fast model directly from model list or manual input.
+
+    Args:
+        cached_models: Previously fetched model list. If empty, prompts for manual input instead.
+    """
+    # If we have cached models, show them for selection (without reprinting the list)
+    if cached_models:
+        return prompt_choice(t("set.select_small_model", lang), cached_models, show_options=False)
+
+    # Otherwise, prompt for manual input (main model was entered manually)
+    manual = prompt_text(t("set.enter_small_model", lang))
+    while not manual:
+        manual = prompt_text(t("set.enter_small_model_empty", lang), color=FG_RED)
     return manual
 
 
@@ -147,14 +208,14 @@ def resolve_api_key(preset: Optional[str]) -> str:
     return key
 
 
-def select_tool_name(arg_name: Optional[str]) -> Tuple[ToolIntegration, str]:
+def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegration, str]:
     if arg_name:
         tool = TOOLS.resolve(ToolName(arg_name))
         if tool:
             return tool, tool.primary_name
         raise SystemExit(f"Unsupported tool: {arg_name}")
     available = TOOLS.primary_names()
-    chosen = prompt_choice("Select tool to configure", [str(name) for name in available])
+    chosen = prompt_choice(t("set.select_tool", lang), [str(name) for name in available])
     tool = TOOLS.resolve(ToolName(chosen))
     if not tool:
         raise SystemExit(f"Unsupported tool: {chosen}")
@@ -162,32 +223,42 @@ def select_tool_name(arg_name: Optional[str]) -> Tuple[ToolIntegration, str]:
 
 
 def handle_set(args: argparse.Namespace) -> None:
-    tool, tool_name = select_tool_name(args.tool)
+    lang = resolve_lang(getattr(args, "lang", None))
+    tool, tool_name = select_tool_name(args.tool, lang)
     api_key = resolve_api_key(args.api_key)
     base_url = resolve_base_url(args.base_url)
-    model = choose_model(base_url, api_key, args.model)
+    model, cached_models = choose_model(base_url, api_key, args.model, lang)
+    small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
 
-    header("\nConfiguration summary:")
-    print(f"- Tool: {tool_name}")
-    print(f"- Base URL: {base_url}")
-    print(f"- Model: {model}")
-    print(f"- API key: {masked_key(api_key)}")
-    if not prompt_yes_no("Apply this configuration?"):
-        warning("Cancelled.")
+    # Get config file path from tool if available
+    config_path = getattr(tool, "_settings_path", None)
+
+    header(t("set.summary_header", lang))
+    print(t("set.summary_tool", lang, tool=tool_name))
+    if config_path:
+        print(t("set.summary_config_file", lang, path=config_path))
+    print(t("set.summary_base_url", lang, url=base_url))
+    print(t("set.summary_main_model", lang, model=model))
+    print(t("set.summary_small_model", lang, model=small_model))
+    print(t("set.summary_api_key", lang, apikey=masked_key(api_key)))
+    if not prompt_yes_no(t("set.confirm_apply", lang)):
+        warning(t("set.cancelled", lang))
         return
 
     result: ToolConfigSetResult = tool.set_config(
         base_url=base_url,
         api_key=api_key,
         model=model,
+        small_model=small_model,
     )
-    success(f"Configuration written to: {result.target_path}")
+    success(t("set.success_written", lang, path=result.target_path))
     if result.backup_path:
-        success(f"Backup saved to: {result.backup_path}")
+        success(t("set.success_backup", lang, path=result.backup_path))
 
 
 def handle_reset(args: argparse.Namespace) -> None:
-    tool, tool_name = select_tool_name(args.tool)
+    lang = resolve_lang(getattr(args, "lang", None))
+    tool, tool_name = select_tool_name(args.tool, lang)
     backups = tool.list_backups()
     if not backups:
         error("No backups found for this tool.")
@@ -324,7 +395,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         args = parser.parse_args(argv)
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
-            header(t("cli.title", lang))
+            print(_style(t("cli.banner", lang), FG_CYAN))
             info(t("cli.tagline", lang))
             print()
             info(t("cli.examples.title", lang))

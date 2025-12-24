@@ -26,6 +26,13 @@ def resolve_lang(value: str | None) -> str:
 
 _STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
+        "cli.banner": """
+██████╗  ██████╗  ██████╗
+██╔══██╗██╔═══██╗██╔════╝
+██████╔╝╚███████║███████╗
+██╔══██╗ ╚════██║╚════██║
+██║  ██║ ██████╔╝██████╔╝
+╚═╝  ╚═╝ ╚═════╝ ╚═════╝ """,
         "cli.title": "r9s CLI",
         "cli.tagline": "Chat with r9s, manage bots, or configure local dev tools to use r9s.",
         "cli.examples.title": "Common usage examples:",
@@ -58,8 +65,38 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "chat.resume.none": "No saved sessions found in: {dir}",
         "chat.resume.select": "Select a session to resume (enter number): ",
         "chat.resume.invalid": "Invalid selection, try again.",
+        "set.select_tool": "Select tool to configure",
+        "set.available_models": "Available models from API:",
+        "set.select_model": "Select ANTHROPIC_MODEL",
+        "set.select_small_model": "Select ANTHROPIC_SMALL_FAST_MODEL",
+        "set.small_model_option_same": "Use same as main model ({model})",
+        "set.small_model_option_list": "Select from model list",
+        "set.small_model_option_manual": "Enter manually",
+        "set.select_small_model_from_list": "Select small model",
+        "set.enter_model": "Enter model name: ",
+        "set.enter_model_empty": "Model name cannot be empty. Enter model name: ",
+        "set.enter_small_model": "Enter small model name: ",
+        "set.enter_small_model_empty": "Model name cannot be empty. Enter small model name: ",
+        "set.summary_header": "\nConfiguration summary:",
+        "set.summary_tool": "- Tool: {tool}",
+        "set.summary_config_file": "- Config file: {path}",
+        "set.summary_base_url": "- Base URL: {url}",
+        "set.summary_main_model": "- Main Model: {model}",
+        "set.summary_small_model": "- Small/Fast Model: {model}",
+        "set.summary_api_key": "- API key: {apikey}",
+        "set.confirm_apply": "Apply this configuration?",
+        "set.cancelled": "Cancelled.",
+        "set.success_written": "Configuration written to: {path}",
+        "set.success_backup": "Backup saved to: {path}",
     },
     "zh-CN": {
+        "cli.banner": """
+██████╗  ██████╗  ██████╗
+██╔══██╗██╔═══██╗██╔════╝
+██████╔╝╚███████║███████╗
+██╔══██╗ ╚════██║╚════██║
+██║  ██║ ██████╔╝██████╔╝
+╚═╝  ╚═╝ ╚═════╝ ╚═════╝ """,
         "cli.title": "r9s CLI",
         "cli.tagline": "与 r9s 对话、管理 bot，或配置本地开发工具接入 r9s。",
         "cli.examples.title": "常用用法示例：",
@@ -92,6 +129,29 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "chat.resume.none": "在此目录未找到可恢复会话: {dir}",
         "chat.resume.select": "选择要恢复的会话（输入编号）：",
         "chat.resume.invalid": "选择无效，请重试。",
+        "set.select_tool": "选择要配置的工具",
+        "set.available_models": "API 可用模型：",
+        "set.select_model": "选择 ANTHROPIC_MODEL",
+        "set.select_small_model": "选择 ANTHROPIC_SMALL_FAST_MODEL",
+        "set.small_model_option_same": "使用与主模型相同 ({model})",
+        "set.small_model_option_list": "从模型列表选择",
+        "set.small_model_option_manual": "手动输入",
+        "set.select_small_model_from_list": "选择小模型",
+        "set.enter_model": "请输入模型名称：",
+        "set.enter_model_empty": "模型名称不能为空，请重新输入：",
+        "set.enter_small_model": "请输入小模型名称：",
+        "set.enter_small_model_empty": "模型名称不能为空，请重新输入：",
+        "set.summary_header": "\n配置摘要：",
+        "set.summary_tool": "- 工具：{tool}",
+        "set.summary_config_file": "- 配置文件：{path}",
+        "set.summary_base_url": "- Base URL：{url}",
+        "set.summary_main_model": "- 主模型：{model}",
+        "set.summary_small_model": "- 小/快速模型：{model}",
+        "set.summary_api_key": "- API key：{apikey}",
+        "set.confirm_apply": "应用此配置？",
+        "set.cancelled": "已取消。",
+        "set.success_written": "配置已写入：{path}",
+        "set.success_backup": "备份已保存：{path}",
     },
 }
 

@@ -21,6 +21,47 @@ FG_RED = "\033[31m"
 FG_YELLOW = "\033[33m"
 FG_CYAN = "\033[36m"
 
+# True color (RGB) support
+def rgb_color(r: int, g: int, b: int, bg: bool = False) -> str:
+    """Generate ANSI escape code for 24-bit RGB color.
+
+    Args:
+        r: Red value (0-255)
+        g: Green value (0-255)
+        b: Blue value (0-255)
+        bg: If True, set background color; otherwise set foreground
+
+    Returns:
+        ANSI escape code string
+    """
+    code = 48 if bg else 38
+    return f"\033[{code};2;{r};{g};{b}m"
+
+def hex_color(hex_code: str, bg: bool = False) -> str:
+    """Convert hex color code to ANSI RGB escape sequence.
+
+    Args:
+        hex_code: Hex color like "#7c3aed" or "7c3aed"
+        bg: If True, set background color; otherwise set foreground
+
+    Returns:
+        ANSI escape code string
+    """
+    hex_code = hex_code.lstrip("#")
+    if len(hex_code) != 6:
+        return ""
+    try:
+        r = int(hex_code[0:2], 16)
+        g = int(hex_code[2:4], 16)
+        b = int(hex_code[4:6], 16)
+        return rgb_color(r, g, b, bg)
+    except ValueError:
+        return ""
+
+# Brand colors
+FG_PURPLE = hex_color("#7c3aed")  # Primary brand color
+FG_PURPLE_LIGHT = hex_color("#a78bfa")  # Light purple for secondary text
+
 
 def _style(text: str, *codes: str) -> str:
     return "".join(codes) + text + RESET
