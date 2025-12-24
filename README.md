@@ -81,5 +81,5 @@ with R9S() as r9s:
     ], stream=False)
 ```
 
-Advanced SDK usage: `docs/sdk-advanced.md`
+Advanced SDK usage: [docs/sdk-advanced.md](docs/sdk-advanced.md)
 
