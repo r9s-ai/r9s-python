@@ -194,7 +194,7 @@ def transcribe_audio_with_timestamps():
         else:
             print(f"Transcription: {response.text}")
             if response.words:
-                print(f"\nFirst 5 words with timestamps:")
+                print("\nFirst 5 words with timestamps:")
                 for word_info in response.words[:5]:
                     print(
                         f"  {word_info.word} [{word_info.start:.2f}s - {word_info.end:.2f}s]"

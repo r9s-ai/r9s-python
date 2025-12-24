@@ -21,7 +21,7 @@ def basic_completion():
         res = r9_s.completions.create(
             model="gpt-4o-mini", prompt="Once upon a time", max_tokens=50
         )
-        print(f"Prompt: Once upon a time")
+        print("Prompt: Once upon a time")
         print(f"Completion: {res.choices[0].text}")
         print(f"Usage: {res.usage}")
 

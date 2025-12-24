@@ -1,14 +1,10 @@
 import argparse
 import json
-import os
-import shutil
 import sys
 import threading
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from r9s.cli_tools.bot_cli import (
@@ -23,8 +19,6 @@ from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
-    FG_PURPLE,
-    FG_PURPLE_LIGHT,
     ToolName,
     _style,
     error,
