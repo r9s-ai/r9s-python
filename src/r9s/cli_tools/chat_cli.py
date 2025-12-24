@@ -24,7 +24,7 @@ from r9s.cli_tools.chat_extensions import (
 )
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model, resolve_system_prompt
 from r9s.cli_tools.i18n import resolve_lang, t
-from r9s.cli_tools.terminal import FG_CYAN, error, header, info, prompt_text
+from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
 from r9s.sdk import R9S
 

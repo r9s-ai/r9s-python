@@ -20,7 +20,7 @@ from r9s.cli_tools.bot_cli import (
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url
 from r9s.cli_tools.i18n import resolve_lang, t
-from r9s.cli_tools.terminal import (
+from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
     FG_PURPLE,

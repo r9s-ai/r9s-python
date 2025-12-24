@@ -142,3 +142,4 @@ if __name__ == "__main__":
     name = prompt_text("Enter your name: ")
     secret = prompt_secret("Enter a secret (hidden): ")
     success(f"Hello, {name}! Your secret length is {len(secret)}.")
+
