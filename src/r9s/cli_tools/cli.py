@@ -23,6 +23,7 @@ from r9s.cli_tools.bot_cli import (
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url
 from r9s.cli_tools.i18n import resolve_lang, t
+from r9s.cli_tools.run_cli import handle_run
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
@@ -39,6 +40,15 @@ from r9s.cli_tools.ui.terminal import (
 from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
+
+CLI_BANNER = """
+██████╗  ██████╗  ██████╗
+██╔══██╗██╔═══██╗██╔════╝
+██████╔╝╚███████║███████╗
+██╔══██╗ ╚════██║╚════██║
+██║  ██║ ██████╔╝██████╔╝
+╚═╝  ╚═╝ ╚═════╝ ╚═════╝
+""".strip("\n")
 
 
 class ToolRegistry:
@@ -221,6 +231,8 @@ def resolve_api_key(preset: Optional[str]) -> str:
 
 def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegration, str]:
     if arg_name:
+        if arg_name.strip().lower() == "cc":
+            arg_name = "claude-code"
         tool = TOOLS.resolve(ToolName(arg_name))
         if tool:
             return tool, tool.primary_name
@@ -237,7 +249,7 @@ def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegratio
 
 def handle_set(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
-    tool, tool_name = select_tool_name(args.tool, lang)
+    tool, tool_name = select_tool_name(args.app, lang)
     api_key = resolve_api_key(args.api_key)
     base_url = resolve_base_url(args.base_url)
     model, cached_models = choose_model(base_url, api_key, args.model, lang)
@@ -271,7 +283,7 @@ def handle_set(args: argparse.Namespace) -> None:
 
 def handle_reset(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
-    tool, tool_name = select_tool_name(args.tool, lang)
+    tool, tool_name = select_tool_name(args.app, lang)
     backups = tool.list_backups()
     if not backups:
         error("No backups found for this tool.")
@@ -386,13 +398,41 @@ def build_parser() -> argparse.ArgumentParser:
     bot_delete.add_argument("name", help="Bot name")
     bot_delete.set_defaults(func=handle_bot_delete)
 
+    run_parser = subparsers.add_parser("run", help="Run an app with r9s env injected")
+    run_parser.add_argument("app", help="App name (e.g. claude-code)")
+    run_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    run_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    run_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
+    run_parser.add_argument(
+        "--print-env",
+        action="store_true",
+        help="Print the injected env and exit",
+    )
+    run_parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Ask for confirmation before running",
+    )
+    run_parser.add_argument(
+        "args",
+        nargs=argparse.REMAINDER,
+        help="Arguments passed to the underlying command (use `--` to separate)",
+    )
+    run_parser.set_defaults(func=handle_run)
+
     set_parser = subparsers.add_parser("set", help="Write r9s config for a tool")
     set_parser.add_argument(
         "--lang",
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
-    set_parser.add_argument("tool", nargs="?", help="Tool name, e.g. claude-code")
+    primary_apps = [str(x) for x in TOOLS.primary_names()]
+    supported_set = set(primary_apps)
+    if "claude-code" in supported_set:
+        supported_set.add("cc")
+    supported_apps = ", ".join(sorted(supported_set))
+    set_parser.epilog = f"Supported apps: {supported_apps}"
+    set_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     set_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
     set_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     set_parser.add_argument(
@@ -409,7 +449,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
-    reset_parser.add_argument("tool", nargs="?", help="Tool name, e.g. claude-code")
+    reset_parser.epilog = f"Supported apps: {supported_apps}"
+    reset_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     reset_parser.set_defaults(func=handle_reset)
     return parser
 
@@ -426,7 +467,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         maybe_notify_update()
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
-            print(_style(t("cli.banner", lang), FG_CYAN))
+            print(_style(CLI_BANNER, FG_CYAN))
             info(t("cli.tagline", lang))
             print()
             info(t("cli.examples.title", lang))
@@ -437,6 +478,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             print(t("cli.examples.resume", lang))
             print()
             print(t("cli.examples.bots", lang))
+            print()
+            print(t("cli.examples.run", lang))
             print()
             print(t("cli.examples.configure", lang))
             print()

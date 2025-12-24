@@ -26,13 +26,6 @@ def resolve_lang(value: str | None) -> str:
 
 _STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
-        "cli.banner": """
-██████╗  ██████╗  ██████╗
-██╔══██╗██╔═══██╗██╔════╝
-██████╔╝╚███████║███████╗
-██╔══██╗ ╚════██║╚════██║
-██║  ██║ ██████╔╝██████╔╝
-╚═╝  ╚═╝ ╚═════╝ ╚═════╝ """,
         "cli.title": "r9s CLI",
         "cli.tagline": "Chat with r9s, manage bots, or configure local dev tools to use r9s.",
         "cli.examples.title": "Common usage examples:",
@@ -40,7 +33,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "cli.examples.chat_pipe": '  # Chat (pipe stdin)\n  echo "hello" | r9s chat --model "$R9S_MODEL"',
         "cli.examples.resume": "  # Resume a session\n  r9s chat resume",
         "cli.examples.bots": '  # Bots\n  r9s bot create mybot --model "$R9S_MODEL" --system-prompt "You are a helpful assistant"\n  r9s chat --bot mybot\n  r9s bot list',
-        "cli.examples.configure": "  # Configure a tool\n  r9s set claude-code\n  r9s reset claude-code",
+        "cli.examples.run": '  # Run an app via r9s\n  r9s run $app --model "$R9S_MODEL"\n  # Supported apps: claude-code, cc',
+        "cli.examples.configure": "  # Configure an app\n  r9s set $app\n  r9s reset $app\n  # Supported apps: claude-code, cc",
         "cli.examples.more": "Run 'r9s -h' to see all options.",
         "chat.title": "r9s chat",
         "chat.base_url": "base_url",
@@ -90,13 +84,6 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "set.success_backup": "Backup saved to: {path}",
     },
     "zh-CN": {
-        "cli.banner": """
-██████╗  ██████╗  ██████╗
-██╔══██╗██╔═══██╗██╔════╝
-██████╔╝╚███████║███████╗
-██╔══██╗ ╚════██║╚════██║
-██║  ██║ ██████╔╝██████╔╝
-╚═╝  ╚═╝ ╚═════╝ ╚═════╝ """,
         "cli.title": "r9s CLI",
         "cli.tagline": "与 r9s 对话、管理 bot，或配置本地开发工具接入 r9s。",
         "cli.examples.title": "常用用法示例：",
@@ -104,7 +91,8 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "cli.examples.chat_pipe": '  # 对话（stdin 管道）\n  echo "hello" | r9s chat --model "$R9S_MODEL"',
         "cli.examples.resume": "  # 恢复对话\n  r9s chat resume",
         "cli.examples.bots": '  # Bots\n  r9s bot create mybot --model "$R9S_MODEL" --system-prompt "你是一个严谨的助手"\n  r9s chat --bot mybot\n  r9s bot list',
-        "cli.examples.configure": "  # 配置工具\n  r9s set claude-code\n  r9s reset claude-code",
+        "cli.examples.run": '  # 通过 r9s 启动应用\n  r9s run $app --model "$R9S_MODEL"\n  # 当前支持：claude-code, cc',
+        "cli.examples.configure": "  # 配置应用\n  r9s set $app\n  r9s reset $app\n  # 当前支持：claude-code, cc",
         "cli.examples.more": "运行 'r9s -h' 查看全部选项。",
         "chat.title": "r9s chat",
         "chat.base_url": "base_url",
