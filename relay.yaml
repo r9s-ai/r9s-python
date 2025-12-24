@@ -5,7 +5,7 @@ info:
   description: Next Router LLM API Documentation
 
 servers:
-  - url: "https://api.huamedia.tv/v1"
+  - url: "https://api.r9s.ai/v1"
     description: Production Server
 
 security:
@@ -2139,8 +2139,9 @@ components:
               type: string
               description: Error type
             code:
-              type: string
-              nullable: true
+              anyOf:
+                - type: string
+                - type: "null"
               description: Error code
             param:
               type: string
@@ -2243,12 +2244,12 @@ components:
           enum: [system, user, assistant, tool]
           description: Message role
         content:
-          nullable: true
-          oneOf:
+          anyOf:
             - type: string
             - type: array
               items:
                 $ref: '#/components/schemas/MessageContent'
+            - type: "null"
           description: |
             Message content. Can be null when assistant message contains tool_calls.
             - user/system messages: Required, contains text or multimodal content
@@ -2688,9 +2689,10 @@ components:
         delta:
           $ref: '#/components/schemas/ChatCompletionStreamDelta'
         finish_reason:
-          type: string
-          nullable: true
-          enum: [stop, length, tool_calls, content_filter]
+          anyOf:
+            - type: string
+              enum: [stop, length, tool_calls, content_filter]
+            - type: "null"
         logprobs:
           type: object
 
@@ -2923,16 +2925,19 @@ components:
               enum: [developer, organization]
               description: Who is paying for this response
         completed_at:
-          type: integer
-          nullable: true
+          anyOf:
+            - type: integer
+            - type: "null"
           description: Unix timestamp when the response was completed
         error:
-          type: object
-          nullable: true
+          anyOf:
+            - type: object
+            - type: "null"
           description: Error information if the response failed
         incomplete_details:
-          type: object
-          nullable: true
+          anyOf:
+            - type: object
+            - type: "null"
           description: Details about why the response is incomplete
         instructions:
           type: string
@@ -2941,8 +2946,9 @@ components:
           type: integer
           description: Maximum number of tokens to generate
         max_tool_calls:
-          type: integer
-          nullable: true
+          anyOf:
+            - type: integer
+            - type: "null"
           description: Maximum number of tool calls allowed
         model:
           type: string
@@ -2956,33 +2962,39 @@ components:
           type: boolean
           description: Whether parallel tool calls are enabled
         previous_response_id:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: ID of the previous response in a chain
         prompt_cache_key:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: Key for prompt caching
         prompt_cache_retention:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: Prompt cache retention policy
         reasoning:
           type: object
           description: Reasoning configuration
           properties:
             effort:
-              type: string
-              nullable: true
-              enum: [none, minimal, low, medium, high, xhigh]
+              anyOf:
+                - type: string
+                  enum: [none, minimal, low, medium, high, xhigh]
+                - type: "null"
               description: Reasoning effort level (none/minimal for fast, low/medium for balanced, high/xhigh for thorough)
             summary:
-              type: string
-              nullable: true
+              anyOf:
+                - type: string
+                - type: "null"
               description: Summary of reasoning
         safety_identifier:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: Safety identifier for the response
         service_tier:
           type: string
@@ -3030,8 +3042,9 @@ components:
           enum: [auto, disabled]
           description: Truncation strategy used
         user:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: User identifier
         metadata:
           type: object
@@ -3097,14 +3110,15 @@ components:
           type: string
           description: Function output
         summary:
-          nullable: true
-          oneOf:
+          anyOf:
             - type: string
             - type: array
+            - type: "null"
           description: Natural-language summary of reasoning (for reasoning type), can be string or array
         encrypted_content:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
           description: Encrypted reasoning tokens for stateless workflows (for reasoning type)
 
     ResponseStreamEvent:
@@ -3517,9 +3531,10 @@ components:
         model:
           type: string
         stop_reason:
-          type: string
-          nullable: true
-          enum: [end_turn, max_tokens, stop_sequence, tool_use, pause_turn, refusal]
+          anyOf:
+            - type: string
+              enum: [end_turn, max_tokens, stop_sequence, tool_use, pause_turn, refusal]
+            - type: "null"
           description: |
             Reason why the model stopped:
             - end_turn: Natural completion
@@ -3529,8 +3544,9 @@ components:
             - pause_turn: Long-running task paused (extended thinking)
             - refusal: Content policy violation
         stop_sequence:
-          type: string
-          nullable: true
+          anyOf:
+            - type: string
+            - type: "null"
         usage:
           type: object
           required:
@@ -3607,11 +3623,13 @@ components:
             model:
               type: string
             stop_reason:
-              type: string
-              nullable: true
+              anyOf:
+                - type: string
+                - type: "null"
             stop_sequence:
-              type: string
-              nullable: true
+              anyOf:
+                - type: string
+                - type: "null"
             usage:
               type: object
               required:
@@ -3704,8 +3722,9 @@ components:
           type: object
           properties:
             stop_reason:
-              type: string
-              nullable: true
+              anyOf:
+                - type: string
+                - type: "null"
         usage:
           type: object
           properties:
@@ -3855,8 +3874,9 @@ components:
         index:
           type: integer
         logprobs:
-          type: object
-          nullable: true
+          anyOf:
+            - type: object
+            - type: "null"
         finish_reason:
           type: string
           enum: [stop, length, content_filter]
@@ -3891,19 +3911,20 @@ components:
       required:
         - text
         - index
-        - finish_reason
       properties:
         text:
           type: string
         index:
           type: integer
         logprobs:
-          type: object
-          nullable: true
+          anyOf:
+            - type: object
+            - type: "null"
         finish_reason:
-          type: string
-          nullable: true
-          enum: [stop, length, content_filter]
+          anyOf:
+            - type: string
+              enum: [stop, length, content_filter]
+            - type: "null"
 
     CompletionStreamEvent:
       description: Completion stream event (data payload for SSE stream)

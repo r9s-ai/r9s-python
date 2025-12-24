@@ -25,8 +25,8 @@ CompletionStreamChoiceFinishReason = Literal[
 class CompletionStreamChoiceTypedDict(TypedDict):
     text: str
     index: int
-    finish_reason: Nullable[CompletionStreamChoiceFinishReason]
     logprobs: NotRequired[Nullable[CompletionStreamChoiceLogprobsTypedDict]]
+    finish_reason: NotRequired[Nullable[CompletionStreamChoiceFinishReason]]
 
 
 class CompletionStreamChoice(BaseModel):
@@ -34,13 +34,13 @@ class CompletionStreamChoice(BaseModel):
 
     index: int
 
-    finish_reason: Nullable[CompletionStreamChoiceFinishReason]
-
     logprobs: OptionalNullable[CompletionStreamChoiceLogprobs] = UNSET
+
+    finish_reason: OptionalNullable[CompletionStreamChoiceFinishReason] = UNSET
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = ["logprobs"]
+        optional_fields = ["logprobs", "finish_reason"]
         nullable_fields = ["logprobs", "finish_reason"]
         null_default_fields = []
 

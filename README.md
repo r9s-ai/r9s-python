@@ -479,7 +479,7 @@ from r9s import R9S
 
 
 with R9S(
-    server_url="https://api.huamedia.tv/v1",
+    server_url="https://api.r9s.ai/v1",
     api_key="<YOUR_BEARER_TOKEN_HERE>",
 ) as r9_s:
 
