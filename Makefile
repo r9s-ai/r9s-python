@@ -1,4 +1,7 @@
-.PHONY: clean build publish publish-test check
+.PHONY: lint clean build publish publish-test check
+
+lint:
+	python -m pyright
 
 # Remove previous build artifacts
 clean:
@@ -24,3 +27,6 @@ publish-test: build check
 publish: build check
 	@echo "Uploading to PyPI..."
 	twine upload dist/*
+
+install_dev:
+	uv pip install -e .

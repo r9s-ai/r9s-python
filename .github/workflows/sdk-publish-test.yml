@@ -1,13 +1,13 @@
-name: Publish Python SDK to PyPI
+name: Publish Python SDK to TestPyPI
 
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags, e.g. v1.0.0
+      - 'v*'
 
 jobs:
   publish:
-    name: Publish to PyPI
+    name: Publish to TestPyPI
     runs-on: ubuntu-22.04
     environment: production
 
@@ -22,15 +22,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Gate (main-only tags)
+      - name: Gate (dev-only tags)
         id: gate
         run: |
           set -euo pipefail
-          git fetch origin main --tags --force
-          if git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
+          git fetch origin main dev --tags --force
+
+          if git merge-base --is-ancestor "$GITHUB_SHA" "origin/dev"; then
+            if git merge-base --is-ancestor "$GITHUB_SHA" "origin/main"; then
+              echo "Tag commit is already on main; skipping TestPyPI publish."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "Tag commit is not on main; skipping PyPI publish."
+            echo "Tag commit is not on dev; skipping TestPyPI publish."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -61,9 +67,10 @@ jobs:
           python -m build
           twine check dist/*
 
-      - name: Publish to PyPI
+      - name: Publish to TestPyPI
         if: steps.gate.outputs.publish == 'true'
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ dist/*

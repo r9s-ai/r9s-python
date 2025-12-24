@@ -6,7 +6,7 @@ from .chatcompletionstreamdelta import (
     ChatCompletionStreamDeltaTypedDict,
 )
 from pydantic import model_serializer
-from r9s.types import BaseModel, Nullable, UNSET_SENTINEL
+from r9s.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_SENTINEL
 from typing import Literal, Optional
 from typing_extensions import NotRequired, TypedDict
 
@@ -30,7 +30,7 @@ class ChatCompletionStreamChoiceLogprobs(BaseModel):
 class ChatCompletionStreamChoiceTypedDict(TypedDict):
     index: int
     delta: ChatCompletionStreamDeltaTypedDict
-    finish_reason: Nullable[ChatCompletionStreamChoiceFinishReason]
+    finish_reason: NotRequired[Nullable[ChatCompletionStreamChoiceFinishReason]]
     logprobs: NotRequired[ChatCompletionStreamChoiceLogprobsTypedDict]
 
 
@@ -39,13 +39,13 @@ class ChatCompletionStreamChoice(BaseModel):
 
     delta: ChatCompletionStreamDelta
 
-    finish_reason: Nullable[ChatCompletionStreamChoiceFinishReason]
+    finish_reason: OptionalNullable[ChatCompletionStreamChoiceFinishReason] = UNSET
 
     logprobs: Optional[ChatCompletionStreamChoiceLogprobs] = None
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = ["logprobs"]
+        optional_fields = ["finish_reason", "logprobs"]
         nullable_fields = ["finish_reason"]
         null_default_fields = []
 

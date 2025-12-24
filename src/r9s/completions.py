@@ -4,7 +4,6 @@ from .basesdk import BaseSDK
 from enum import Enum
 from r9s import errors, models, utils
 from r9s._hooks import HookContext
-from r9s.models import completionrequest as models_completionrequest
 from r9s.types import OptionalNullable, UNSET
 from r9s.utils import eventstreaming
 from r9s.utils.unmarshal_json_response import unmarshal_json_response
@@ -32,10 +31,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Union[Literal[False], None] = None,
         temperature: Optional[float] = 1,
@@ -87,10 +83,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Literal[True],
         temperature: Optional[float] = 1,
@@ -141,10 +134,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Optional[bool] = False,
         temperature: Optional[float] = 1,
@@ -346,10 +336,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Union[Literal[False], None] = None,
         temperature: Optional[float] = 1,
@@ -401,10 +388,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Literal[True],
         temperature: Optional[float] = 1,
@@ -455,10 +439,7 @@ class Completions(BaseSDK):
         presence_penalty: Optional[float] = 0,
         seed: Optional[int] = None,
         stop: Optional[
-            Union[
-                models_completionrequest.CompletionRequestStop,
-                models_completionrequest.CompletionRequestStopTypedDict,
-            ]
+            Union[models.CompletionRequestStop, models.CompletionRequestStopTypedDict]
         ] = None,
         stream: Optional[bool] = False,
         temperature: Optional[float] = 1,

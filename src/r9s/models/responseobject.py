@@ -45,19 +45,19 @@ class Billing(BaseModel):
 
 
 class ErrorTypedDict(TypedDict):
-    r"""Error information if the response failed"""
+    pass
 
 
 class Error(BaseModel):
-    r"""Error information if the response failed"""
+    pass
 
 
 class IncompleteDetailsTypedDict(TypedDict):
-    r"""Details about why the response is incomplete"""
+    pass
 
 
 class IncompleteDetails(BaseModel):
-    r"""Details about why the response is incomplete"""
+    pass
 
 
 ResponseObjectEffort = Literal[
@@ -68,7 +68,6 @@ ResponseObjectEffort = Literal[
     "high",
     "xhigh",
 ]
-r"""Reasoning effort level (none/minimal for fast, low/medium for balanced, high/xhigh for thorough)"""
 
 
 class ResponseObjectReasoningTypedDict(TypedDict):

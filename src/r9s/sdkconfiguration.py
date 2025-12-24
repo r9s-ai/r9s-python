@@ -16,7 +16,7 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 
 SERVERS = [
-    "https://api.huamedia.tv/v1",
+    "https://api.r9s.ai/v1",
     # Production Server
 ]
 """Contains the list of servers available to the SDK"""

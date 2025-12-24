@@ -1,7 +1,5 @@
 # ResponseObjectEffort
 
-Reasoning effort level (none/minimal for fast, low/medium for balanced, high/xhigh for thorough)
-
 
 ## Values
 

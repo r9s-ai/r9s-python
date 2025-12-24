@@ -175,8 +175,8 @@ Before shipping a new adapter, manually test the basic flows:
 1. **Setup flow**
 
    ```bash
-   export r9s_API_KEY="test-api-key"
-   export r9s_BASE_URL="https://api.r9s.ai"
+   export R9S_API_KEY="test-api-key"
+   export R9S_BASE_URL="https://api.r9s.ai/v1"
 
    r9s set my-tool
    ```
