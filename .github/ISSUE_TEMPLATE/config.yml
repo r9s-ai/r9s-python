@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/r9s-ai/r9s-python
+    about: Check README and docs first.
+
