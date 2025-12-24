@@ -52,6 +52,10 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "chat.err.history_not_array": "History file must be a JSON array: {path}",
         "chat.err.ext_load_file": "Failed to load extension file: {path}",
         "chat.err.ext_contract": "Extension must provide one of: register(registry) / get_extension() / EXTENSION / extension",
+        "chat.err.resume_requires_tty": "Resume requires an interactive TTY (no stdin piping).",
+        "chat.resume.none": "No saved sessions found in: {dir}",
+        "chat.resume.select": "Select a session to resume (enter number): ",
+        "chat.resume.invalid": "Invalid selection, try again.",
     },
     "zh-CN": {
         "cli.title": "r9s CLI",
@@ -80,6 +84,10 @@ _STRINGS: Dict[str, Dict[str, str]] = {
         "chat.err.history_not_array": "history 文件必须是 JSON array: {path}",
         "chat.err.ext_load_file": "无法加载扩展文件: {path}",
         "chat.err.ext_contract": "扩展必须提供 register(registry) / get_extension() / EXTENSION / extension 之一",
+        "chat.err.resume_requires_tty": "resume 需要交互式终端（不能通过 stdin 管道）。",
+        "chat.resume.none": "在此目录未找到可恢复会话: {dir}",
+        "chat.resume.select": "选择要恢复的会话（输入编号）：",
+        "chat.resume.invalid": "选择无效，请重试。",
     },
 }
 

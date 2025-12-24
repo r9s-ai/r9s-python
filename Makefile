@@ -27,3 +27,6 @@ publish-test: build check
 publish: build check
 	@echo "Uploading to PyPI..."
 	twine upload dist/*
+
+install_dev:
+	uv pip install -e .

@@ -61,7 +61,7 @@ Interactive flow:
    - Otherwise a list of supported primary tool names is shown.
 
 3. **Choose model**
-   - Calls `GET $R9S_BASE_URL/v1/models` with header:
+   - Calls `GET $R9S_BASE_URL/models` with header:
 
      ```http
      Authorization: Bearer <R9S_API_KEY>

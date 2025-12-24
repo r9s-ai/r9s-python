@@ -4,6 +4,9 @@ import argparse
 import json
 import os
 import sys
+import uuid
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -21,6 +24,22 @@ from r9s.cli_tools.chat_extensions import (
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.sdk import R9S
+
+
+@dataclass
+class SessionMeta:
+    session_id: str
+    created_at: str
+    updated_at: str
+    base_url: str
+    model: str
+    system_prompt: Optional[str] = None
+
+
+@dataclass
+class SessionRecord:
+    meta: SessionMeta
+    messages: List[models.MessageTypedDict]
 
 
 def _resolve_api_key(args_api_key: Optional[str]) -> str:
@@ -52,19 +71,27 @@ def _resolve_system_prompt(args_system_prompt: Optional[str], args_file: Optiona
     return env.strip() if env else None
 
 
-def _load_history(path: str) -> List[models.MessageTypedDict]:
-    try:
-        raw = Path(path).read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return []
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(str(exc)) from exc
-    if not isinstance(data, list):
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def _history_root() -> Path:
+    return Path.home() / ".r9s" / "chat"
+
+
+def _default_session_path() -> Path:
+    root = _history_root()
+    root.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sid = uuid.uuid4().hex[:8]
+    return root / f"{stamp}_{sid}.json"
+
+
+def _coerce_messages(value: Any) -> List[models.MessageTypedDict]:
+    if not isinstance(value, list):
         raise TypeError("history is not a JSON array")
     out: List[models.MessageTypedDict] = []
-    for item in data:
+    for item in value:
         if not isinstance(item, dict):
             continue
         role = item.get("role")
@@ -75,9 +102,59 @@ def _load_history(path: str) -> List[models.MessageTypedDict]:
     return out
 
 
-def _save_history(path: str, history: List[models.MessageTypedDict]) -> None:
+def _load_history(path: str) -> SessionRecord:
+    try:
+        raw = Path(path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(str(exc)) from exc
+    # Backward compatible:
+    # - list[...] => messages only
+    # - {"meta": {...}, "messages": [...]} => full record
+    if isinstance(data, list):
+        now = _utc_now_iso()
+        meta = SessionMeta(
+            session_id=Path(path).stem,
+            created_at=now,
+            updated_at=now,
+            base_url="",
+            model="",
+            system_prompt=None,
+        )
+        return SessionRecord(meta=meta, messages=_coerce_messages(data))
+    if isinstance(data, dict):
+        messages = _coerce_messages(data.get("messages", []))
+        meta_raw = data.get("meta", {}) if isinstance(data.get("meta"), dict) else {}
+        now = _utc_now_iso()
+        meta = SessionMeta(
+            session_id=str(meta_raw.get("session_id") or Path(path).stem),
+            created_at=str(meta_raw.get("created_at") or now),
+            updated_at=str(meta_raw.get("updated_at") or now),
+            base_url=str(meta_raw.get("base_url") or ""),
+            model=str(meta_raw.get("model") or ""),
+            system_prompt=(str(meta_raw.get("system_prompt")) if meta_raw.get("system_prompt") else None),
+        )
+        return SessionRecord(meta=meta, messages=messages)
+    raise TypeError("history is not a JSON array")
+
+
+def _save_history(path: str, record: SessionRecord) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(json.dumps(history, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    payload = {
+        "meta": {
+            "session_id": record.meta.session_id,
+            "created_at": record.meta.created_at,
+            "updated_at": record.meta.updated_at,
+            "base_url": record.meta.base_url,
+            "model": record.meta.model,
+            "system_prompt": record.meta.system_prompt,
+        },
+        "messages": record.messages,
+    }
+    Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _build_messages(
@@ -184,29 +261,67 @@ def handle_chat(args: argparse.Namespace) -> None:
     if not api_key:
         raise SystemExit(t("chat.err.missing_api_key", lang))
 
+    if getattr(args, "action", None) == "resume":
+        if not sys.stdin.isatty():
+            raise SystemExit(t("chat.err.resume_requires_tty", lang))
+        selected = _resume_select_session(lang)
+        if selected is None:
+            raise SystemExit(t("chat.resume.none", lang, dir=str(_history_root())))
+        args.history_file = str(selected)
+
     base_url = _resolve_base_url(args.base_url)
     model = _resolve_model(args.model)
     if not model:
         raise SystemExit(t("chat.err.missing_model", lang))
 
     system_prompt = _resolve_system_prompt(args.system_prompt, args.system_prompt_file)
-    history: List[models.MessageTypedDict] = []
-    if args.history_file:
+
+    history_path: Optional[str]
+    if args.no_history:
+        history_path = None
+    else:
+        history_path = args.history_file or str(_default_session_path())
+
+    record: Optional[SessionRecord] = None
+    if history_path and Path(history_path).exists():
         try:
-            history = _load_history(args.history_file)
+            record = _load_history(history_path)
         except ValueError as exc:
             raise SystemExit(
-                t("chat.err.history_not_json", lang, path=args.history_file, err=str(exc))
+                t("chat.err.history_not_json", lang, path=history_path, err=str(exc))
             ) from exc
         except TypeError as exc:
-            raise SystemExit(t("chat.err.history_not_array", lang, path=args.history_file)) from exc
+            raise SystemExit(t("chat.err.history_not_array", lang, path=history_path)) from exc
+
+    if record is None:
+        now = _utc_now_iso()
+        record = SessionRecord(
+            meta=SessionMeta(
+                session_id=Path(history_path).stem if history_path else uuid.uuid4().hex,
+                created_at=now,
+                updated_at=now,
+                base_url=base_url,
+                model=model,
+                system_prompt=system_prompt,
+            ),
+            messages=[],
+        )
+    else:
+        # Fill missing meta fields if old file format or partial meta
+        if not record.meta.base_url:
+            record.meta.base_url = base_url
+        if not record.meta.model:
+            record.meta.model = model
+        if record.meta.system_prompt is None:
+            record.meta.system_prompt = system_prompt
+        record.meta.updated_at = _utc_now_iso()
 
     ctx = ChatContext(
         base_url=base_url,
         model=model,
         system_prompt=system_prompt,
-        history_file=args.history_file,
-        history=history,
+        history_file=history_path,
+        history=record.messages,
     )
 
     ext_specs = parse_extension_specs(args.ext)
@@ -239,8 +354,10 @@ def handle_chat(args: argparse.Namespace) -> None:
                 else _stream_chat(r9s, model, messages, ctx, exts)
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})
-            if args.history_file:
-                _save_history(args.history_file, ctx.history)
+            if history_path:
+                record.meta.updated_at = _utc_now_iso()
+                record.messages = ctx.history
+                _save_history(history_path, record)
             return
 
         header(t("chat.title", lang))
@@ -294,10 +411,65 @@ def handle_chat(args: argparse.Namespace) -> None:
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})
 
-            if args.history_file:
-                _save_history(args.history_file, ctx.history)
+            if history_path:
+                record.meta.updated_at = _utc_now_iso()
+                record.messages = ctx.history
+                _save_history(history_path, record)
 
 
 def _style_prompt(text: str) -> str:
     # 避免在这里引入更多样式依赖：prompt_text 已支持颜色，但我们希望保持提示一致性
     return text
+
+
+def _resume_select_session(lang: str) -> Optional[Path]:
+    root = _history_root()
+    if not root.exists():
+        return None
+    sessions = _list_sessions(root)
+    if not sessions:
+        return None
+    info(f"Sessions in: {root}")
+    for idx, s in enumerate(sessions, start=1):
+        print(f"{idx}) {s.display}")
+    while True:
+        selection = prompt_text(t("chat.resume.select", lang))
+        if not selection.isdigit():
+            error(t("chat.resume.invalid", lang))
+            continue
+        num = int(selection)
+        if 1 <= num <= len(sessions):
+            return sessions[num - 1].path
+        error(t("chat.resume.invalid", lang))
+
+
+@dataclass
+class SessionInfo:
+    path: Path
+    updated_at: str
+    display: str
+
+
+def _list_sessions(root: Path) -> List[SessionInfo]:
+    out: List[SessionInfo] = []
+    for path in sorted(root.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        try:
+            rec = _load_history(str(path))
+        except Exception:
+            continue
+        updated = rec.meta.updated_at or ""
+        base = rec.meta.base_url or "?"
+        model = rec.meta.model or "?"
+        preview = ""
+        for msg in reversed(rec.messages):
+            content = msg.get("content")
+            if msg.get("role") == "user" and isinstance(content, str):
+                preview = content.replace("\n", " ")
+                break
+        if preview:
+            preview = (preview[:60] + "…") if len(preview) > 60 else preview
+        display = f"{path.name}  [{updated}]  {model}  {base}"
+        if preview:
+            display += f"  - {preview}"
+        out.append(SessionInfo(path=path, updated_at=updated, display=display))
+    return out

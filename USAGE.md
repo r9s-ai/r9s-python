@@ -47,12 +47,15 @@ echo "你好" | r9s chat --model "$R9S_MODEL"
 # 2) Interactive multi-turn
 r9s chat --model "$R9S_MODEL" --system-prompt "你是一个严谨的助手"
 
-# 3) Persist history across runs
-r9s chat --model "$R9S_MODEL" --history-file .r9s_history.json
+# 3) History (default: saved under ~/.r9s/chat/)
+r9s chat --model "$R9S_MODEL"
 
-# 4) Load extensions (module path or .py file)
+# 4) Resume a saved session (interactive selection)
+r9s chat resume --model "$R9S_MODEL"
+
+# 5) Load extensions (module path or .py file)
 r9s chat --model "$R9S_MODEL" --ext example/chat_extension.py
 
-# 5) Switch UI language (default: en)
+# 6) Switch UI language (default: en)
 r9s chat --lang zh-CN --model "$R9S_MODEL"
 ```

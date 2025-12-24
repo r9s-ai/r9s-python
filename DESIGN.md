@@ -13,7 +13,8 @@ model: 可通过环境变量设置，如：export R9S_MODEL=xxx
 - **stdin 模式**：`echo "你好" | r9s chat --model xxx`（适合脚本/管道）
 - **交互模式**：直接运行 `r9s chat --model xxx`，逐行输入，多轮对话自动携带上下文
 - **system prompt**：`--system-prompt` / `--system-prompt-file` / `R9S_SYSTEM_PROMPT`
-- **会话历史**：`--history-file path/to/history.json`（可跨进程继续对话）
+- **会话历史**：默认写入 `~/.r9s/chat/`；`--no-history` 可关闭；`--history-file` 可指定路径
+- **恢复对话**：`r9s chat resume` 进入交互式选择，从 `~/.r9s/chat/` 选择并恢复继续对话
 - **对话扩展（extensions）**：通过 `--ext` 或 `R9S_CHAT_EXTENSIONS` 加载扩展模块/脚本，实现输入/输出/请求前后处理
 
 #### 扩展点约定（最小接口）

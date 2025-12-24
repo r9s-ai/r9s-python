@@ -84,7 +84,7 @@ def prompt_yes_no(prompt: str, default_no: bool = True) -> bool:
 
 
 def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
-    url = base_url.rstrip("/") + "/v1/models"
+    url = base_url.rstrip("/") + "/models"
     headers = {"Authorization": f"Bearer {api_key}"}
     req = urllib.request.Request(url, headers=headers)
     try:
@@ -234,6 +234,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     chat_parser = subparsers.add_parser("chat", help="Interactive chat (supports piping stdin)")
     chat_parser.add_argument(
+        "action",
+        nargs="?",
+        choices=["resume"],
+        help="Special actions (e.g. resume a saved session)",
+    )
+    chat_parser.add_argument(
         "--lang",
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
@@ -245,7 +251,12 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--system-prompt-file", help="Load system prompt from file")
     chat_parser.add_argument(
         "--history-file",
-        help="Persist conversation history to a JSON file (optional)",
+        help="History file path (default: auto under ~/.r9s/; disabled when --no-history)",
+    )
+    chat_parser.add_argument(
+        "--no-history",
+        action="store_true",
+        help="Disable history persistence (no load/save)",
     )
     chat_parser.add_argument(
         "--ext",
