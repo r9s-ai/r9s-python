@@ -16,6 +16,7 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_show,
 )
 from r9s.cli_tools.chat_cli import handle_chat
+from r9s.cli_tools.config import get_api_key, resolve_base_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.terminal import (
     FG_RED,
@@ -136,21 +137,10 @@ def choose_model(base_url: str, api_key: str, preset: Optional[str]) -> str:
     return manual
 
 
-def resolve_base_url(args_base_url: Optional[str]) -> str:
-    env_base = os.getenv("R9S_BASE_URL")
-    if args_base_url:
-        return args_base_url
-    if env_base:
-        return env_base
-    return "https://api.r9s.ai"
-
-
 def resolve_api_key(preset: Optional[str]) -> str:
-    env_key = os.getenv("R9S_API_KEY")
-    if env_key:
-        return env_key
-    if preset:
-        return preset
+    env_or_arg = get_api_key(preset)
+    if env_or_arg:
+        return env_or_arg
     key = prompt_secret("R9S_API_KEY is not set. Enter API key: ")
     while not key:
         key = prompt_secret("API key cannot be empty. Enter API key: ", color=FG_RED)

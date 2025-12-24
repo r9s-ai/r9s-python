@@ -176,7 +176,7 @@ Before shipping a new adapter, manually test the basic flows:
 
    ```bash
    export R9S_API_KEY="test-api-key"
-   export R9S_BASE_URL="https://api.r9s.ai"
+   export R9S_BASE_URL="https://api.r9s.ai/v1"
 
    r9s set my-tool
    ```

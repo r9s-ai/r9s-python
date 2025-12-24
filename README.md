@@ -22,7 +22,6 @@ uvx r9s
 
    ```bash
    export R9S_API_KEY="your_api_key"
-   export R9S_BASE_URL="https://api.r9s.ai"
    ```
 
 2. Run the setup command and follow the prompts:

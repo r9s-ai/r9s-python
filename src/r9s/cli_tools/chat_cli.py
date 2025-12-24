@@ -22,6 +22,7 @@ from r9s.cli_tools.chat_extensions import (
     run_stream_delta_extensions,
     run_user_input_extensions,
 )
+from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model, resolve_system_prompt
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
@@ -44,33 +45,11 @@ class SessionRecord:
     messages: List[models.MessageTypedDict]
 
 
-def _resolve_api_key(args_api_key: Optional[str]) -> str:
-    return (
-        os.getenv("R9S_API_KEY")
-        or args_api_key
-        or ""
-    )
-
-
-def _resolve_base_url(args_base_url: Optional[str]) -> str:
-    return (
-        args_base_url
-        or os.getenv("R9S_BASE_URL")
-        or "https://api.r9s.ai"
-    )
-
-
-def _resolve_model(args_model: Optional[str]) -> str:
-    return (args_model or os.getenv("R9S_MODEL") or "").strip()
-
-
-def _resolve_system_prompt(args_system_prompt: Optional[str], args_file: Optional[str]) -> Optional[str]:
-    if args_system_prompt:
-        return args_system_prompt
-    if args_file:
-        return Path(args_file).read_text(encoding="utf-8").strip() or None
-    env = os.getenv("R9S_SYSTEM_PROMPT")
-    return env.strip() if env else None
+def _require_api_key(args_api_key: Optional[str], lang: str) -> str:
+    key = get_api_key(args_api_key)
+    if not key:
+        raise SystemExit(t("chat.err.missing_api_key", lang))
+    return key
 
 
 def _utc_now_iso() -> str:
@@ -265,9 +244,7 @@ def _content_to_text(content: Any) -> str:
 
 def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
-    api_key = _resolve_api_key(args.api_key)
-    if not api_key:
-        raise SystemExit(t("chat.err.missing_api_key", lang))
+    api_key = _require_api_key(args.api_key, lang)
 
     bot: Optional[BotConfig] = None
     if getattr(args, "bot", None):
@@ -301,9 +278,9 @@ def handle_chat(args: argparse.Namespace) -> None:
             raise SystemExit(t("chat.resume.none", lang, dir=str(_history_root())))
         args.history_file = str(selected)
 
-    base_url = _resolve_base_url(args.base_url)
-    model = _resolve_model(args.model)
-    system_prompt = _resolve_system_prompt(args.system_prompt, args.system_prompt_file)
+    base_url = resolve_base_url(args.base_url)
+    model = resolve_model(args.model)
+    system_prompt = resolve_system_prompt(args.system_prompt, args.system_prompt_file)
 
     history_path: Optional[str]
     if args.no_history:
