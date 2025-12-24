@@ -2,7 +2,10 @@ openapi: 3.1.0
 info:
   title: R9S API
   version: 0.1.0
-  description: Next Router LLM API Documentation
+  description: Next Router Relay LLM API Documentation
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: "https://api.r9s.ai/v1"
@@ -401,6 +404,8 @@ paths:
           $ref: '#/components/responses/AuthenticationError'
         '403':
           $ref: '#/components/responses/PermissionDeniedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
         '422':
           $ref: '#/components/responses/UnprocessableEntityError'
         '429':
@@ -894,6 +899,8 @@ paths:
           $ref: '#/components/responses/AuthenticationError'
         '403':
           $ref: '#/components/responses/PermissionDeniedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
         '422':
           $ref: '#/components/responses/UnprocessableEntityError'
         '429':
@@ -992,8 +999,7 @@ paths:
                             description: City or timezone
                         required:
                           - location
-                  tool_choice:
-                    type: auto
+                  tool_choice: auto
               tool_use_response:
                 summary: Tool use result response
                 value:
@@ -1225,6 +1231,8 @@ paths:
           $ref: '#/components/responses/AuthenticationError'
         '403':
           $ref: '#/components/responses/PermissionDeniedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
         '422':
           $ref: '#/components/responses/UnprocessableEntityError'
         '429':
@@ -2190,6 +2198,11 @@ components:
           properties:
             status:
               enum: [409]
+      description: |
+        Resource conflict error. Reserved for future use cases:
+        - Duplicate resource creation
+        - Concurrent modification conflicts
+        - State conflicts in background tasks
 
     UnprocessableEntityError:
       allOf:
@@ -3051,7 +3064,10 @@ components:
           additionalProperties: true
           description: Additional metadata
         usage:
-          $ref: '#/components/schemas/ResponseUsage'
+          anyOf:
+            - $ref: '#/components/schemas/ResponseUsage'
+            - type: "null"
+          description: Usage statistics (null when response is still in progress)
       x-speakeasy-unknown-values: allow
 
     ResponseOutputItem:
@@ -3163,14 +3179,6 @@ components:
                   type: string
                   description: Content delta
           description: Delta updates (present in response.text.delta events), can be a string or object
-
-    ResponseDelta:
-      type: object
-      properties:
-        content:
-          type: string
-        role:
-          type: string
 
     # Anthropic schemas
     AnthropicMessageMessage:
@@ -4555,7 +4563,7 @@ components:
             $ref: '#/components/schemas/NotFoundError'
 
     ConflictError:
-      description: Resource conflict
+      description: Resource conflict (reserved for future use)
       content:
         application/json:
           schema:
