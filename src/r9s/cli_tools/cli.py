@@ -1,11 +1,18 @@
 import argparse
 import json
+import os
 import sys
 import threading
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
+
+try:
+    from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
+except Exception:  # pragma: no cover
+    load_dotenv = None  # type: ignore[assignment]
 
 from r9s.cli_tools.bot_cli import (
     handle_bot_create,
@@ -410,6 +417,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = build_parser()
     try:
+        # Load `.env` from current working directory (best-effort).
+        # Disable with: R9S_NO_DOTENV=1
+        if load_dotenv is not None and not os.getenv("R9S_NO_DOTENV"):
+            load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
+
         args = parser.parse_args(argv)
         maybe_notify_update()
         if not getattr(args, "command", None):
