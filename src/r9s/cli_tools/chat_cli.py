@@ -22,7 +22,12 @@ from r9s.cli_tools.chat_extensions import (
     run_stream_delta_extensions,
     run_user_input_extensions,
 )
-from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model, resolve_system_prompt
+from r9s.cli_tools.config import (
+    get_api_key,
+    resolve_base_url,
+    resolve_model,
+    resolve_system_prompt,
+)
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
@@ -77,7 +82,11 @@ def _coerce_messages(value: Any) -> List[models.MessageTypedDict]:
             continue
         role = item.get("role")
         content = item.get("content")
-        if isinstance(role, str) and role in ("system", "user", "assistant", "tool") and isinstance(content, str):
+        if (
+            isinstance(role, str)
+            and role in ("system", "user", "assistant", "tool")
+            and isinstance(content, str)
+        ):
             role_typed: Role = role
             out.append({"role": role_typed, "content": content})
     return out
@@ -116,7 +125,11 @@ def _load_history(path: str) -> SessionRecord:
             updated_at=str(meta_raw.get("updated_at") or now),
             base_url=str(meta_raw.get("base_url") or ""),
             model=str(meta_raw.get("model") or ""),
-            system_prompt=(str(meta_raw.get("system_prompt")) if meta_raw.get("system_prompt") else None),
+            system_prompt=(
+                str(meta_raw.get("system_prompt"))
+                if meta_raw.get("system_prompt")
+                else None
+            ),
         )
         return SessionRecord(meta=meta, messages=messages)
     raise TypeError("history is not a JSON array")
@@ -135,7 +148,9 @@ def _save_history(path: str, record: SessionRecord) -> None:
         },
         "messages": record.messages,
     }
-    Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    Path(path).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _build_messages(
@@ -261,7 +276,10 @@ def handle_chat(args: argparse.Namespace) -> None:
             args.base_url = bot.base_url
         if getattr(args, "model", None) is None and bot.model:
             args.model = bot.model
-        if getattr(args, "system_prompt", None) is None and getattr(args, "system_prompt_file", None) is None:
+        if (
+            getattr(args, "system_prompt", None) is None
+            and getattr(args, "system_prompt_file", None) is None
+        ):
             if bot.system_prompt_file:
                 args.system_prompt_file = bot.system_prompt_file
             elif bot.system_prompt:
@@ -297,13 +315,17 @@ def handle_chat(args: argparse.Namespace) -> None:
                 t("chat.err.history_not_json", lang, path=history_path, err=str(exc))
             ) from exc
         except TypeError as exc:
-            raise SystemExit(t("chat.err.history_not_array", lang, path=history_path)) from exc
+            raise SystemExit(
+                t("chat.err.history_not_array", lang, path=history_path)
+            ) from exc
 
     if record is None:
         now = _utc_now_iso()
         record = SessionRecord(
             meta=SessionMeta(
-                session_id=Path(history_path).stem if history_path else uuid.uuid4().hex,
+                session_id=Path(history_path).stem
+                if history_path
+                else uuid.uuid4().hex,
                 created_at=now,
                 updated_at=now,
                 base_url=base_url,
@@ -349,7 +371,11 @@ def handle_chat(args: argparse.Namespace) -> None:
             message = str(exc)
             if message.startswith("Failed to load extension file:"):
                 raise SystemExit(
-                    t("chat.err.ext_load_file", lang, path=message.split(":", 1)[1].strip())
+                    t(
+                        "chat.err.ext_load_file",
+                        lang,
+                        path=message.split(":", 1)[1].strip(),
+                    )
                 ) from exc
             if "Extension must provide one of" in message:
                 raise SystemExit(t("chat.err.ext_contract", lang)) from exc
@@ -364,7 +390,9 @@ def handle_chat(args: argparse.Namespace) -> None:
                 return
             user_text = run_user_input_extensions(exts, user_text, ctx)
             ctx.history.append({"role": "user", "content": user_text})
-            messages = run_before_request_extensions(exts, _build_messages(system_prompt, ctx.history), ctx)
+            messages = run_before_request_extensions(
+                exts, _build_messages(system_prompt, ctx.history), ctx
+            )
             assistant_text = (
                 _non_stream_chat(r9s, model, messages, ctx, exts)
                 if args.no_stream
@@ -392,7 +420,9 @@ def handle_chat(args: argparse.Namespace) -> None:
 
         while True:
             try:
-                user_text = prompt_text(_style_prompt(t("chat.prompt.user", lang)), color=FG_CYAN)
+                user_text = prompt_text(
+                    _style_prompt(t("chat.prompt.user", lang)), color=FG_CYAN
+                )
             except EOFError:
                 print()
                 return
@@ -421,9 +451,23 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages = run_before_request_extensions(exts, messages, ctx)
 
             assistant_text = (
-                _non_stream_chat(r9s, model, messages, ctx, exts, prefix=_style_prompt(t("chat.prompt.assistant", lang)))
+                _non_stream_chat(
+                    r9s,
+                    model,
+                    messages,
+                    ctx,
+                    exts,
+                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                )
                 if args.no_stream
-                else _stream_chat(r9s, model, messages, ctx, exts, prefix=_style_prompt(t("chat.prompt.assistant", lang)))
+                else _stream_chat(
+                    r9s,
+                    model,
+                    messages,
+                    ctx,
+                    exts,
+                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                )
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})
 
@@ -468,7 +512,9 @@ class SessionInfo:
 
 def _list_sessions(root: Path) -> List[SessionInfo]:
     out: List[SessionInfo] = []
-    for path in sorted(root.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+    for path in sorted(
+        root.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
+    ):
         try:
             rec = _load_history(str(path))
         except Exception:

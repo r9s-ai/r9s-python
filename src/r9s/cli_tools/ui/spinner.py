@@ -35,11 +35,7 @@ class Spinner:
         self._thread = None
         if self._last_len > 0 and self._prefix:
             sys.stdout.write(
-                "\r"
-                + self._prefix
-                + (" " * self._last_len)
-                + "\r"
-                + self._prefix
+                "\r" + self._prefix + (" " * self._last_len) + "\r" + self._prefix
             )
             sys.stdout.flush()
         self._last_len = 0
@@ -56,4 +52,3 @@ class Spinner:
             sys.stdout.flush()
             idx += 1
             time.sleep(0.12)
-

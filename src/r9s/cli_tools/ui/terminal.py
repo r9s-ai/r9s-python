@@ -21,6 +21,7 @@ FG_RED = "\033[31m"
 FG_YELLOW = "\033[33m"
 FG_CYAN = "\033[36m"
 
+
 # True color (RGB) support
 def rgb_color(r: int, g: int, b: int, bg: bool = False) -> str:
     """Generate ANSI escape code for 24-bit RGB color.
@@ -36,6 +37,7 @@ def rgb_color(r: int, g: int, b: int, bg: bool = False) -> str:
     """
     code = 48 if bg else 38
     return f"\033[{code};2;{r};{g};{b}m"
+
 
 def hex_color(hex_code: str, bg: bool = False) -> str:
     """Convert hex color code to ANSI RGB escape sequence.
@@ -57,6 +59,7 @@ def hex_color(hex_code: str, bg: bool = False) -> str:
         return rgb_color(r, g, b, bg)
     except ValueError:
         return ""
+
 
 # Brand colors
 FG_PURPLE = hex_color("#7c3aed")  # Primary brand color
@@ -142,4 +145,3 @@ if __name__ == "__main__":
     name = prompt_text("Enter your name: ")
     secret = prompt_secret("Enter a secret (hidden): ")
     success(f"Hello, {name}! Your secret length is {len(secret)}.")
-

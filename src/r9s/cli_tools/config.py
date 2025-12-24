@@ -11,7 +11,9 @@ def get_api_key(args_api_key: Optional[str]) -> Optional[str]:
 
 
 def resolve_base_url(args_base_url: Optional[str]) -> str:
-    return (args_base_url or os.getenv("R9S_BASE_URL") or "https://api.r9s.ai/v1").strip()
+    return (
+        args_base_url or os.getenv("R9S_BASE_URL") or "https://api.r9s.ai/v1"
+    ).strip()
 
 
 def resolve_model(args_model: Optional[str]) -> str:

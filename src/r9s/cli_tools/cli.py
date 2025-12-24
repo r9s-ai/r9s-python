@@ -74,6 +74,7 @@ def masked_key(key: str, visible: int = 4) -> str:
 
 class LoadingSpinner:
     """Context manager for displaying a loading animation."""
+
     def __init__(self, message: str = "Loading"):
         self.message = message
         self.running = False
@@ -149,7 +150,9 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
         try:
             data = json.loads(payload.decode("utf-8"))
         except json.JSONDecodeError:
-            error("Model list response is not valid JSON. Skipping automatic selection.")
+            error(
+                "Model list response is not valid JSON. Skipping automatic selection."
+            )
             return []
 
     if isinstance(data, list) and all(isinstance(item, str) for item in data):
@@ -166,7 +169,9 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
     return []
 
 
-def choose_model(base_url: str, api_key: str, preset: Optional[str], lang: str) -> tuple[str, List[str]]:
+def choose_model(
+    base_url: str, api_key: str, preset: Optional[str], lang: str
+) -> tuple[str, List[str]]:
     """Choose a model and return both the choice and the fetched model list."""
     if preset:
         return preset, []
@@ -181,7 +186,9 @@ def choose_model(base_url: str, api_key: str, preset: Optional[str], lang: str) 
     return manual, []
 
 
-def choose_small_model(base_url: str, api_key: str, main_model: str, cached_models: List[str], lang: str) -> str:
+def choose_small_model(
+    base_url: str, api_key: str, main_model: str, cached_models: List[str], lang: str
+) -> str:
     """Choose small/fast model directly from model list or manual input.
 
     Args:
@@ -189,7 +196,9 @@ def choose_small_model(base_url: str, api_key: str, main_model: str, cached_mode
     """
     # If we have cached models, show them for selection (without reprinting the list)
     if cached_models:
-        return prompt_choice(t("set.select_small_model", lang), cached_models, show_options=False)
+        return prompt_choice(
+            t("set.select_small_model", lang), cached_models, show_options=False
+        )
 
     # Otherwise, prompt for manual input (main model was entered manually)
     manual = prompt_text(t("set.enter_small_model", lang))
@@ -215,7 +224,9 @@ def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegratio
             return tool, tool.primary_name
         raise SystemExit(f"Unsupported tool: {arg_name}")
     available = TOOLS.primary_names()
-    chosen = prompt_choice(t("set.select_tool", lang), [str(name) for name in available])
+    chosen = prompt_choice(
+        t("set.select_tool", lang), [str(name) for name in available]
+    )
     tool = TOOLS.resolve(ToolName(chosen))
     if not tool:
         raise SystemExit(f"Unsupported tool: {chosen}")
@@ -299,7 +310,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    chat_parser = subparsers.add_parser("chat", help="Interactive chat (supports piping stdin)")
+    chat_parser = subparsers.add_parser(
+        "chat", help="Interactive chat (supports piping stdin)"
+    )
     chat_parser.add_argument(
         "action",
         nargs="?",
@@ -314,9 +327,15 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
     chat_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
-    chat_parser.add_argument("--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.json)")
-    chat_parser.add_argument("--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)")
-    chat_parser.add_argument("--system-prompt-file", help="Load system prompt from file")
+    chat_parser.add_argument(
+        "--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.json)"
+    )
+    chat_parser.add_argument(
+        "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
+    )
+    chat_parser.add_argument(
+        "--system-prompt-file", help="Load system prompt from file"
+    )
     chat_parser.add_argument(
         "--history-file",
         help="History file path (default: auto under ~/.r9s/; disabled when --no-history)",
@@ -349,7 +368,9 @@ def build_parser() -> argparse.ArgumentParser:
     bot_create.add_argument("--system-prompt", help="System prompt text")
     bot_create.add_argument("--system-prompt-file", help="System prompt file path")
     bot_create.add_argument("--lang", help="Default UI language (en, zh-CN)")
-    bot_create.add_argument("--ext", action="append", default=[], help="Default chat extension (repeatable)")
+    bot_create.add_argument(
+        "--ext", action="append", default=[], help="Default chat extension (repeatable)"
+    )
     bot_create.set_defaults(func=handle_bot_create)
 
     bot_list = bot_sub.add_parser("list", help="List bots")
@@ -378,7 +399,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     set_parser.set_defaults(func=handle_set)
 
-    reset_parser = subparsers.add_parser("reset", help="Restore configuration from backup")
+    reset_parser = subparsers.add_parser(
+        "reset", help="Restore configuration from backup"
+    )
     reset_parser.add_argument(
         "--lang",
         default=None,

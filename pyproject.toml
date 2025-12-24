@@ -43,8 +43,10 @@ test = [
 ]
 dev = [
     "mypy ==1.15.0",
+    "pre-commit >=3.7.0",
     "pylint ==3.2.3",
     "pyright ==1.1.398",
+    "ruff >=0.6.9",
 ]
 
 
@@ -82,3 +84,12 @@ include = ["src", "example", "main.py"]
 exclude = ["build", "dist", "**/__pycache__", "**/*.egg-info"]
 pythonVersion = "3.9"
 typeCheckingMode = "basic"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

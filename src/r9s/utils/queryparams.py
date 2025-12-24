@@ -31,9 +31,13 @@ def get_query_params(
 ) -> Dict[str, List[str]]:
     params: Dict[str, List[str]] = {}
 
-    globals_already_populated = _populate_query_params(query_params, gbls, params, [], allow_empty_value)
+    globals_already_populated = _populate_query_params(
+        query_params, gbls, params, [], allow_empty_value
+    )
     if _is_set(gbls):
-        _populate_query_params(gbls, None, params, globals_already_populated, allow_empty_value)
+        _populate_query_params(
+            gbls, None, params, globals_already_populated, allow_empty_value
+        )
 
     return params
 
