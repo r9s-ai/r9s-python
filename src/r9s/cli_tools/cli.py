@@ -29,6 +29,7 @@ from r9s.cli_tools.ui.terminal import (
     success,
     warning,
 )
+from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
 
@@ -410,6 +411,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = build_parser()
     try:
         args = parser.parse_args(argv)
+        maybe_notify_update()
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
             print(_style(t("cli.banner", lang), FG_CYAN))
