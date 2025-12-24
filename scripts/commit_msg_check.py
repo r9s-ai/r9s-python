@@ -39,7 +39,22 @@ def main(argv: list[str]) -> int:
         print("Empty commit message is not allowed.", file=sys.stderr)
         return 1
 
-    first_line = msg.splitlines()[0].strip()
+    # Ignore commented lines that may exist in commit message templates.
+    lines = [ln for ln in msg.splitlines() if not ln.lstrip().startswith("#")]
+    if not lines:
+        print("Empty commit message is not allowed.", file=sys.stderr)
+        return 1
+
+    cleaned = "\n".join(lines).strip()
+    # Require English-only commit messages (best-effort): ASCII characters only.
+    if any(ord(ch) > 127 for ch in cleaned):
+        print(
+            "Commit message must be English-only (ASCII characters only).",
+            file=sys.stderr,
+        )
+        return 1
+
+    first_line = lines[0].strip()
 
     # Allow auto-generated messages.
     if first_line.startswith("Merge "):
@@ -57,6 +72,8 @@ def main(argv: list[str]) -> int:
         "  <type>(<scope>)?: <description>\n"
         "  <type>!: <description>\n\n"
         f"Allowed types: {allowed}\n\n"
+        "Additional rule:\n"
+        "  - English-only (ASCII characters only)\n\n"
         "Examples:\n"
         "  feat(cli): add run command\n"
         "  fix(chat): handle missing finish_reason\n"
@@ -68,4 +85,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))
-
