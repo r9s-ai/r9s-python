@@ -37,3 +37,22 @@ async def main():
 asyncio.run(main())
 ```
 <!-- End SDK Example Usage [usage] -->
+
+## CLI: Chat
+
+```bash
+# 1) Pipe stdin (single-turn)
+echo "你好" | r9s chat --model "$R9S_MODEL"
+
+# 2) Interactive multi-turn
+r9s chat --model "$R9S_MODEL" --system-prompt "你是一个严谨的助手"
+
+# 3) Persist history across runs
+r9s chat --model "$R9S_MODEL" --history-file .r9s_history.json
+
+# 4) Load extensions (module path or .py file)
+r9s chat --model "$R9S_MODEL" --ext example/chat_extension.py
+
+# 5) Switch UI language (default: en)
+r9s chat --lang zh-CN --model "$R9S_MODEL"
+```

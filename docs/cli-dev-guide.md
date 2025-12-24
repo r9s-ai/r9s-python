@@ -8,8 +8,8 @@ The main entry point lives in `r9s/cli.py`.
 
 - `r9s set [tool]`
   - Interactive setup to wire a tool to the r9s API.
-  - Reads/asks for `r9s_API_KEY` and `r9s_BASE_URL`.
-  - Fetches model list from `$r9s_BASE_URL/v1/model` when possible.
+  - Reads/asks for `R9S_API_KEY` and `R9S_BASE_URL`.
+  - Fetches model list from `$R9S_BASE_URL/v1/model` when possible.
   - Backs up existing config before writing a new one.
 - `r9s reset [tool]`
   - Restores a previous config from backups created by `set`.
@@ -18,14 +18,14 @@ Currently only **Claude Code** is supported. Tool‑specific logic lives in `r9s
 
 ## Environment variables
 
-- `r9s_API_KEY`  
+- `R9S_API_KEY`  
   API key used by the CLI. If not set, the CLI prompts and hides input.
 
-- `r9s_BASE_URL`  
+- `R9S_BASE_URL`  
   Base URL for r9s. Resolution order:
 
   1. `--base-url` flag (if provided)
-  2. `r9s_BASE_URL` environment variable
+  2. `R9S_BASE_URL` environment variable
   3. Fallback: `https://api.r9s.ai`
 
   If neither the flag nor the environment variable is set, the CLI silently uses the default URL and does not prompt the user.
@@ -53,7 +53,7 @@ If `tool` is omitted, the CLI shows a menu and lets the user choose.
 Interactive flow:
 
 1. **Resolve API key**
-   - Use `r9s_API_KEY` if set.
+   - Use `R9S_API_KEY` if set.
    - Otherwise prompt the user via `getpass()` (no echo).
 
 2. **Select tool**
@@ -61,10 +61,10 @@ Interactive flow:
    - Otherwise a list of supported primary tool names is shown.
 
 3. **Choose model**
-   - Calls `GET $r9s_BASE_URL/v1/models` with header:
+   - Calls `GET $R9S_BASE_URL/v1/models` with header:
 
      ```http
-     Authorization: Bearer <r9s_API_KEY>
+     Authorization: Bearer <R9S_API_KEY>
      ```
    - If the response is:
      - A list of strings → treated as model IDs.
@@ -86,15 +86,15 @@ You can pre‑fill most values via flags, then still get a confirmation step:
 
 ```bash
 r9s set claude-code \
-  --api-key "$r9s_API_KEY" \
-  --base-url "$r9s_BASE_URL" \
+  --api-key "$R9S_API_KEY" \
+  --base-url "$R9S_BASE_URL" \
   --model "r9s-code-1"
 ```
 
 Flags:
 
-- `--api-key` – override or replace `r9s_API_KEY`.
-- `--base-url` – override or replace `r9s_BASE_URL`.
+- `--api-key` – override or replace `R9S_API_KEY`.
+- `--base-url` – override or replace `R9S_BASE_URL`.
 - `--model` – skip model selection and use the given model.
 
 ### `r9s reset`

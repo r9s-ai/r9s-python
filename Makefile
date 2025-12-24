@@ -1,4 +1,7 @@
-.PHONY: clean build publish publish-test check
+.PHONY: lint clean build publish publish-test check
+
+lint:
+	python -m pyright
 
 # Remove previous build artifacts
 clean:
