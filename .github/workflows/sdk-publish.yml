@@ -9,6 +9,7 @@ jobs:
   publish:
     name: Publish to PyPI
     runs-on: ubuntu-22.04
+    environment: production
 
     steps:
       - name: Checkout code
