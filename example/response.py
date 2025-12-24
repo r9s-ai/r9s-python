@@ -4,15 +4,16 @@ Demonstrates various ways to use the R9S Response API (OpenAI 2025 format).
 
 Note: This file uses dict literals for simplicity and readability.
 """
+
 from r9s import R9S
 import os
 
 
 def simple_text_input():
     """Example 1: Simple text input"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 1: Simple Text Input")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -21,7 +22,7 @@ def simple_text_input():
             instructions="You are a funny assistant",
             max_output_tokens=500,
             temperature=0.7,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Assistant: {res.output[0].content[0].text}")
@@ -31,9 +32,9 @@ def simple_text_input():
 
 def with_messages():
     """Example 2: Using message array (recommended)"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 2: Using Message Array")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -46,7 +47,7 @@ def with_messages():
             ],
             instructions="You are a helpful assistant",
             max_output_tokens=1000,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Assistant: {res.output[0].content[0].text}")
@@ -54,9 +55,9 @@ def with_messages():
 
 def multi_turn_conversation():
     """Example 3: Multi-turn conversation"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 3: Multi-turn Conversation")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -77,7 +78,7 @@ def multi_turn_conversation():
             ],
             instructions="You are a knowledgeable AI tutor",
             max_output_tokens=2000,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Assistant: {res.output[0].content[0].text}")
@@ -85,9 +86,9 @@ def multi_turn_conversation():
 
 def with_tools():
     """Example 4: Request with tool calls"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 4: Request with Tool Calls")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -108,16 +109,12 @@ def with_tools():
                     "description": "Get the current weather in a location",
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            "location": {
-                                "type": "string"
-                            }
-                        },
-                        "required": ["location"]
-                    }
+                        "properties": {"location": {"type": "string"}},
+                        "required": ["location"],
+                    },
                 }
             ],
-            stream=False
+            stream=False,
         )
         print(f"Output: {res.output}")
         if res.usage:
@@ -126,9 +123,9 @@ def with_tools():
 
 def streaming_response():
     """Example 5: Streaming response"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 5: Streaming Response")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -137,7 +134,7 @@ def streaming_response():
             instructions="You are a creative poet",
             stream=True,
             max_output_tokens=500,
-            temperature=0.9
+            temperature=0.9,
         )
         print("Assistant: ", end="", flush=True)
         for chunk in res:
@@ -149,9 +146,9 @@ def streaming_response():
 
 def json_mode():
     """Example 6: JSON mode output"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 6: JSON Mode Output")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -159,12 +156,10 @@ def json_mode():
             input="Extract person information and return as JSON: John Smith is 35 years old and works as a software engineer in San Francisco",
             instructions="Extract structured data and output in JSON format",
             text={  # type: ignore
-                "format": {
-                    "type": "json_object"
-                }
+                "format": {"type": "json_object"}
             },
             max_output_tokens=500,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"JSON Output:\n{res.output[0].content[0].text}")
@@ -172,9 +167,9 @@ def json_mode():
 
 def json_schema():
     """Example 7: Structured JSON with schema"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 7: Structured JSON with Schema")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -188,33 +183,20 @@ def json_schema():
                     "schema": {
                         "type": "object",
                         "properties": {
-                            "name": {
-                                "type": "string"
-                            },
-                            "age": {
-                                "type": "integer"
-                            },
-                            "occupation": {
-                                "type": "string"
-                            },
-                            "location": {
-                                "type": "string"
-                            },
-                            "skills": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
+                            "name": {"type": "string"},
+                            "age": {"type": "integer"},
+                            "occupation": {"type": "string"},
+                            "location": {"type": "string"},
+                            "skills": {"type": "array", "items": {"type": "string"}},
                         },
                         "required": ["name", "age", "occupation", "location", "skills"],
-                        "additionalProperties": False
+                        "additionalProperties": False,
                     },
-                    "strict": True
+                    "strict": True,
                 }
             },
             max_output_tokens=800,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Structured Output:\n{res.output[0].content[0].text}")
@@ -222,9 +204,9 @@ def json_schema():
 
 def with_metadata():
     """Example 8: Request with metadata"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 8: Request with Metadata")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -237,9 +219,9 @@ def with_metadata():
             metadata={
                 "user_id": "user_12345",
                 "session_id": "session_abc",
-                "conversation_id": "conv_xyz"
+                "conversation_id": "conv_xyz",
             },
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Assistant: {res.output[0].content[0].text}")
@@ -247,9 +229,9 @@ def with_metadata():
 
 def reasoning_mode():
     """Example 9: Reasoning mode for complex problems"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 9: Reasoning Mode")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         res = r9_s.responses.create(
@@ -260,7 +242,7 @@ def reasoning_mode():
                 "effort": "high"
             },
             max_output_tokens=3000,
-            stream=False
+            stream=False,
         )
         if res.output and res.output[0].content:
             print(f"Assistant: {res.output[0].content[0].text}")
@@ -280,9 +262,9 @@ def main():
         ("Reasoning Mode", reasoning_mode),
     ]
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("R9S Response API - All Examples")
-    print("="*60)
+    print("=" * 60)
     print("\nAvailable examples:")
     for i, (name, _) in enumerate(examples, 1):
         print(f"  {i}. {name}")

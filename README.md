@@ -49,6 +49,12 @@ r9s bot create mybot --system-prompt "You are a helpful assistant"
 r9s chat --bot mybot
 ```
 
+Run apps with r9s env injected (supported: `claude-code`, `cc`):
+
+```bash
+r9s run cc --model "$R9S_MODEL"
+```
+
 Configure local tools:
 
 ```bash
@@ -62,6 +68,7 @@ See all options:
 r9s -h
 r9s chat -h
 r9s bot -h
+r9s run -h
 ```
 
 ## Python SDK usage
@@ -81,5 +88,4 @@ with R9S() as r9s:
     ], stream=False)
 ```
 
-Advanced SDK usage: `docs/sdk-advanced.md`
-
+Advanced SDK usage: [docs/sdk-advanced.md](docs/sdk-advanced.md)

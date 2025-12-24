@@ -62,4 +62,7 @@ r9s chat --lang zh-CN --model "$R9S_MODEL"
 # 7) Use a saved bot profile (local)
 r9s bot create mybot --model "$R9S_MODEL" --system-prompt "You are a helpful assistant"
 r9s chat --bot mybot
+
+# 8) Run Claude Code with r9s env injected (supported: claude-code, cc)
+r9s run cc --model "$R9S_MODEL"
 ```

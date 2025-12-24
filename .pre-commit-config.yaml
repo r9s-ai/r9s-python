@@ -1,0 +1,17 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.14.10
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        types_or: [python]
+        args: [--fix]
+        files: ^(src/r9s/cli_tools/|example/|main\.py$)
+      # Run the formatter.
+      - id: ruff-format
+        types_or: [python]
+        files: ^(src/r9s/cli_tools/|example/|main\.py$)

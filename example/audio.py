@@ -5,21 +5,22 @@ Demonstrates various ways to use the R9S audio API (speech, transcription, trans
 Note: This file uses dict literals for simplicity and readability.
 Type hints are suppressed with # type: ignore comments where needed.
 """
+
 from r9s import R9S
 import os
 
 
 def text_to_speech_basic():
     """Example 1: Basic text-to-speech"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 1: Basic Text-to-Speech")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         response = r9_s.audio.speech(
             model="speech-2.6-turbo",
             input="Hello, welcome to our service!",
-            voice="alloy"
+            voice="alloy",
         )
 
         # Save audio to file (response is a streaming response)
@@ -31,9 +32,9 @@ def text_to_speech_basic():
 
 def text_to_speech_with_options():
     """Example 2: Text-to-speech with custom parameters"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 2: Text-to-Speech with Custom Parameters")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         response = r9_s.audio.speech(
@@ -41,7 +42,7 @@ def text_to_speech_with_options():
             input="The quick brown fox jumps over the lazy dog.",
             voice="nova",
             response_format="mp3",
-            speed=1.0
+            speed=1.0,
         )
 
         output_file = "output_detailed.mp3"
@@ -52,9 +53,9 @@ def text_to_speech_with_options():
 
 def text_to_speech_fast():
     """Example 3: Fast-paced speech for briefings"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 3: Fast-Paced Speech")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         response = r9_s.audio.speech(
@@ -62,7 +63,7 @@ def text_to_speech_fast():
             input="Daily update: traffic is clear, weather is sunny, meetings start at 10 AM.",
             voice="echo",
             response_format="mp3",
-            speed=1.2
+            speed=1.2,
         )
 
         output_file = "output_fast.mp3"
@@ -73,9 +74,9 @@ def text_to_speech_fast():
 
 def text_to_speech_slow():
     """Example 4: Slow speech for language learning"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 4: Slow Speech for Language Learning")
-    print("="*60)
+    print("=" * 60)
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
         response = r9_s.audio.speech(
@@ -83,7 +84,7 @@ def text_to_speech_slow():
             input="Practice makes perfect. Repeat after me slowly.",
             voice="shimmer",
             response_format="mp3",
-            speed=0.75
+            speed=0.75,
         )
 
         output_file = "output_slow.mp3"
@@ -94,15 +95,17 @@ def text_to_speech_slow():
 
 def transcribe_audio_basic():
     """Example 5: Basic audio transcription"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 5: Basic Audio Transcription")
-    print("="*60)
+    print("=" * 60)
 
     # Note: You need to have an audio file to transcribe
     audio_file_path = "output_slow.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -112,7 +115,7 @@ def transcribe_audio_basic():
                     "file_name": "output_slow.mp3",
                     "content": audio_file.read(),
                 },
-                model="whisper-1"
+                model="whisper-1",
             )
 
         # Response can be AudioTranscriptionResponse object or str
@@ -126,14 +129,16 @@ def transcribe_audio_basic():
 
 def transcribe_audio_with_options():
     """Example 6: Audio transcription with parameters"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 6: Audio Transcription with Parameters")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "output_slow.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -146,7 +151,7 @@ def transcribe_audio_with_options():
                 model="whisper-1",
                 language="en",
                 response_format="json",
-                temperature=0
+                temperature=0,
             )
 
         # Response can be AudioTranscriptionResponse object or str
@@ -158,14 +163,16 @@ def transcribe_audio_with_options():
 
 def transcribe_audio_with_timestamps():
     """Example 7: Audio transcription with word timestamps"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 7: Audio Transcription with Word Timestamps")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "meeting.wav"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -178,7 +185,7 @@ def transcribe_audio_with_timestamps():
                 model="gpt-4o-transcribe",
                 language="en",
                 response_format="verbose_json",
-                timestamp_granularities=["word"]
+                timestamp_granularities=["word"],
             )
 
         # Response can be AudioTranscriptionResponse object or str
@@ -187,21 +194,25 @@ def transcribe_audio_with_timestamps():
         else:
             print(f"Transcription: {response.text}")
             if response.words:
-                print(f"\nFirst 5 words with timestamps:")
+                print("\nFirst 5 words with timestamps:")
                 for word_info in response.words[:5]:
-                    print(f"  {word_info.word} [{word_info.start:.2f}s - {word_info.end:.2f}s]")
+                    print(
+                        f"  {word_info.word} [{word_info.start:.2f}s - {word_info.end:.2f}s]"
+                    )
 
 
 def transcribe_audio_srt():
     """Example 8: Generate SRT subtitles"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 8: Generate SRT Subtitles")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "video_audio.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -213,7 +224,7 @@ def transcribe_audio_srt():
                 },
                 model="whisper-1",
                 language="en",
-                response_format="srt"
+                response_format="srt",
             )
 
         # Save SRT file (response is str when format is srt)
@@ -228,14 +239,16 @@ def transcribe_audio_srt():
 
 def transcribe_with_prompt():
     """Example 9: Transcription with technical terms prompt"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 9: Transcription with Technical Terms Prompt")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "tech_talk.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -249,7 +262,7 @@ def transcribe_with_prompt():
                 language="en",
                 prompt="Technical discussion about Kubernetes, Docker, microservices, API gateway",
                 response_format="json",
-                temperature=0
+                temperature=0,
             )
 
         # Response can be AudioTranscriptionResponse object or str
@@ -262,14 +275,16 @@ def transcribe_with_prompt():
 
 def translate_audio_basic():
     """Example 10: Basic audio translation to English"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 10: Basic Audio Translation")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "german_audio.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -279,7 +294,7 @@ def translate_audio_basic():
                     "file_name": "german_audio.mp3",
                     "content": audio_file.read(),
                 },
-                model="whisper-1"
+                model="whisper-1",
             )
 
         # Response can be AudioTranslationResponse object or str
@@ -293,14 +308,16 @@ def translate_audio_basic():
 
 def translate_audio_with_prompt():
     """Example 11: Audio translation with contextual prompt"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 11: Audio Translation with Prompt")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "french_audio.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -312,7 +329,7 @@ def translate_audio_with_prompt():
                 },
                 model="whisper-1",
                 prompt="This is about technology",
-                response_format="json"
+                response_format="json",
             )
 
         # Response can be AudioTranslationResponse object or str
@@ -324,14 +341,16 @@ def translate_audio_with_prompt():
 
 def translate_meeting_notes():
     """Example 12: Translate meeting recording to English"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 12: Translate Meeting Recording")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "meeting_cn.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -343,7 +362,7 @@ def translate_meeting_notes():
                 },
                 model="gpt-4o-transcribe",
                 prompt="Business meeting, translate clearly",
-                response_format="text"
+                response_format="text",
             )
 
         # Response is str when format is text
@@ -355,14 +374,16 @@ def translate_meeting_notes():
 
 def translate_with_precise_mode():
     """Example 13: Precise translation for legal content"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Example 13: Precise Translation (Low Temperature)")
-    print("="*60)
+    print("=" * 60)
 
     audio_file_path = "legal_audio.mp3"
 
     if not os.path.exists(audio_file_path):
-        print(f"Warning: Audio file '{audio_file_path}' not found. Skipping this example.")
+        print(
+            f"Warning: Audio file '{audio_file_path}' not found. Skipping this example."
+        )
         return
 
     with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
@@ -375,7 +396,7 @@ def translate_with_precise_mode():
                 model="whisper-1",
                 prompt="Legal document reading, translate accurately",
                 response_format="json",
-                temperature=0
+                temperature=0,
             )
 
         # Response can be AudioTranslationResponse object or str
@@ -404,9 +425,9 @@ def main():
         ("Precise Translation", translate_with_precise_mode),
     ]
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("R9S Audio API - All Examples")
-    print("="*60)
+    print("=" * 60)
     print("\nAvailable examples:")
     for i, (name, _) in enumerate(examples, 1):
         print(f"  {i}. {name}")

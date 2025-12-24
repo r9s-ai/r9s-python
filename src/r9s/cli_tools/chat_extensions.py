@@ -7,7 +7,16 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Iterable, List, Optional, Protocol, Sequence, cast, runtime_checkable
+from typing import (
+    Any,
+    Iterable,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+    cast,
+    runtime_checkable,
+)
 
 from r9s import models
 
@@ -100,7 +109,9 @@ def _maybe_call(ext: Any, method: str, *args: Any, **kwargs: Any) -> Any:
     return None
 
 
-def run_user_input_extensions(exts: Iterable[ChatExtension], text: str, ctx: ChatContext) -> str:
+def run_user_input_extensions(
+    exts: Iterable[ChatExtension], text: str, ctx: ChatContext
+) -> str:
     out = text
     for ext in exts:
         result = _maybe_call(ext, "on_user_input", out, ctx)
@@ -122,7 +133,9 @@ def run_before_request_extensions(
     return out
 
 
-def run_stream_delta_extensions(exts: Iterable[ChatExtension], delta: str, ctx: ChatContext) -> str:
+def run_stream_delta_extensions(
+    exts: Iterable[ChatExtension], delta: str, ctx: ChatContext
+) -> str:
     out = delta
     for ext in exts:
         result = _maybe_call(ext, "on_stream_delta", out, ctx)

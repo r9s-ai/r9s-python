@@ -4,7 +4,15 @@ import argparse
 from typing import Optional
 
 from r9s.cli_tools.bots import BotConfig, delete_bot, list_bots, load_bot, save_bot
-from r9s.cli_tools.terminal import FG_RED, error, header, info, prompt_text, success, warning
+from r9s.cli_tools.ui.terminal import (
+    FG_RED,
+    error,
+    header,
+    info,
+    prompt_text,
+    success,
+    warning,
+)
 
 
 def _require_name(name: Optional[str]) -> str:
@@ -83,4 +91,3 @@ def handle_bot_create(args: argparse.Namespace) -> None:
     )
     path = save_bot(bot)
     success(f"Saved: {path}")
-
