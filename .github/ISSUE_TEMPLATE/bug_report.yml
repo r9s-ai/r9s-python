@@ -1,0 +1,83 @@
+name: Bug report
+description: Report a problem with the SDK/CLI
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please include enough detail for us to reproduce.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - Python SDK
+        - Streaming
+        - Auth / Config
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see? What did you expect instead?
+      placeholder: Describe the bug clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Provide minimal steps (commands/code) to reproduce.
+      placeholder: |
+        1) ...
+        2) ...
+        3) ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / tracebacks
+      description: Paste relevant logs (redact secrets).
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: r9s version
+      description: Output of `r9s -h` or `python -c "import r9s; print(r9s.__version__)"`
+      placeholder: "0.4.1"
+    validations:
+      required: false
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.11.x"
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Any relevant environment details (shell, container, CI, etc.).
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have removed/redacted any secrets (API keys, tokens).
+          required: true
+
