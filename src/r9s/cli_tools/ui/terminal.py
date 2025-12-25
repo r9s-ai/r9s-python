@@ -65,6 +65,13 @@ def hex_color(hex_code: str, bg: bool = False) -> str:
 FG_PURPLE = hex_color("#7c3aed")  # Primary brand color
 FG_PURPLE_LIGHT = hex_color("#a78bfa")  # Light purple for secondary text
 
+# Classic terminal-friendly palette (Nord-inspired)
+FG_TITLE = hex_color("#88C0D0")  # Cyan
+FG_MUTED = hex_color("#D8DEE9")  # Light gray
+FG_ACCENT = hex_color("#A3BE8C")  # Green
+FG_NOTE = hex_color("#EBCB8B")  # Yellow
+FG_CMD = hex_color("#81A1C1")  # Blue
+
 
 def _style(text: str, *codes: str) -> str:
     return "".join(codes) + text + RESET

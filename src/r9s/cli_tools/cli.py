@@ -32,6 +32,7 @@ from r9s.cli_tools.run_cli import handle_run
 from r9s.cli_tools.ui.banner import CLI_BANNER
 from r9s.cli_tools.ui.prompts import prompt_choice, prompt_yes_no
 from r9s.cli_tools.ui.spinner import LoadingSpinner
+from r9s.cli_tools.ui.home import print_home
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
@@ -610,22 +611,21 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
             print(_style(CLI_BANNER, FG_CYAN))
-            info(t("cli.tagline", lang))
             print()
-            info(t("cli.examples.title", lang))
-            print(t("cli.examples.chat_interactive", lang))
-            print()
-            print(t("cli.examples.chat_pipe", lang))
-            print()
-            print(t("cli.examples.resume", lang))
-            print()
-            print(t("cli.examples.bots", lang))
-            print()
-            print(t("cli.examples.run", lang))
-            print()
-            print(t("cli.examples.configure", lang))
-            print()
-            info(t("cli.examples.more", lang))
+            print_home(
+                name=t("cli.title", lang),
+                description=t("cli.tagline", lang),
+                examples_title=t("cli.examples.title", lang),
+                examples=[
+                    t("cli.examples.chat_interactive", lang),
+                    t("cli.examples.chat_pipe", lang),
+                    t("cli.examples.resume", lang),
+                    t("cli.examples.bots", lang),
+                    t("cli.examples.run", lang),
+                    t("cli.examples.configure", lang),
+                ],
+                footer=t("cli.examples.more", lang),
+            )
             return
         args.func(args)
     except KeyboardInterrupt:
