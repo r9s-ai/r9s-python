@@ -15,8 +15,6 @@ class Spinner:
         self.prefix_printed = False
 
     def start(self) -> None:
-        if not self._prefix:
-            return
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
@@ -33,10 +31,13 @@ class Spinner:
         self._stop.set()
         self._thread.join(timeout=0.5)
         self._thread = None
-        if self._last_len > 0 and self._prefix:
-            sys.stdout.write(
-                "\r" + self._prefix + (" " * self._last_len) + "\r" + self._prefix
-            )
+        if self._last_len > 0:
+            if self._prefix:
+                sys.stdout.write(
+                    "\r" + self._prefix + (" " * self._last_len) + "\r" + self._prefix
+                )
+            else:
+                sys.stdout.write("\r" + (" " * self._last_len) + "\r")
             sys.stdout.flush()
         self._last_len = 0
         self.prefix_printed = True
@@ -48,7 +49,7 @@ class Spinner:
             frame = frames[idx % len(frames)]
             anim = f" {frame}"
             self._last_len = len(anim)
-            sys.stdout.write("\r" + self._prefix + anim)
+            sys.stdout.write("\r" + (self._prefix or "") + anim)
             sys.stdout.flush()
             idx += 1
             time.sleep(0.12)

@@ -195,7 +195,7 @@ def _stream_chat(
     frequency_penalty: Optional[float] = None,
 ) -> str:
     spinner = Spinner(prefix or "")
-    if prefix and sys.stdout.isatty():
+    if sys.stdout.isatty():
         spinner.start()
 
     stream = r9s.chat.create(
@@ -424,9 +424,23 @@ def handle_chat(args: argparse.Namespace) -> None:
                 exts, _build_messages(system_prompt, ctx.history), ctx
             )
             assistant_text = (
-                _non_stream_chat(r9s, model, messages, ctx, exts, **bot_generation)
+                _non_stream_chat(
+                    r9s,
+                    model,
+                    messages,
+                    ctx,
+                    exts,
+                    **bot_generation,
+                )
                 if args.no_stream
-                else _stream_chat(r9s, model, messages, ctx, exts, **bot_generation)
+                else _stream_chat(
+                    r9s,
+                    model,
+                    messages,
+                    ctx,
+                    exts,
+                    **bot_generation,
+                )
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})
             if history_path:
