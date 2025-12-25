@@ -13,7 +13,14 @@ class ClaudeCodeIntegration(ToolIntegration):
         self._backup_dir = Path.home() / ".r9s" / "backup" / "claude-code"
 
     def set_config(
-        self, *, base_url: str, api_key: str, model: str, small_model: str
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: str | None = None,
     ) -> ToolConfigSetResult:
         # 标准化base_url：移除尾部斜杠和/v1后缀（Claude Code会自动添加API路径）
         normalized_base_url = base_url.rstrip("/")

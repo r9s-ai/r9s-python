@@ -33,7 +33,14 @@ class ToolIntegration:
     aliases: List[str]
 
     def set_config(
-        self, *, base_url: str, api_key: str, model: str, small_model: str
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: Optional[str] = None,
     ) -> ToolConfigSetResult:
         """Apply r9s configuration for this tool and return where it was written.
 
@@ -42,6 +49,8 @@ class ToolIntegration:
             api_key: Authentication token
             model: Primary model name (ANTHROPIC_MODEL)
             small_model: Small/fast model name (ANTHROPIC_SMALL_FAST_MODEL)
+            wire_api: API protocol type (tool-specific; used by Codex)
+            reasoning_effort: Optional reasoning effort level (tool/model-specific)
 
         Subclasses must implement this.
         """

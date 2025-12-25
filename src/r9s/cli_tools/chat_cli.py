@@ -12,6 +12,8 @@ from typing import Any, List, Optional
 from r9s import models
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
+from r9s.cli_tools.commands import list_commands, load_command
+from r9s.cli_tools.template_renderer import RenderContext, render_template
 from r9s.cli_tools.chat_extensions import (
     ChatContext,
     load_extensions,
@@ -186,12 +188,26 @@ def _stream_chat(
     exts: List[Any],
     *,
     prefix: Optional[str] = None,
+    temperature: Optional[float] = None,
+    top_p: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    presence_penalty: Optional[float] = None,
+    frequency_penalty: Optional[float] = None,
 ) -> str:
     spinner = Spinner(prefix or "")
     if prefix and sys.stdout.isatty():
         spinner.start()
 
-    stream = r9s.chat.create(model=model, messages=messages, stream=True)
+    stream = r9s.chat.create(
+        model=model,
+        messages=messages,
+        stream=True,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
+    )
     assistant_parts: List[str] = []
     for event in stream:
         if not event.choices:
@@ -220,8 +236,22 @@ def _non_stream_chat(
     exts: List[Any],
     *,
     prefix: Optional[str] = None,
+    temperature: Optional[float] = None,
+    top_p: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    presence_penalty: Optional[float] = None,
+    frequency_penalty: Optional[float] = None,
 ) -> str:
-    res = r9s.chat.create(model=model, messages=messages, stream=False)
+    res = r9s.chat.create(
+        model=model,
+        messages=messages,
+        stream=False,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
+    )
     text = ""
     if res.choices and res.choices[0].message:
         text = _content_to_text(res.choices[0].message.content)
@@ -260,6 +290,10 @@ def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(args.api_key, lang)
 
+    piped_stdin_text: Optional[str] = None
+    if _is_piped_stdin():
+        piped_stdin_text = _read_piped_input()
+
     bot: Optional[BotConfig] = None
     if getattr(args, "bot", None):
         try:
@@ -269,23 +303,16 @@ def handle_chat(args: argparse.Namespace) -> None:
         except Exception as exc:
             raise SystemExit(f"Failed to load bot: {args.bot} ({exc})") from exc
 
-        if getattr(args, "lang", None) is None and bot.lang:
-            lang = resolve_lang(bot.lang)
-        if getattr(args, "base_url", None) is None and bot.base_url:
-            args.base_url = bot.base_url
-        if getattr(args, "model", None) is None and bot.model:
-            args.model = bot.model
-        if (
-            getattr(args, "system_prompt", None) is None
-            and getattr(args, "system_prompt_file", None) is None
-        ):
-            if bot.system_prompt_file:
-                args.system_prompt_file = bot.system_prompt_file
-            elif bot.system_prompt:
-                args.system_prompt = bot.system_prompt
-        if bot.extensions:
-            # bot defaults first, CLI --ext overrides later by appending
-            args.ext = [*bot.extensions, *list(getattr(args, "ext", []) or [])]
+        if getattr(args, "system_prompt", None) is None and bot.system_prompt:
+            args.system_prompt = bot.system_prompt
+
+    bot_generation = {
+        "temperature": bot.temperature if bot else None,
+        "top_p": bot.top_p if bot else None,
+        "max_tokens": bot.max_tokens if bot else None,
+        "presence_penalty": bot.presence_penalty if bot else None,
+        "frequency_penalty": bot.frequency_penalty if bot else None,
+    }
 
     if getattr(args, "action", None) == "resume":
         if not sys.stdin.isatty():
@@ -297,7 +324,7 @@ def handle_chat(args: argparse.Namespace) -> None:
 
     base_url = resolve_base_url(args.base_url)
     model = resolve_model(args.model)
-    system_prompt = resolve_system_prompt(args.system_prompt, args.system_prompt_file)
+    system_prompt = resolve_system_prompt(args.system_prompt)
 
     history_path: Optional[str]
     if args.no_history:
@@ -382,10 +409,12 @@ def handle_chat(args: argparse.Namespace) -> None:
     else:
         exts = []
 
+    command_names = set(list_commands()) if sys.stdin.isatty() else set()
+
     with R9S(api_key=api_key, server_url=base_url) as r9s:
-        if _is_piped_stdin():
-            user_text = _read_piped_input().strip()
-            if not user_text:
+        if piped_stdin_text is not None:
+            user_text = piped_stdin_text.strip()
+            if not user_text.strip():
                 return
             user_text = run_user_input_extensions(exts, user_text, ctx)
             ctx.history.append({"role": "user", "content": user_text})
@@ -393,9 +422,9 @@ def handle_chat(args: argparse.Namespace) -> None:
                 exts, _build_messages(system_prompt, ctx.history), ctx
             )
             assistant_text = (
-                _non_stream_chat(r9s, model, messages, ctx, exts)
+                _non_stream_chat(r9s, model, messages, ctx, exts, **bot_generation)
                 if args.no_stream
-                else _stream_chat(r9s, model, messages, ctx, exts)
+                else _stream_chat(r9s, model, messages, ctx, exts, **bot_generation)
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})
             if history_path:
@@ -409,6 +438,8 @@ def handle_chat(args: argparse.Namespace) -> None:
         info(f"{t('chat.model', lang)}: {model}")
         if system_prompt:
             info(t("chat.system_prompt_set", lang))
+        if command_names:
+            info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
         if exts:
             info(
                 f"{t('chat.extensions', lang)}: "
@@ -440,8 +471,30 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx.history.clear()
                     info(t("chat.msg.history_cleared", lang))
                     continue
-                error(t("chat.err.unknown_command", lang, cmd=cmd))
-                continue
+                parts = cmd[1:].split(" ", 1)
+                command_name = parts[0]
+                args_text = parts[1] if len(parts) > 1 else ""
+                if command_name in command_names:
+                    try:
+                        cfg = load_command(command_name)
+                        rendered = render_template(
+                            cfg.prompt or "",
+                            RenderContext(
+                                args_text=args_text.strip(),
+                                assume_yes=bool(getattr(args, "yes", False)),
+                                interactive=True,
+                            ),
+                        ).strip()
+                    except Exception as exc:
+                        error(f"Command failed: /{command_name} ({exc})")
+                        continue
+                    if not rendered:
+                        error("Command produced empty prompt.")
+                        continue
+                    user_text = rendered
+                else:
+                    error(t("chat.err.unknown_command", lang, cmd=cmd))
+                    continue
 
             user_text = run_user_input_extensions(exts, user_text, ctx)
             ctx.history.append({"role": "user", "content": user_text})
@@ -457,6 +510,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx,
                     exts,
                     prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                    **bot_generation,
                 )
                 if args.no_stream
                 else _stream_chat(
@@ -466,6 +520,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx,
                     exts,
                     prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                    **bot_generation,
                 )
             )
             ctx.history.append({"role": "assistant", "content": assistant_text})

@@ -59,10 +59,24 @@ r9s chat --model "$R9S_MODEL" --ext example/chat_extension.py
 # 6) Switch UI language (default: en)
 r9s chat --lang zh-CN --model "$R9S_MODEL"
 
-# 7) Use a saved bot profile (local)
-r9s bot create mybot --model "$R9S_MODEL" --system-prompt "You are a helpful assistant"
-r9s chat --bot mybot
+# 7) Use a saved bot profile (local, system prompt only)
+#
+# Bots are saved as TOML under: ~/.r9s/bots/<name>.toml
+#
+r9s bot create reviewer --system-prompt "You are a helpful assistant"
+r9s chat --bot reviewer
 
-# 8) Run Claude Code with r9s env injected (supported: claude-code, cc)
+# 8) Create and use a command (local, prompt template only)
+#
+# Commands are saved as TOML under: ~/.r9s/commands/<name>.toml
+# In interactive chat, commands become /<name> slash commands.
+#
+# - {{args}}: replaced by the slash command arguments string
+# - !{...}: runs a local shell command (bash -lc ...); requires confirmation unless -y is provided
+#
+r9s command create summarize --prompt "Summarize: {{args}}"
+# In chat: /summarize hello world
+
+# 9) Run Claude Code with r9s env injected (supported: claude-code, cc)
 r9s run cc --model "$R9S_MODEL"
 ```

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from typing import Optional
 
 from r9s.cli_tools.bots import BotConfig, delete_bot, list_bots, load_bot, save_bot
@@ -21,6 +22,10 @@ def _require_name(name: Optional[str]) -> str:
     raise SystemExit("bot name is required")
 
 
+def _is_interactive() -> bool:
+    return sys.stdin.isatty()
+
+
 def handle_bot_list(_: argparse.Namespace) -> None:
     bots = list_bots()
     if not bots:
@@ -35,17 +40,20 @@ def handle_bot_show(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
     bot = load_bot(name)
     header(f"Bot: {bot.name}")
-    print(f"- model: {bot.model}")
-    if bot.base_url:
-        print(f"- base_url: {bot.base_url}")
-    if bot.system_prompt_file:
-        print(f"- system_prompt_file: {bot.system_prompt_file}")
+    if bot.description:
+        print(f"- description: {bot.description}")
     if bot.system_prompt:
         print("- system_prompt: (set)")
-    if bot.lang:
-        print(f"- lang: {bot.lang}")
-    if bot.extensions:
-        print(f"- extensions: {', '.join(bot.extensions)}")
+    if bot.temperature is not None:
+        print(f"- temperature: {bot.temperature}")
+    if bot.top_p is not None:
+        print(f"- top_p: {bot.top_p}")
+    if bot.max_tokens is not None:
+        print(f"- max_tokens: {bot.max_tokens}")
+    if bot.presence_penalty is not None:
+        print(f"- presence_penalty: {bot.presence_penalty}")
+    if bot.frequency_penalty is not None:
+        print(f"- frequency_penalty: {bot.frequency_penalty}")
 
 
 def handle_bot_delete(args: argparse.Namespace) -> None:
@@ -65,29 +73,31 @@ def handle_bot_delete(args: argparse.Namespace) -> None:
 def handle_bot_create(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
 
-    model = (args.model or "").strip()
-    if not model:
-        model = prompt_text("Model: ")
-    while not model:
-        model = prompt_text("Model cannot be empty. Model: ", color=FG_RED)
-
-    base_url = (args.base_url or "").strip() or None
-    system_prompt_file = (args.system_prompt_file or "").strip() or None
     system_prompt = args.system_prompt
     if system_prompt is not None:
         system_prompt = system_prompt.strip() or None
 
-    lang = (args.lang or "").strip() or None
-    extensions = list(args.ext or []) or None
+    description = (args.description or "").strip() or None
+
+    temperature = args.temperature
+
+    top_p = args.top_p
+
+    max_tokens = args.max_tokens
+
+    presence_penalty = args.presence_penalty
+
+    frequency_penalty = args.frequency_penalty
 
     bot = BotConfig(
         name=name,
-        model=model,
-        base_url=base_url,
+        description=description,
         system_prompt=system_prompt,
-        system_prompt_file=system_prompt_file,
-        lang=lang,
-        extensions=extensions,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
     )
     path = save_bot(bot)
     success(f"Saved: {path}")

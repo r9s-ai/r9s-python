@@ -42,12 +42,27 @@ Resume a saved chat session (interactive selection):
 r9s chat resume
 ```
 
-Bots (save model/prompt defaults locally under `~/.r9s/bots/`):
+Bots (saved as TOML under `~/.r9s/bots/<name>.toml`, system prompt only):
 
 ```bash
-r9s bot create mybot --system-prompt "You are a helpful assistant"
-r9s chat --bot mybot
+r9s bot create reviewer --system-prompt "You are a helpful assistant"
+r9s chat --bot reviewer
 ```
+
+Commands (saved as TOML under `~/.r9s/commands/<name>.toml`, prompt template only):
+
+```bash
+r9s command create summarize --prompt "Summarize: {{args}}"
+```
+
+In interactive chat, commands are available as slash commands:
+
+- `/summarize hello world`
+
+Command templates:
+
+- `{{args}}` is replaced by the slash command arguments.
+- `!{...}` runs a local shell command (`bash -lc ...`) after confirmation; pass `-y` to skip confirmation.
 
 Run apps with r9s env injected (supported: `claude-code`, `cc`):
 

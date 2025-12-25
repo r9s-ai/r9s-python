@@ -21,6 +21,14 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_list,
     handle_bot_show,
 )
+from r9s.cli_tools.command_cli import (
+    handle_command_create,
+    handle_command_delete,
+    handle_command_list,
+    handle_command_render,
+    handle_command_run,
+    handle_command_show,
+)
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
@@ -170,7 +178,9 @@ def print_options_multi_column(options: List[str], columns: int = 3) -> None:
             if idx < len(options):
                 num_str = f"{idx + 1})"
                 # Format: "num) option_name" with proper padding
-                formatted = f"{_style(num_str.rjust(max_num_width), FG_CYAN)} {options[idx]}"
+                formatted = (
+                    f"{_style(num_str.rjust(max_num_width), FG_CYAN)} {options[idx]}"
+                )
                 # Pad to column width for alignment (except last column)
                 if col < columns - 1:
                     # Calculate the length without ANSI codes
@@ -242,7 +252,11 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
 
 
 def choose_model(
-    base_url: str, api_key: str, preset: Optional[str], lang: str, tool_name: str = "claude-code"
+    base_url: str,
+    api_key: str,
+    preset: Optional[str],
+    lang: str,
+    tool_name: str = "claude-code",
 ) -> tuple[str, List[str]]:
     """Choose a model and return both the choice and the fetched model list."""
     if preset:
@@ -320,9 +334,7 @@ def resolve_base_url_with_validation(preset: Optional[str]) -> str:
 
 def supports_reasoning(model_name: str) -> bool:
     """Check if model supports reasoning_effort parameter."""
-    reasoning_keywords = [
-        "reasoning", "o1", "o3", "think", "reason", "extended"
-    ]
+    reasoning_keywords = ["reasoning", "o1", "o3", "think", "reason", "extended"]
     model_lower = model_name.lower()
     return any(keyword in model_lower for keyword in reasoning_keywords)
 
@@ -356,10 +368,14 @@ def handle_set(args: argparse.Namespace) -> None:
     if not is_valid_url(base_url):
         # This should rarely happen unless user explicitly set invalid URL
         error(f"Invalid base_url format: '{base_url}'")
-        error("Please set a valid R9S_BASE_URL environment variable or use --base-url parameter")
+        error(
+            "Please set a valid R9S_BASE_URL environment variable or use --base-url parameter"
+        )
         raise SystemExit(1)
 
-    model, cached_models = choose_model(base_url, api_key, args.model, lang, tool.primary_name)
+    model, cached_models = choose_model(
+        base_url, api_key, args.model, lang, tool.primary_name
+    )
 
     # Small model selection - skip for codex and qwen-code
     small_model = ""
@@ -374,8 +390,7 @@ def handle_set(args: argparse.Namespace) -> None:
         # Select wire_api type
         info("\nSelect wire API type:")
         wire_api = prompt_choice(
-            "Choose API protocol",
-            ["responses", "chat", "completion"]
+            "Choose API protocol", ["responses", "chat", "completion"]
         )
 
         # Check if model supports reasoning_effort
@@ -383,8 +398,7 @@ def handle_set(args: argparse.Namespace) -> None:
             info(f"\nModel '{model}' appears to support reasoning effort.")
             if prompt_yes_no("Configure reasoning effort?", default_no=True):
                 reasoning_effort = prompt_choice(
-                    "Select reasoning effort level",
-                    ["low", "medium", "high"]
+                    "Select reasoning effort level", ["low", "medium", "high"]
                 )
 
     # Get config file path from tool if available
@@ -494,13 +508,10 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
     chat_parser.add_argument(
-        "--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.json)"
+        "--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.toml)"
     )
     chat_parser.add_argument(
         "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
-    )
-    chat_parser.add_argument(
-        "--system-prompt-file", help="Load system prompt from file"
     )
     chat_parser.add_argument(
         "--history-file",
@@ -522,21 +533,56 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable streaming output",
     )
+    chat_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    chat_parser.epilog = (
+        "Bots: --bot loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
+        "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
+    )
     chat_parser.set_defaults(func=handle_chat)
 
-    bot_parser = subparsers.add_parser("bot", help="Manage local bots (~/.r9s/bots)")
+    bot_parser = subparsers.add_parser(
+        "bot", help="Manage local bots (~/.r9s/bots/*.toml)"
+    )
     bot_sub = bot_parser.add_subparsers(dest="bot_command")
+    bot_parser.set_defaults(func=lambda _: bot_parser.print_help())
 
     bot_create = bot_sub.add_parser("create", help="Create or update a bot")
     bot_create.add_argument("name", help="Bot name")
-    bot_create.add_argument("--model", help="Model name")
-    bot_create.add_argument("--base-url", help="Base URL")
-    bot_create.add_argument("--system-prompt", help="System prompt text")
-    bot_create.add_argument("--system-prompt-file", help="System prompt file path")
-    bot_create.add_argument("--lang", help="Default UI language (en, zh-CN)")
+    bot_create.add_argument("--description", help="Description (prompts if omitted)")
     bot_create.add_argument(
-        "--ext", action="append", default=[], help="Default chat extension (repeatable)"
+        "--system-prompt", help="System prompt text (prompts if omitted)"
     )
+    bot_create.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="Sampling temperature (optional)",
+    )
+    bot_create.add_argument(
+        "--top-p", type=float, default=None, help="Top-p (optional)"
+    )
+    bot_create.add_argument(
+        "--max-tokens", type=int, default=None, help="Max tokens (optional)"
+    )
+    bot_create.add_argument(
+        "--presence-penalty",
+        type=float,
+        default=None,
+        help="Presence penalty (optional)",
+    )
+    bot_create.add_argument(
+        "--frequency-penalty",
+        type=float,
+        default=None,
+        help="Frequency penalty (optional)",
+    )
+    bot_create.epilog = "Bots are saved as TOML under ~/.r9s/bots/<name>.toml and only contain system_prompt."
     bot_create.set_defaults(func=handle_bot_create)
 
     bot_list = bot_sub.add_parser("list", help="List bots")
@@ -549,6 +595,72 @@ def build_parser() -> argparse.ArgumentParser:
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")
     bot_delete.set_defaults(func=handle_bot_delete)
+
+    command_parser = subparsers.add_parser(
+        "command", help="Manage local commands (~/.r9s/commands/*.toml)"
+    )
+    command_sub = command_parser.add_subparsers(dest="command_command")
+    command_parser.set_defaults(func=lambda _: command_parser.print_help())
+
+    command_create = command_sub.add_parser("create", help="Create or update a command")
+    command_create.add_argument("name", help="Command name")
+    command_create.add_argument(
+        "--description", help="Description (prompts if omitted)"
+    )
+    command_create.add_argument(
+        "--prompt", help="Prompt template text (prompts if omitted)"
+    )
+    command_create.add_argument(
+        "--prompt-file", type=Path, help="Prompt template file path"
+    )
+    command_create.set_defaults(func=handle_command_create)
+
+    command_list = command_sub.add_parser("list", help="List commands")
+    command_list.set_defaults(func=handle_command_list)
+
+    command_show = command_sub.add_parser("show", help="Show command config")
+    command_show.add_argument("name", help="Command name")
+    command_show.set_defaults(func=handle_command_show)
+
+    command_delete = command_sub.add_parser("delete", help="Delete command")
+    command_delete.add_argument("name", help="Command name")
+    command_delete.set_defaults(func=handle_command_delete)
+
+    command_render = command_sub.add_parser("render", help="Render a command prompt")
+    command_render.add_argument("name", help="Command name")
+    command_render.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    command_render.add_argument(
+        "args", nargs=argparse.REMAINDER, help="Arguments for {{args}}"
+    )
+    command_render.set_defaults(func=handle_command_render)
+
+    command_run = command_sub.add_parser("run", help="Run a command (single-turn)")
+    command_run.add_argument("name", help="Command name")
+    command_run.add_argument("--bot", help="Bot name (load system_prompt)")
+    command_run.add_argument("--lang", default=None, help="UI language (en, zh-CN)")
+    command_run.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    command_run.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    command_run.add_argument("--model", help="Model name (overrides R9S_MODEL)")
+    command_run.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output",
+    )
+    command_run.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    command_run.add_argument(
+        "args", nargs=argparse.REMAINDER, help="Arguments for {{args}}"
+    )
+    command_run.set_defaults(func=handle_command_run)
 
     run_parser = subparsers.add_parser("run", help="Run an app with r9s env injected")
     run_parser.add_argument("app", help="App name (e.g. claude-code)")
@@ -616,7 +728,6 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
         args = parser.parse_args(argv)
-
 
         maybe_notify_update()
         if not getattr(args, "command", None):

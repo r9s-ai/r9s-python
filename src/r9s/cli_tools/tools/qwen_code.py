@@ -21,6 +21,8 @@ class QwenCodeIntegration(ToolIntegration):
         api_key: str,
         model: str,
         small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: str | None = None,
     ) -> ToolConfigSetResult:
         """Configure Qwen Code to use r9s API.
 
@@ -68,7 +70,7 @@ OPENAI_MODEL={model}
         data["security"]["auth"] = {
             "selectedType": "openai",
             "apiKey": "$OPENAI_API_KEY",
-            "baseUrl": "$OPENAI_BASE_URL"
+            "baseUrl": "$OPENAI_BASE_URL",
         }
 
         # Ensure model section exists
@@ -133,7 +135,11 @@ OPENAI_MODEL={model}
             return []
         # Only list settings.json backups for consistency with other tools
         backups = sorted(
-            [p for p in self._backup_dir.iterdir() if p.name.startswith("settings.json")]
+            [
+                p
+                for p in self._backup_dir.iterdir()
+                if p.name.startswith("settings.json")
+            ]
         )
         return backups
 
