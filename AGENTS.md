@@ -20,5 +20,7 @@
   - Chat：`src/r9s/cli_tools/chat_cli.py`（stdin/交互、多轮、history 持久化）
   - 扩展机制：`src/r9s/cli_tools/chat_extensions.py`（`--ext`/`R9S_CHAT_EXTENSIONS`，对输入/请求/流式增量/输出/命令的扩展点）
   - i18n：`src/r9s/cli_tools/i18n.py`（`--lang`/`R9S_LANG`）
+- **测试**
+  - 使用pytest：`tests/`
 - **典型调用链**
   - CLI `chat` → 组装 messages/history → `R9S(...).chat.create(...)` → HTTP 请求 → 解析模型响应/流式事件 → 输出到终端

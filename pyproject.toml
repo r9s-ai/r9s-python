@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.5.0"
+version = "0.5.1"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.9.2"
@@ -63,7 +63,6 @@ where = ["src"]
 
 
 [tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "function"
 pythonpath = ["src"]
 
 

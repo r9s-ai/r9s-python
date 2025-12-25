@@ -112,7 +112,9 @@ def load_bot(name: str) -> BotConfig:
         if isinstance(data.get("system_prompt"), str)
         else None
     )
-    system_prompt = system_prompt if (system_prompt and system_prompt.strip()) else None
+    system_prompt = (
+        system_prompt.strip() if (system_prompt and system_prompt.strip()) else None
+    )
 
     temperature = data.get("temperature")
     temperature = (

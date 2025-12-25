@@ -89,7 +89,7 @@ def load_command(name: str) -> CommandConfig:
 
     prompt_raw = data.get("prompt")
     prompt = prompt_raw if isinstance(prompt_raw, str) else None
-    prompt = prompt if (prompt and prompt.strip()) else None
+    prompt = prompt.strip() if (prompt and prompt.strip()) else None
 
     if not prompt:
         raise ValueError(f"command config missing 'prompt': {path}")
