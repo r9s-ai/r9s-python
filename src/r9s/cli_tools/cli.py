@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 import sys
 import threading
 import time
@@ -126,14 +127,63 @@ class LoadingSpinner:
             self.thread.join(timeout=1)
 
 
-def prompt_choice(prompt: str, options: List[str], show_options: bool = True) -> str:
-    # Calculate width needed for numbers (e.g., "10)" needs 3 chars)
-    max_num_width = len(f"{len(options)})")
-    if show_options:
+def print_options_multi_column(options: List[str], columns: int = 3) -> None:
+    """Print options in multi-column layout with proper alignment.
+
+    Args:
+        options: List of option strings to display
+        columns: Number of columns (auto-adjusted based on terminal width)
+    """
+    if len(options) <= 10:
+        # For small lists, use single column (current behavior)
+        max_num_width = len(f"{len(options)})")
         for idx, value in enumerate(options, start=1):
             num_str = f"{idx})"
-            # Right-align the number part for consistent spacing
             print(_style(num_str.rjust(max_num_width), FG_CYAN), value)
+        return
+
+    # Get terminal width (default to 80 if can't determine)
+    try:
+        term_width = shutil.get_terminal_size().columns
+    except Exception:
+        term_width = 80
+
+    # Calculate max widths
+    max_num_width = len(f"{len(options)})")
+    max_option_width = max(len(opt) for opt in options)
+
+    # Each column needs: number + ") " + option_name + padding
+    column_width = max_num_width + 2 + max_option_width + 4  # 4 for spacing
+
+    # Adjust columns based on available width
+    max_columns = max(1, term_width // column_width)
+    columns = min(columns, max_columns)
+
+    # Calculate rows needed
+    rows = (len(options) + columns - 1) // columns
+
+    # Print in column-major order (top to bottom, left to right)
+    for row in range(rows):
+        line_parts = []
+        for col in range(columns):
+            idx = col * rows + row  # Column-first indexing
+            if idx < len(options):
+                num_str = f"{idx + 1})"
+                # Format: "num) option_name" with proper padding
+                formatted = f"{_style(num_str.rjust(max_num_width), FG_CYAN)} {options[idx]}"
+                # Pad to column width for alignment (except last column)
+                if col < columns - 1:
+                    # Calculate the length without ANSI codes
+                    display_len = max_num_width + 1 + len(options[idx])
+                    padding = column_width - display_len
+                    formatted += " " * padding
+                line_parts.append(formatted)
+        print("".join(line_parts))
+
+
+def prompt_choice(prompt: str, options: List[str], show_options: bool = True) -> str:
+    if show_options:
+        print_options_multi_column(options, columns=3)
     while True:
         selection = prompt_text(f"{prompt} (enter number): ")
         if not selection.isdigit():
@@ -300,11 +350,14 @@ def handle_set(args: argparse.Namespace) -> None:
     tool, tool_name = select_tool_name(args.app, lang)
     api_key = resolve_api_key(args.api_key)
 
-    # Use validation for base_url if tool is codex or qwen-code
-    if tool.primary_name in ("codex", "qwen-code"):
-        base_url = resolve_base_url_with_validation(args.base_url)
-    else:
-        base_url = resolve_base_url(args.base_url)
+    # Get base_url with default fallback (https://api.huamedia.tv/v1)
+    base_url = resolve_base_url(args.base_url)
+    # Validate the URL format - should always be valid with default fallback
+    if not is_valid_url(base_url):
+        # This should rarely happen unless user explicitly set invalid URL
+        error(f"Invalid base_url format: '{base_url}'")
+        error("Please set a valid R9S_BASE_URL environment variable or use --base-url parameter")
+        raise SystemExit(1)
 
     model, cached_models = choose_model(base_url, api_key, args.model, lang, tool.primary_name)
 
@@ -563,6 +616,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
         args = parser.parse_args(argv)
+
+
         maybe_notify_update()
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
@@ -591,4 +646,9 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Debug mode: inject test command when running directly
+    if __debug__:
+        args = ["set"]  # Change this to test different commands
+        main(args)
+    else:
+        main()
