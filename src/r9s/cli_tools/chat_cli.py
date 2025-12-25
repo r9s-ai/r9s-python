@@ -294,14 +294,24 @@ def handle_chat(args: argparse.Namespace) -> None:
     if _is_piped_stdin():
         piped_stdin_text = _read_piped_input()
 
+    bot_or_action = getattr(args, "bot", None)
+    if bot_or_action == "resume":
+        if not sys.stdin.isatty():
+            raise SystemExit(t("chat.err.resume_requires_tty", lang))
+        selected = _resume_select_session(lang)
+        if selected is None:
+            raise SystemExit(t("chat.resume.none", lang, dir=str(_history_root())))
+        args.history_file = str(selected)
+        bot_or_action = None
+
     bot: Optional[BotConfig] = None
-    if getattr(args, "bot", None):
+    if bot_or_action:
         try:
-            bot = load_bot(args.bot)
+            bot = load_bot(bot_or_action)
         except FileNotFoundError as exc:
-            raise SystemExit(f"Bot not found: {args.bot}") from exc
+            raise SystemExit(f"Bot not found: {bot_or_action}") from exc
         except Exception as exc:
-            raise SystemExit(f"Failed to load bot: {args.bot} ({exc})") from exc
+            raise SystemExit(f"Failed to load bot: {bot_or_action} ({exc})") from exc
 
         if getattr(args, "system_prompt", None) is None and bot.system_prompt:
             args.system_prompt = bot.system_prompt
@@ -313,14 +323,6 @@ def handle_chat(args: argparse.Namespace) -> None:
         "presence_penalty": bot.presence_penalty if bot else None,
         "frequency_penalty": bot.frequency_penalty if bot else None,
     }
-
-    if getattr(args, "action", None) == "resume":
-        if not sys.stdin.isatty():
-            raise SystemExit(t("chat.err.resume_requires_tty", lang))
-        selected = _resume_select_session(lang)
-        if selected is None:
-            raise SystemExit(t("chat.resume.none", lang, dir=str(_history_root())))
-        args.history_file = str(selected)
 
     base_url = resolve_base_url(args.base_url)
     model = resolve_model(args.model)
@@ -436,8 +438,8 @@ def handle_chat(args: argparse.Namespace) -> None:
         header(t("chat.title", lang))
         info(f"{t('chat.base_url', lang)}: {base_url}")
         info(f"{t('chat.model', lang)}: {model}")
-        if system_prompt:
-            info(t("chat.system_prompt_set", lang))
+        bot_display = bot_or_action or "(none)"
+        info(f"bot: {bot_display}")
         if command_names:
             info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
         if exts:

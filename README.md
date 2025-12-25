@@ -46,7 +46,7 @@ Bots (saved as TOML under `~/.r9s/bots/<name>.toml`, system prompt only):
 
 ```bash
 r9s bot create reviewer --system-prompt "You are a helpful assistant"
-r9s chat --bot reviewer
+r9s chat reviewer
 ```
 
 Commands (saved as TOML under `~/.r9s/commands/<name>.toml`, prompt template only):

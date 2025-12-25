@@ -64,7 +64,7 @@ r9s chat --lang zh-CN --model "$R9S_MODEL"
 # Bots are saved as TOML under: ~/.r9s/bots/<name>.toml
 #
 r9s bot create reviewer --system-prompt "You are a helpful assistant"
-r9s chat --bot reviewer
+r9s chat reviewer
 
 # 8) Create and use a command (local, prompt template only)
 #

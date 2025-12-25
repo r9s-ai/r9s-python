@@ -494,10 +494,10 @@ def build_parser() -> argparse.ArgumentParser:
         "chat", help="Interactive chat (supports piping stdin)"
     )
     chat_parser.add_argument(
-        "action",
+        "bot",
         nargs="?",
-        choices=["resume"],
-        help="Special actions (e.g. resume a saved session)",
+        default=None,
+        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml). Use `resume` to resume a session.",
     )
     chat_parser.add_argument(
         "--lang",
@@ -507,9 +507,6 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
     chat_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
-    chat_parser.add_argument(
-        "--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.toml)"
-    )
     chat_parser.add_argument(
         "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
     )
@@ -540,7 +537,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip confirmation for template shell execution (!{...})",
     )
     chat_parser.epilog = (
-        "Bots: --bot loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
         "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
     )
@@ -757,9 +754,4 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
 
 if __name__ == "__main__":
-    # Debug mode: inject test command when running directly
-    if __debug__:
-        args = ["set"]  # Change this to test different commands
-        main(args)
-    else:
-        main()
+    main()

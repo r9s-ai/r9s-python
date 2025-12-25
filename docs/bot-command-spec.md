@@ -57,12 +57,12 @@ Focus on correctness, security, and readability.
 
 - 不支持 `system_prompt_file`。
 - 不支持 `model` / `base_url`（这些属于环境/连接配置，仍通过 `--model`/`R9S_MODEL`、`--base-url`/`R9S_BASE_URL`、`r9s set` 管理）。
-- 以上生成参数会在 `r9s chat --bot <name>` 以及 `r9s command run --bot <name>` 调用模型时自动带上，用于赋予该 bot 稳定的“输出风格/个性”。
+- 以上生成参数会在 `r9s chat <bot>` 以及 `r9s command run --bot <bot>` 调用模型时自动带上，用于赋予该 bot 稳定的“输出风格/个性”。
 
 用法：
 
-- 交互：`r9s chat --bot reviewer`
-- 非交互需要 stdin 作为用户消息：`echo "hello" | r9s chat --bot reviewer`
+- 交互：`r9s chat reviewer`
+- 非交互需要 stdin 作为用户消息：`echo "hello" | r9s chat reviewer`
 
 ---
 
