@@ -41,6 +41,7 @@ from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
 from r9s.cli_tools.tools.codex import CodexIntegration
+from r9s.cli_tools.tools.qwen_code import QwenCodeIntegration
 
 CLI_BANNER = """
 ██████╗  ██████╗  ██████╗
@@ -81,6 +82,10 @@ for alias in _claude_code.aliases:
 _codex = CodexIntegration()
 for alias in _codex.aliases:
     TOOLS.register(ToolName(alias), _codex)
+
+_qwen_code = QwenCodeIntegration()
+for alias in _qwen_code.aliases:
+    TOOLS.register(ToolName(alias), _qwen_code)
 
 
 def masked_key(key: str, visible: int = 4) -> str:
@@ -198,6 +203,8 @@ def choose_model(
         # Use tool-specific prompt text
         if tool_name == "codex":
             prompt_text_key = "Select model"
+        elif tool_name == "qwen-code":
+            prompt_text_key = "Select model"
         else:
             prompt_text_key = t("set.select_model", lang)
         choice = prompt_choice(prompt_text_key, models)
@@ -293,17 +300,17 @@ def handle_set(args: argparse.Namespace) -> None:
     tool, tool_name = select_tool_name(args.app, lang)
     api_key = resolve_api_key(args.api_key)
 
-    # Use validation for base_url if tool is codex
-    if tool.primary_name == "codex":
+    # Use validation for base_url if tool is codex or qwen-code
+    if tool.primary_name in ("codex", "qwen-code"):
         base_url = resolve_base_url_with_validation(args.base_url)
     else:
         base_url = resolve_base_url(args.base_url)
 
     model, cached_models = choose_model(base_url, api_key, args.model, lang, tool.primary_name)
 
-    # Small model selection - skip for codex
+    # Small model selection - skip for codex and qwen-code
     small_model = ""
-    if tool.primary_name != "codex":
+    if tool.primary_name not in ("codex", "qwen-code"):
         small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
 
     # Codex-specific configuration
@@ -336,12 +343,14 @@ def handle_set(args: argparse.Namespace) -> None:
         print(t("set.summary_config_file", lang, path=config_path))
     print(t("set.summary_base_url", lang, url=base_url))
     print(t("set.summary_main_model", lang, model=model))
-    if tool.primary_name != "codex":
+    if tool.primary_name not in ("codex", "qwen-code"):
         print(t("set.summary_small_model", lang, model=small_model))
     if tool.primary_name == "codex":
         print(f"Wire API: {wire_api}")
         if reasoning_effort:
             print(f"Reasoning effort: {reasoning_effort}")
+    if tool.primary_name == "qwen-code":
+        print(f"Config files: {config_path}, ~/.qwen/.env")
     print(t("set.summary_api_key", lang, apikey=masked_key(api_key)))
     if not prompt_yes_no(t("set.confirm_apply", lang)):
         warning(t("set.cancelled", lang))
