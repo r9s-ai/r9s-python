@@ -4,5 +4,5 @@ src/r9s/r9s_tools
 
 # 版本管理
 pyproject.toml
-./README.md
+/README.md
 gen.yaml

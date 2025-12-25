@@ -21,7 +21,7 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_show,
 )
 from r9s.cli_tools.chat_cli import handle_chat
-from r9s.cli_tools.config import get_api_key, resolve_base_url
+from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
 from r9s.cli_tools.ui.terminal import (
@@ -40,6 +40,7 @@ from r9s.cli_tools.ui.terminal import (
 from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
+from r9s.cli_tools.tools.codex import CodexIntegration
 
 CLI_BANNER = """
 ██████╗  ██████╗  ██████╗
@@ -76,6 +77,10 @@ TOOLS = ToolRegistry()
 _claude_code = ClaudeCodeIntegration()
 for alias in _claude_code.aliases:
     TOOLS.register(ToolName(alias), _claude_code)
+
+_codex = CodexIntegration()
+for alias in _codex.aliases:
+    TOOLS.register(ToolName(alias), _codex)
 
 
 def masked_key(key: str, visible: int = 4) -> str:
@@ -182,7 +187,7 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
 
 
 def choose_model(
-    base_url: str, api_key: str, preset: Optional[str], lang: str
+    base_url: str, api_key: str, preset: Optional[str], lang: str, tool_name: str = "claude-code"
 ) -> tuple[str, List[str]]:
     """Choose a model and return both the choice and the fetched model list."""
     if preset:
@@ -190,7 +195,12 @@ def choose_model(
     models = fetch_models(base_url, api_key)
     if models:
         info(t("set.available_models", lang))
-        choice = prompt_choice(t("set.select_model", lang), models)
+        # Use tool-specific prompt text
+        if tool_name == "codex":
+            prompt_text_key = "Select model"
+        else:
+            prompt_text_key = t("set.select_model", lang)
+        choice = prompt_choice(prompt_text_key, models)
         return choice, models
     manual = prompt_text(t("set.enter_model", lang))
     while not manual:
@@ -229,6 +239,37 @@ def resolve_api_key(preset: Optional[str]) -> str:
     return key
 
 
+def resolve_base_url_with_validation(preset: Optional[str]) -> str:
+    """Get and validate base_url, prioritizing environment variable."""
+    # 1. If provided via command-line argument, validate and use
+    if preset:
+        if is_valid_url(preset):
+            return preset.rstrip("/")
+        error(f"Invalid base_url format: {preset}")
+
+    # 2. Try reading from environment variable
+    env_url = os.getenv("R9S_BASE_URL")
+    if env_url and is_valid_url(env_url):
+        info(f"Using R9S_BASE_URL from environment: {env_url}")
+        return env_url.rstrip("/")
+
+    # 3. Prompt user for manual input
+    while True:
+        url = prompt_text("R9S_BASE_URL is not set or invalid. Enter base URL: ")
+        if is_valid_url(url):
+            return url.rstrip("/")
+        error("Invalid URL format. Must start with http:// or https://")
+
+
+def supports_reasoning(model_name: str) -> bool:
+    """Check if model supports reasoning_effort parameter."""
+    reasoning_keywords = [
+        "reasoning", "o1", "o3", "think", "reason", "extended"
+    ]
+    model_lower = model_name.lower()
+    return any(keyword in model_lower for keyword in reasoning_keywords)
+
+
 def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegration, str]:
     if arg_name:
         if arg_name.strip().lower() == "cc":
@@ -251,9 +292,40 @@ def handle_set(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     tool, tool_name = select_tool_name(args.app, lang)
     api_key = resolve_api_key(args.api_key)
-    base_url = resolve_base_url(args.base_url)
-    model, cached_models = choose_model(base_url, api_key, args.model, lang)
-    small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
+
+    # Use validation for base_url if tool is codex
+    if tool.primary_name == "codex":
+        base_url = resolve_base_url_with_validation(args.base_url)
+    else:
+        base_url = resolve_base_url(args.base_url)
+
+    model, cached_models = choose_model(base_url, api_key, args.model, lang, tool.primary_name)
+
+    # Small model selection - skip for codex
+    small_model = ""
+    if tool.primary_name != "codex":
+        small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
+
+    # Codex-specific configuration
+    wire_api = "responses"  # default
+    reasoning_effort = None
+
+    if tool.primary_name == "codex":
+        # Select wire_api type
+        info("\nSelect wire API type:")
+        wire_api = prompt_choice(
+            "Choose API protocol",
+            ["responses", "chat", "completion"]
+        )
+
+        # Check if model supports reasoning_effort
+        if supports_reasoning(model):
+            info(f"\nModel '{model}' appears to support reasoning effort.")
+            if prompt_yes_no("Configure reasoning effort?", default_no=True):
+                reasoning_effort = prompt_choice(
+                    "Select reasoning effort level",
+                    ["low", "medium", "high"]
+                )
 
     # Get config file path from tool if available
     config_path = getattr(tool, "_settings_path", None)
@@ -264,18 +336,36 @@ def handle_set(args: argparse.Namespace) -> None:
         print(t("set.summary_config_file", lang, path=config_path))
     print(t("set.summary_base_url", lang, url=base_url))
     print(t("set.summary_main_model", lang, model=model))
-    print(t("set.summary_small_model", lang, model=small_model))
+    if tool.primary_name != "codex":
+        print(t("set.summary_small_model", lang, model=small_model))
+    if tool.primary_name == "codex":
+        print(f"Wire API: {wire_api}")
+        if reasoning_effort:
+            print(f"Reasoning effort: {reasoning_effort}")
     print(t("set.summary_api_key", lang, apikey=masked_key(api_key)))
     if not prompt_yes_no(t("set.confirm_apply", lang)):
         warning(t("set.cancelled", lang))
         return
 
-    result: ToolConfigSetResult = tool.set_config(
-        base_url=base_url,
-        api_key=api_key,
-        model=model,
-        small_model=small_model,
-    )
+    # Call set_config with appropriate parameters based on tool type
+    if tool.primary_name == "codex":
+        # Codex requires wire_api and optional reasoning_effort
+        result: ToolConfigSetResult = tool.set_config(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            small_model=small_model,
+            wire_api=wire_api,
+            reasoning_effort=reasoning_effort,
+        )
+    else:
+        # Claude Code and other tools use standard parameters
+        result = tool.set_config(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            small_model=small_model,
+        )
     success(t("set.success_written", lang, path=result.target_path))
     if result.backup_path:
         success(t("set.success_backup", lang, path=result.backup_path))
