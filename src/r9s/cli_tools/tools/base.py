@@ -86,7 +86,7 @@ class ToolIntegration:
             return None
         if not settings_path.exists():
             return None
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
         backup_dir.mkdir(parents=True, exist_ok=True)
         backup_filename = settings_path.name
         backup_path = backup_dir / f"{backup_filename}.{timestamp}.bak"

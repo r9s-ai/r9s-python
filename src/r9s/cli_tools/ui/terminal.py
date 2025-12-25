@@ -97,8 +97,13 @@ def prompt_text(message: str, *, color: str = FG_YELLOW) -> str:
 def prompt_secret(message: str, *, color: str = FG_YELLOW) -> str:
     styled = _style(message, color)
 
-    # If we don't have termios/tty support (e.g. on Windows), fall back to getpass.
-    if termios is None or tty is None or os.name != "posix" or not sys.stdin.isatty():
+    # On Windows, use regular input() instead of getpass() to support right-click paste
+    # API keys are configured locally, so hiding input is not critical
+    if os.name == "nt":  # Windows
+        return input(styled).strip()
+
+    # If we don't have termios/tty support, fall back to getpass.
+    if termios is None or tty is None or not sys.stdin.isatty():
         return getpass(styled).strip()
 
     sys.stdout.write(styled)
