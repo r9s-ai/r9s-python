@@ -16,6 +16,7 @@
   - Hooks：`src/r9s/_hooks/`（请求前/成功后/错误后等生命周期钩子；注册点在 `registration.py`）
 - **CLI（手写代码为主）**
   - 命令入口：`src/r9s/cli_tools/cli.py`（`chat/set/reset`）
+  - 命令相关的UI: `src/r9s/cli_tools/ui/`
   - Chat：`src/r9s/cli_tools/chat_cli.py`（stdin/交互、多轮、history 持久化）
   - 扩展机制：`src/r9s/cli_tools/chat_extensions.py`（`--ext`/`R9S_CHAT_EXTENSIONS`，对输入/请求/流式增量/输出/命令的扩展点）
   - i18n：`src/r9s/cli_tools/i18n.py`（`--lang`/`R9S_LANG`）

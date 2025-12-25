@@ -1,10 +1,6 @@
 import argparse
 import json
 import os
-import shutil
-import sys
-import threading
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -33,6 +29,9 @@ from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
+from r9s.cli_tools.ui.banner import CLI_BANNER
+from r9s.cli_tools.ui.prompts import prompt_choice, prompt_yes_no
+from r9s.cli_tools.ui.spinner import LoadingSpinner
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
@@ -51,15 +50,6 @@ from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
 from r9s.cli_tools.tools.codex import CodexIntegration
 from r9s.cli_tools.tools.qwen_code import QwenCodeIntegration
-
-CLI_BANNER = """
-██████╗  ██████╗  ██████╗
-██╔══██╗██╔═══██╗██╔════╝
-██████╔╝╚███████║███████╗
-██╔══██╗ ╚════██║╚════██║
-██║  ██║ ██████╔╝██████╔╝
-╚═╝  ╚═╝ ╚═════╝ ╚═════╝
-""".strip("\n")
 
 
 class ToolRegistry:
@@ -101,116 +91,6 @@ def masked_key(key: str, visible: int = 4) -> str:
     if len(key) <= visible:
         return "*" * len(key)
     return f"{key[:visible]}***{key[-visible:]}"
-
-
-class LoadingSpinner:
-    """Context manager for displaying a loading animation."""
-
-    def __init__(self, message: str = "Loading"):
-        self.message = message
-        self.running = False
-        self.thread = None
-
-    def _animate(self):
-        dots = 0
-        while self.running:
-            # Print message with animated dots (0-3 dots)
-            sys.stdout.write(f"\r{self.message}{'.' * dots}   ")
-            sys.stdout.flush()
-            dots = (dots + 1) % 4
-            time.sleep(0.5)
-        # Clear the line when done
-        sys.stdout.write("\r" + " " * (len(self.message) + 10) + "\r")
-        sys.stdout.flush()
-
-    def __enter__(self):
-        self.running = True
-        self.thread = threading.Thread(target=self._animate, daemon=True)
-        self.thread.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=1)
-
-
-def print_options_multi_column(options: List[str], columns: int = 3) -> None:
-    """Print options in multi-column layout with proper alignment.
-
-    Args:
-        options: List of option strings to display
-        columns: Number of columns (auto-adjusted based on terminal width)
-    """
-    if len(options) <= 10:
-        # For small lists, use single column (current behavior)
-        max_num_width = len(f"{len(options)})")
-        for idx, value in enumerate(options, start=1):
-            num_str = f"{idx})"
-            print(_style(num_str.rjust(max_num_width), FG_CYAN), value)
-        return
-
-    # Get terminal width (default to 80 if can't determine)
-    try:
-        term_width = shutil.get_terminal_size().columns
-    except Exception:
-        term_width = 80
-
-    # Calculate max widths
-    max_num_width = len(f"{len(options)})")
-    max_option_width = max(len(opt) for opt in options)
-
-    # Each column needs: number + ") " + option_name + padding
-    column_width = max_num_width + 2 + max_option_width + 4  # 4 for spacing
-
-    # Adjust columns based on available width
-    max_columns = max(1, term_width // column_width)
-    columns = min(columns, max_columns)
-
-    # Calculate rows needed
-    rows = (len(options) + columns - 1) // columns
-
-    # Print in column-major order (top to bottom, left to right)
-    for row in range(rows):
-        line_parts = []
-        for col in range(columns):
-            idx = col * rows + row  # Column-first indexing
-            if idx < len(options):
-                num_str = f"{idx + 1})"
-                # Format: "num) option_name" with proper padding
-                formatted = (
-                    f"{_style(num_str.rjust(max_num_width), FG_CYAN)} {options[idx]}"
-                )
-                # Pad to column width for alignment (except last column)
-                if col < columns - 1:
-                    # Calculate the length without ANSI codes
-                    display_len = max_num_width + 1 + len(options[idx])
-                    padding = column_width - display_len
-                    formatted += " " * padding
-                line_parts.append(formatted)
-        print("".join(line_parts))
-
-
-def prompt_choice(prompt: str, options: List[str], show_options: bool = True) -> str:
-    if show_options:
-        print_options_multi_column(options, columns=3)
-    while True:
-        selection = prompt_text(f"{prompt} (enter number): ")
-        if not selection.isdigit():
-            error("Please enter a valid number.")
-            continue
-        num = int(selection)
-        if 1 <= num <= len(options):
-            return options[num - 1]
-        error("Selection out of range, try again.")
-
-
-def prompt_yes_no(prompt: str, default_no: bool = True) -> bool:
-    suffix = "[y/N]" if default_no else "[Y/n]"
-    answer = prompt_text(f"{prompt} {suffix}: ").lower()
-    if not answer:
-        return not default_no
-    return answer in ("y", "yes")
 
 
 def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
