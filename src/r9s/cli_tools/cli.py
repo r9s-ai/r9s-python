@@ -583,6 +583,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 examples=[
                     t("cli.examples.chat_interactive", lang),
                     t("cli.examples.chat_pipe", lang),
+                    t("cli.examples.chat_pipe_image", lang),
                     t("cli.examples.resume", lang),
                     t("cli.examples.bots", lang),
                     t("cli.examples.run", lang, apps=apps_run),
