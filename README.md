@@ -78,6 +78,12 @@ r9s set claude-code
 r9s reset claude-code
 ```
 
+Enable bash completion:
+
+```bash
+eval "$(r9s completion bash)"
+```
+
 See all options:
 
 ```bash

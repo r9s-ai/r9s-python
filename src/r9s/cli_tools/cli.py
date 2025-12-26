@@ -25,6 +25,7 @@ from r9s.cli_tools.command_cli import (
     handle_command_run,
     handle_command_show,
 )
+from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
@@ -556,6 +557,23 @@ def build_parser() -> argparse.ArgumentParser:
     reset_parser.epilog = f"Supported apps: {supported_apps}"
     reset_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     reset_parser.set_defaults(func=handle_reset)
+
+    completion_parser = subparsers.add_parser(
+        "completion", help="Generate shell completion scripts"
+    )
+    completion_parser.add_argument(
+        "shell",
+        nargs="?",
+        default="bash",
+        help="Shell name (bash; planned: zsh, fish)",
+    )
+    completion_parser.set_defaults(func=handle_completion)
+
+    complete_parser = subparsers.add_parser("__complete", help=argparse.SUPPRESS)
+    complete_parser.add_argument("shell", help=argparse.SUPPRESS)
+    complete_parser.add_argument("cword", type=int, help=argparse.SUPPRESS)
+    complete_parser.add_argument("words", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    complete_parser.set_defaults(func=handle___complete)
     return parser
 
 
