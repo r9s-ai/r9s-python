@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.6.0"
+version = "0.6.1"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,6 +24,7 @@ dependencies = [
     "httpcore >=1.0.9",
     "httpx >=0.28.1",
     "pydantic >=2.11.2",
+    "pytest>=9.0.2",
     "python-dotenv >=1.0.1",
     "tomli-w >=1.0.0",
 ]

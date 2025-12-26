@@ -7,6 +7,7 @@ from typing import Optional
 from r9s.cli_tools.bots import BotConfig, delete_bot, list_bots, load_bot, save_bot
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
+    FG_YELLOW,
     error,
     header,
     info,
@@ -24,6 +25,23 @@ def _require_name(name: Optional[str]) -> str:
 
 def _is_interactive() -> bool:
     return sys.stdin.isatty()
+
+
+def _prompt_multiline_required(message: str) -> str:
+    header(message)
+    first = prompt_text("> ", color=FG_YELLOW)
+    while not first:
+        first = prompt_text("> ", color=FG_RED)
+    lines = [first]
+    while True:
+        line = prompt_text("> ", color=FG_YELLOW)
+        if not line:
+            break
+        lines.append(line)
+    out = "\n".join(lines).rstrip()
+    if not out:
+        raise SystemExit("system prompt cannot be empty")
+    return out
 
 
 def handle_bot_list(_: argparse.Namespace) -> None:
@@ -76,6 +94,13 @@ def handle_bot_create(args: argparse.Namespace) -> None:
     system_prompt = args.system_prompt
     if system_prompt is not None:
         system_prompt = system_prompt.strip() or None
+    elif _is_interactive():
+        info("Enter the system prompt for this bot.")
+        system_prompt = _prompt_multiline_required(
+            "System prompt (end with empty line):"
+        )
+    else:
+        raise SystemExit("Missing --system-prompt (interactive TTY required).")
 
     description = (args.description or "").strip() or None
 
