@@ -34,6 +34,7 @@ from r9s.cli_tools.ui.terminal import (
     success,
     warning,
 )
+from r9s.cli_tools.ui.spinner import Spinner
 
 
 def _require_name(name: Optional[str]) -> str:
@@ -203,22 +204,31 @@ def handle_command_run(args: argparse.Namespace) -> None:
 
     with R9S(api_key=api_key, server_url=base_url) as r9s:
         if getattr(args, "no_stream", False):
-            res = r9s.chat.create(
-                model=model,
-                messages=messages,
-                stream=False,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-                presence_penalty=presence_penalty,
-                frequency_penalty=frequency_penalty,
-            )
-            text = ""
-            if res.choices and res.choices[0].message:
-                text = _content_to_text(res.choices[0].message.content)
+            spinner = Spinner("")
+            if sys.stdout.isatty():
+                spinner.start()
+            try:
+                res = r9s.chat.create(
+                    model=model,
+                    messages=messages,
+                    stream=False,
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_tokens=max_tokens,
+                    presence_penalty=presence_penalty,
+                    frequency_penalty=frequency_penalty,
+                )
+                text = ""
+                if res.choices and res.choices[0].message:
+                    text = _content_to_text(res.choices[0].message.content)
+            finally:
+                spinner.stop_and_clear()
             print(text)
             return
 
+        spinner = Spinner("")
+        if sys.stdout.isatty():
+            spinner.start()
         stream = r9s.chat.create(
             model=model,
             messages=messages,
@@ -229,14 +239,18 @@ def handle_command_run(args: argparse.Namespace) -> None:
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
         )
-        parts: list[str] = []
-        for event in stream:
-            if not event.choices:
-                continue
-            delta = event.choices[0].delta
-            if delta.content:
-                parts.append(delta.content)
-                print(delta.content, end="", flush=True)
+        try:
+            parts: list[str] = []
+            for event in stream:
+                if not event.choices:
+                    continue
+                delta = event.choices[0].delta
+                if delta.content:
+                    spinner.stop_and_clear()
+                    parts.append(delta.content)
+                    print(delta.content, end="", flush=True)
+        finally:
+            spinner.stop_and_clear()
         print()
 
 

@@ -62,8 +62,6 @@ def _run_shell(cmd: str, ctx: RenderContext) -> str:
             )
         _confirm_shell(cmd)
 
-    _stderr(f"[r9s] Running: {cmd}")
-
     try:
         completed = subprocess.run(
             ["bash", "-lc", cmd],

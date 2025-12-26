@@ -93,3 +93,51 @@ def test_command_run_calls_chat_create(
     assert call["model"] == "m"
     assert call["stream"] is False
     assert call["messages"][-1]["content"] == "Say hello"
+
+
+def test_command_run_shows_spinner_in_stream_mode(
+    temp_home, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    save_command(CommandConfig(name="summarize2", prompt="Say {{args}}"))
+    monkeypatch.setenv("R9S_API_KEY", "k")
+    monkeypatch.setenv("R9S_MODEL", "m")
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    monkeypatch.setattr("r9s.cli_tools.command_cli._read_stdin", lambda: "")
+
+    calls: list[str] = []
+
+    class _Spinner:
+        def __init__(self, prefix: str) -> None:  # noqa: ARG002
+            return None
+
+        def start(self) -> None:
+            calls.append("start")
+
+        def stop_and_clear(self) -> None:
+            calls.append("stop")
+
+    monkeypatch.setattr("r9s.cli_tools.command_cli.Spinner", _Spinner)
+
+    stub = _R9SStub()
+    monkeypatch.setattr("r9s.cli_tools.command_cli.R9S", lambda **_: stub)
+
+    args = type(
+        "Args",
+        (),
+        {
+            "name": "summarize2",
+            "args": ["hello"],
+            "lang": None,
+            "api_key": None,
+            "base_url": None,
+            "model": None,
+            "no_stream": False,
+            "yes": True,
+            "bot": None,
+        },
+    )()
+
+    handle_command_run(args)
+    assert "start" in calls
+    assert "stop" in calls
