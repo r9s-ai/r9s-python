@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.5.2"
+version = "0.6.0"
 description = "The official Python library for the r9s API"
 readme = "README.md"
-requires-python = ">=3.9.2"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [
     {name = "routertokens"}
@@ -16,17 +16,15 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
     "httpcore >=1.0.9",
     "httpx >=0.28.1",
     "pydantic >=2.11.2",
     "python-dotenv >=1.0.1",
-    "tomli >=2.0.0; python_version < '3.11'",
     "tomli-w >=1.0.0",
 ]
 
@@ -95,11 +93,11 @@ exclude = [
     "src/r9s/models/**",
     "src/r9s/_hooks/**",
 ]
-pythonVersion = "3.9"
+pythonVersion = "3.11"
 typeCheckingMode = "basic"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py311"
 line-length = 88
 exclude = [
     # Speakeasy-generated (skip lint/format; DO NOT EDIT)
