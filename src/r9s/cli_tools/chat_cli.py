@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import sys
 import uuid
@@ -83,13 +84,13 @@ def _coerce_messages(value: Any) -> List[models.MessageTypedDict]:
             continue
         role = item.get("role")
         content = item.get("content")
-        if (
-            isinstance(role, str)
-            and role in ("system", "user", "assistant", "tool")
-            and isinstance(content, str)
-        ):
+        if isinstance(role, str) and role in ("system", "user", "assistant", "tool"):
             role_typed: Role = role
-            out.append({"role": role_typed, "content": content})
+            if isinstance(content, str):
+                out.append({"role": role_typed, "content": content})
+                continue
+            if isinstance(content, list) and all(isinstance(x, dict) for x in content):
+                out.append({"role": role_typed, "content": content})
     return out
 
 
@@ -176,8 +177,70 @@ def _is_piped_stdin() -> bool:
     return not sys.stdin.isatty()
 
 
-def _read_piped_input() -> str:
-    return sys.stdin.read()
+def _read_piped_input_bytes() -> bytes:
+    try:
+        return sys.stdin.buffer.read()
+    except Exception:
+        return sys.stdin.read().encode("utf-8", errors="replace")
+
+
+def _is_probably_text(data: bytes) -> bool:
+    if not data:
+        return True
+    if b"\x00" in data:
+        return False
+    try:
+        data.decode("utf-8")
+        return True
+    except UnicodeDecodeError:
+        return False
+
+
+def _detect_image_mime(data: bytes) -> Optional[str]:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"GIF87a") or data.startswith(b"GIF89a"):
+        return "image/gif"
+    if data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def _build_user_message_from_piped_stdin(
+    raw: bytes, *, lang: str, exts: List[Any], ctx: ChatContext
+) -> Optional[models.MessageTypedDict]:
+    data = raw.strip()
+    if not data:
+        return None
+
+    mime = _detect_image_mime(data)
+    if mime:
+        if len(data) > 10 * 1024 * 1024:
+            raise SystemExit("Image from stdin is too large (max 10MB).")
+        instruction = "Describe this image."
+        instruction = run_user_input_extensions(exts, instruction, ctx)
+        b64 = base64.b64encode(data).decode("ascii")
+        url = f"data:{mime};base64,{b64}"
+        return {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": instruction},
+                {"type": "image_url", "image_url": {"url": url, "detail": "auto"}},
+            ],
+        }
+
+    if _is_probably_text(data):
+        text = data.decode("utf-8", errors="replace").strip()
+        if not text:
+            return None
+        text = run_user_input_extensions(exts, text, ctx)
+        return {"role": "user", "content": text}
+
+    raise SystemExit(
+        "stdin does not look like UTF-8 text or a supported image (png/jpeg/gif/webp)."
+    )
 
 
 def _stream_chat(
@@ -290,9 +353,9 @@ def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(args.api_key, lang)
 
-    piped_stdin_text: Optional[str] = None
+    piped_stdin_bytes: Optional[bytes] = None
     if _is_piped_stdin():
-        piped_stdin_text = _read_piped_input()
+        piped_stdin_bytes = _read_piped_input_bytes()
 
     bot_or_action = getattr(args, "bot", None)
     if bot_or_action == "resume":
@@ -414,12 +477,13 @@ def handle_chat(args: argparse.Namespace) -> None:
     command_names = set(list_commands()) if sys.stdin.isatty() else set()
 
     with R9S(api_key=api_key, server_url=base_url) as r9s:
-        if piped_stdin_text is not None:
-            user_text = piped_stdin_text.strip()
-            if not user_text.strip():
+        if piped_stdin_bytes is not None:
+            user_msg = _build_user_message_from_piped_stdin(
+                piped_stdin_bytes, lang=lang, exts=exts, ctx=ctx
+            )
+            if user_msg is None:
                 return
-            user_text = run_user_input_extensions(exts, user_text, ctx)
-            ctx.history.append({"role": "user", "content": user_text})
+            ctx.history.append(user_msg)
             messages = run_before_request_extensions(
                 exts, _build_messages(system_prompt, ctx.history), ctx
             )

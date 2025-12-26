@@ -34,6 +34,7 @@ Chat (stdin, useful for scripts/pipes):
 
 ```bash
 echo "hello" | r9s chat
+cat image.png | r9s chat
 ```
 
 Resume a saved chat session (interactive selection):

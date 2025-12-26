@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.5.1"
+version = "0.5.2"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.9.2"
@@ -83,7 +83,18 @@ ignore_missing_imports = true
 venvPath = "."
 venv = ".venv"
 include = ["src", "example", "main.py"]
-exclude = ["build", "dist", "**/__pycache__", "**/*.egg-info"]
+exclude = [
+    "build",
+    "dist",
+    "**/__pycache__",
+    "**/*.egg-info",
+    # Speakeasy-generated (skip type checking; DO NOT EDIT)
+    "src/r9s/*.py",
+    "src/r9s/errors/**",
+    "src/r9s/utils/**",
+    "src/r9s/models/**",
+    "src/r9s/_hooks/**",
+]
 pythonVersion = "3.9"
 typeCheckingMode = "basic"
 
@@ -91,6 +102,10 @@ typeCheckingMode = "basic"
 target-version = "py39"
 line-length = 88
 exclude = [
+    # Speakeasy-generated (skip lint/format; DO NOT EDIT)
+    "src/r9s/*.py",
+    "src/r9s/errors/**",
+    "src/r9s/utils/**",
     "src/r9s/models/**",
     "src/r9s/_hooks/**",
     "src/r9s/sdk.py",
