@@ -74,6 +74,14 @@ class ToolIntegration:
 
         return {}
 
+    def run_preflight(self, *, injected_env: Dict[str, str]) -> Optional[str]:
+        """Return a warning message if `r9s run` may not take effect.
+
+        If a message is returned, the caller may ask the user for confirmation.
+        """
+
+        return None
+
     # --- Common backup helpers -------------------------------------------------
 
     def list_backups(self) -> List[Path]:

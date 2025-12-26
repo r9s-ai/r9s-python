@@ -4,12 +4,13 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 from typing import List, Optional
 
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model
 from r9s.cli_tools.tools.registry import APPS, supported_app_names_for_run
 from r9s.cli_tools.ui.terminal import ToolName
-from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text
+from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text, warning
 
 
 def _require_model(args_model: Optional[str]) -> str:
@@ -52,6 +53,20 @@ def handle_run(args: argparse.Namespace) -> None:
     env = os.environ.copy()
     injected_env = tool.run_env(api_key=api_key, base_url=base_url, model=model)
     env.update(injected_env)
+
+    preflight = tool.run_preflight(injected_env=injected_env)
+    if preflight:
+        warning(preflight)
+        if not getattr(args, "confirm", False):
+            if not sys.stdin.isatty():
+                raise SystemExit(
+                    "Run requires confirmation due to env conflicts, "
+                    "but stdin is not a TTY."
+                )
+            answer = prompt_text("Proceed anyway? [y/N]: ", color=FG_RED).lower()
+            if answer not in ("y", "yes"):
+                error("Cancelled.")
+                return
 
     if getattr(args, "print_env", False):
         for k in sorted(injected_env.keys()):

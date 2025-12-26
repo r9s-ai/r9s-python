@@ -35,6 +35,22 @@ class ClaudeCodeIntegration(ToolIntegration):
             "ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
         }
 
+    def run_preflight(self, *, injected_env: dict[str, str]) -> str | None:
+        data = self._read_settings()
+        env = data.get("env")
+        if not isinstance(env, dict):
+            return None
+        existing_keys = {str(k) for k in env.keys()}
+        injected_keys = set(injected_env.keys())
+        conflicts = sorted(existing_keys.intersection(injected_keys))
+        if not conflicts:
+            return None
+        return (
+            "Detected Claude Code settings env keys that may override injected env "
+            f"({self._settings_path}). r9s run may not take effect. "
+            f"Conflicts: {', '.join(conflicts)}"
+        )
+
     def set_config(
         self,
         *,
