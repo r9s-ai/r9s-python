@@ -358,14 +358,13 @@ def handle_chat(args: argparse.Namespace) -> None:
         piped_stdin_bytes = _read_piped_input_bytes()
 
     bot_or_action = getattr(args, "bot", None)
-    if bot_or_action == "resume":
+    if getattr(args, "resume", False):
         if not sys.stdin.isatty():
             raise SystemExit(t("chat.err.resume_requires_tty", lang))
         selected = _resume_select_session(lang)
         if selected is None:
             raise SystemExit(t("chat.resume.none", lang, dir=str(_history_root())))
         args.history_file = str(selected)
-        bot_or_action = None
 
     bot: Optional[BotConfig] = None
     if bot_or_action:

@@ -344,7 +344,12 @@ def build_parser() -> argparse.ArgumentParser:
         "bot",
         nargs="?",
         default=None,
-        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml). Use `resume` to resume a session.",
+        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml).",
+    )
+    chat_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume a saved session (interactive selection; requires TTY)",
     )
     chat_parser.add_argument(
         "--lang",
@@ -385,6 +390,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     chat_parser.epilog = (
         "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
         "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
     )

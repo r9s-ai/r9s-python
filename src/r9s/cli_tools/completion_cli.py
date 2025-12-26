@@ -81,12 +81,11 @@ def _complete_command(words: list[str], cword: int, cur: str) -> list[str]:
 
 def _complete_chat(words: list[str], cword: int, cur: str) -> list[str]:
     if cword == 1 and not cur.startswith("-"):
-        # Include saved bots + reserved action `resume`.
-        bots = list_bots()
-        return sorted({"resume", *bots})
+        return list_bots()
     if cur.startswith("-"):
         return [
             "--lang",
+            "--resume",
             "--api-key",
             "--base-url",
             "--model",

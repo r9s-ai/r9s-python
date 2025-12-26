@@ -40,7 +40,7 @@ cat image.png | r9s chat
 Resume a saved chat session (interactive selection):
 
 ```bash
-r9s chat resume
+r9s chat --resume
 ```
 
 Bots (saved as TOML under `~/.r9s/bots/<name>.toml`, system prompt only):
