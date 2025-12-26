@@ -29,6 +29,11 @@ from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
+from r9s.cli_tools.tools.registry import (
+    APPS,
+    supported_app_names_for_config,
+    supported_app_names_for_run,
+)
 from r9s.cli_tools.ui.banner import CLI_BANNER
 from r9s.cli_tools.ui.prompts import prompt_choice, prompt_yes_no
 from r9s.cli_tools.ui.spinner import LoadingSpinner
@@ -48,44 +53,6 @@ from r9s.cli_tools.ui.terminal import (
 )
 from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
-from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
-from r9s.cli_tools.tools.codex import CodexIntegration
-from r9s.cli_tools.tools.qwen_code import QwenCodeIntegration
-
-
-class ToolRegistry:
-    def __init__(self) -> None:
-        self._registry: Dict[ToolName, ToolIntegration] = {}
-
-    def register(self, name: ToolName, tool: ToolIntegration) -> None:
-        self._registry[name] = tool
-
-    def get(self, name: ToolName) -> Optional[ToolIntegration]:
-        return self._registry.get(name)
-
-    def primary_names(self) -> List[ToolName]:
-        names = sorted({str(tool.primary_name) for tool in self._registry.values()})
-        return [ToolName(name) for name in names]
-
-    def resolve(self, name: ToolName) -> Optional[ToolIntegration]:
-        if name in self._registry:
-            return self._registry[name]
-        normalized = name.lower().replace("_", "-")
-        return self._registry.get(ToolName(normalized))
-
-
-TOOLS = ToolRegistry()
-_claude_code = ClaudeCodeIntegration()
-for alias in _claude_code.aliases:
-    TOOLS.register(ToolName(alias), _claude_code)
-
-_codex = CodexIntegration()
-for alias in _codex.aliases:
-    TOOLS.register(ToolName(alias), _codex)
-
-_qwen_code = QwenCodeIntegration()
-for alias in _qwen_code.aliases:
-    TOOLS.register(ToolName(alias), _qwen_code)
 
 
 def masked_key(key: str, visible: int = 4) -> str:
@@ -222,19 +189,17 @@ def supports_reasoning(model_name: str) -> bool:
 
 def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegration, str]:
     if arg_name:
-        if arg_name.strip().lower() == "cc":
-            arg_name = "claude-code"
-        tool = TOOLS.resolve(ToolName(arg_name))
+        tool = APPS.resolve(ToolName(arg_name))
         if tool:
             return tool, tool.primary_name
-        raise SystemExit(f"Unsupported tool: {arg_name}")
-    available = TOOLS.primary_names()
+        raise SystemExit(f"Unsupported app: {arg_name}")
+    available = APPS.primary_names()
     chosen = prompt_choice(
         t("set.select_tool", lang), [str(name) for name in available]
     )
-    tool = TOOLS.resolve(ToolName(chosen))
+    tool = APPS.resolve(ToolName(chosen))
     if not tool:
-        raise SystemExit(f"Unsupported tool: {chosen}")
+        raise SystemExit(f"Unsupported app: {chosen}")
     return tool, tool.primary_name
 
 
@@ -560,19 +525,16 @@ def build_parser() -> argparse.ArgumentParser:
         nargs=argparse.REMAINDER,
         help="Arguments passed to the underlying command (use `--` to separate)",
     )
+    run_parser.epilog = f"Supported apps: {', '.join(supported_app_names_for_run())}"
     run_parser.set_defaults(func=handle_run)
 
-    set_parser = subparsers.add_parser("set", help="Write r9s config for a tool")
+    set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(
         "--lang",
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
-    primary_apps = [str(x) for x in TOOLS.primary_names()]
-    supported_set = set(primary_apps)
-    if "claude-code" in supported_set:
-        supported_set.add("cc")
-    supported_apps = ", ".join(sorted(supported_set))
+    supported_apps = ", ".join(supported_app_names_for_config())
     set_parser.epilog = f"Supported apps: {supported_apps}"
     set_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     set_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
@@ -612,6 +574,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             lang = resolve_lang(getattr(args, "lang", None))
             print(_style(CLI_BANNER, FG_CYAN))
             print()
+            apps_run = ", ".join(supported_app_names_for_run())
+            apps_config = ", ".join(supported_app_names_for_config())
             print_home(
                 name=t("cli.title", lang),
                 description=t("cli.tagline", lang),
@@ -621,8 +585,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                     t("cli.examples.chat_pipe", lang),
                     t("cli.examples.resume", lang),
                     t("cli.examples.bots", lang),
-                    t("cli.examples.run", lang),
-                    t("cli.examples.configure", lang),
+                    t("cli.examples.run", lang, apps=apps_run),
+                    t("cli.examples.configure", lang, apps=apps_config),
                 ],
                 footer=t("cli.examples.more", lang),
             )

@@ -71,7 +71,7 @@ Run apps with r9s env injected (supported: `claude-code`, `cc`):
 r9s run cc --model "$R9S_MODEL"
 ```
 
-Configure local tools:
+Configure local tools (supported: `claude-code`, `cc`, `codex`, `qwen-code`):
 
 ```bash
 r9s set claude-code

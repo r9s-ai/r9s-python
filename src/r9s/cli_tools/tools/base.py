@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass
@@ -56,6 +56,23 @@ class ToolIntegration:
         """
 
         raise NotImplementedError
+
+    # --- Run helpers (optional) ----------------------------------------------
+
+    def supports_run(self) -> bool:
+        """Whether this integration supports `r9s run <app>`."""
+
+        return self.run_executable() is not None
+
+    def run_executable(self) -> Optional[str]:
+        """Return the executable name for running this app, e.g. 'claude'."""
+
+        return None
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> Dict[str, str]:
+        """Return env vars injected when running this app."""
+
+        return {}
 
     # --- Common backup helpers -------------------------------------------------
 

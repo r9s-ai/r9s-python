@@ -6,11 +6,34 @@ from .base import ToolConfigSetResult, ToolIntegration
 
 class ClaudeCodeIntegration(ToolIntegration):
     primary_name = "claude-code"
-    aliases = ["claude-code", "claude", "claude_code"]
+    aliases = ["claude-code", "cc", "claude", "claude_code"]
 
     def __init__(self) -> None:
         self._settings_path = Path.home() / ".claude" / "settings.json"
         self._backup_dir = Path.home() / ".r9s" / "backup" / "claude-code"
+
+    @staticmethod
+    def _normalize_base_url_for_claude(base_url: str) -> str:
+        # Claude Code will append its own API path; avoid duplicating /v1.
+        normalized = base_url.rstrip("/")
+        if normalized.endswith("/v1"):
+            normalized = normalized[:-3]
+        return normalized
+
+    def run_executable(self) -> str:
+        return "claude"
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> dict[str, str]:
+        normalized_base_url = self._normalize_base_url_for_claude(base_url)
+        return {
+            "ANTHROPIC_AUTH_TOKEN": api_key,
+            "ANTHROPIC_BASE_URL": normalized_base_url,
+            "ANTHROPIC_MODEL": model,
+            "ANTHROPIC_SMALL_FAST_MODEL": model,
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
+            "ANTHROPIC_DEFAULT_OPUS_MODEL": model,
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
+        }
 
     def set_config(
         self,
@@ -23,9 +46,7 @@ class ClaudeCodeIntegration(ToolIntegration):
         reasoning_effort: str | None = None,
     ) -> ToolConfigSetResult:
         # 标准化base_url：移除尾部斜杠和/v1后缀（Claude Code会自动添加API路径）
-        normalized_base_url = base_url.rstrip("/")
-        if normalized_base_url.endswith("/v1"):
-            normalized_base_url = normalized_base_url[:-3]
+        normalized_base_url = self._normalize_base_url_for_claude(base_url)
 
         backup_path = self._create_backup_if_exists()
         data = self._read_settings()
