@@ -15,3 +15,22 @@ repos:
       - id: ruff-format
         types_or: [python]
         files: ^(src/r9s/cli_tools/|example/|main\.py$)
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: python -m pytest -q
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: commit-msg-format
+        name: commit message format (Conventional Commits)
+        entry: python scripts/commit_msg_check.py
+        language: system
+        stages: [commit-msg]
+      - id: version-bump
+        name: version must be increasing
+        entry: python scripts/version_bump_check.py
+        language: system
+        stages: [pre-commit]

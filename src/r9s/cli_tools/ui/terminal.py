@@ -65,6 +65,13 @@ def hex_color(hex_code: str, bg: bool = False) -> str:
 FG_PURPLE = hex_color("#7c3aed")  # Primary brand color
 FG_PURPLE_LIGHT = hex_color("#a78bfa")  # Light purple for secondary text
 
+# Classic terminal-friendly palette (Nord-inspired)
+FG_TITLE = hex_color("#88C0D0")  # Cyan
+FG_MUTED = hex_color("#D8DEE9")  # Light gray
+FG_ACCENT = hex_color("#A3BE8C")  # Green
+FG_NOTE = hex_color("#EBCB8B")  # Yellow
+FG_CMD = hex_color("#81A1C1")  # Blue
+
 
 def _style(text: str, *codes: str) -> str:
     return "".join(codes) + text + RESET
@@ -97,8 +104,13 @@ def prompt_text(message: str, *, color: str = FG_YELLOW) -> str:
 def prompt_secret(message: str, *, color: str = FG_YELLOW) -> str:
     styled = _style(message, color)
 
-    # If we don't have termios/tty support (e.g. on Windows), fall back to getpass.
-    if termios is None or tty is None or os.name != "posix" or not sys.stdin.isatty():
+    # On Windows, use regular input() instead of getpass() to support right-click paste
+    # API keys are configured locally, so hiding input is not critical
+    if os.name == "nt":  # Windows
+        return input(styled).strip()
+
+    # If we don't have termios/tty support, fall back to getpass.
+    if termios is None or tty is None or not sys.stdin.isatty():
         return getpass(styled).strip()
 
     sys.stdout.write(styled)

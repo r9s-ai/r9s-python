@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass
@@ -33,7 +33,14 @@ class ToolIntegration:
     aliases: List[str]
 
     def set_config(
-        self, *, base_url: str, api_key: str, model: str, small_model: str
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: Optional[str] = None,
     ) -> ToolConfigSetResult:
         """Apply r9s configuration for this tool and return where it was written.
 
@@ -42,11 +49,38 @@ class ToolIntegration:
             api_key: Authentication token
             model: Primary model name (ANTHROPIC_MODEL)
             small_model: Small/fast model name (ANTHROPIC_SMALL_FAST_MODEL)
+            wire_api: API protocol type (tool-specific; used by Codex)
+            reasoning_effort: Optional reasoning effort level (tool/model-specific)
 
         Subclasses must implement this.
         """
 
         raise NotImplementedError
+
+    # --- Run helpers (optional) ----------------------------------------------
+
+    def supports_run(self) -> bool:
+        """Whether this integration supports `r9s run <app>`."""
+
+        return self.run_executable() is not None
+
+    def run_executable(self) -> Optional[str]:
+        """Return the executable name for running this app, e.g. 'claude'."""
+
+        return None
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> Dict[str, str]:
+        """Return env vars injected when running this app."""
+
+        return {}
+
+    def run_preflight(self, *, injected_env: Dict[str, str]) -> Optional[str]:
+        """Return a warning message if `r9s run` may not take effect.
+
+        If a message is returned, the caller may ask the user for confirmation.
+        """
+
+        return None
 
     # --- Common backup helpers -------------------------------------------------
 
@@ -86,7 +120,7 @@ class ToolIntegration:
             return None
         if not settings_path.exists():
             return None
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
         backup_dir.mkdir(parents=True, exist_ok=True)
         backup_filename = settings_path.name
         backup_path = backup_dir / f"{backup_filename}.{timestamp}.bak"

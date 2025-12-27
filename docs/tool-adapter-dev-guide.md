@@ -1,17 +1,25 @@
 # Adding a New Tool Adapter
 
-This guide explains how to add support for a new editor/IDE or tool to the `r9s` CLI, so it can be configured via:
+This guide explains how to add support for a new editor/IDE or tool (called an “app” in the CLI) to the `r9s` CLI.
+
+Once added, it can be configured via:
 
 ```bash
-r9s set <tool-name>
-r9s reset <tool-name>
+r9s set <app>
+r9s reset <app>
+```
+
+Some apps may also support:
+
+```bash
+r9s run <app> --model "$R9S_MODEL"
 ```
 
 The examples below assume basic familiarity with Python and the existing Claude Code integration.
 
 ## Overview
 
-Tool adapters live under `r9s/tools/` and follow a common interface provided by `ToolIntegration` in `r9s/tools/base.py`.
+Tool adapters live under `src/r9s/cli_tools/tools/` and follow a common interface provided by `ToolIntegration` in `src/r9s/cli_tools/tools/base.py`.
 
 At a high level, a tool adapter:
 
@@ -21,15 +29,16 @@ At a high level, a tool adapter:
   - Create a backup of the current config (if any).
   - Update the config to use the r9s API.
 - Inherits common backup/restore helpers from `ToolIntegration`.
+- (Optional) Implements `run_executable` + `run_env` to support `r9s run <app>`.
 
-Once registered in the CLI, users can configure the tool with a single command.
+Once registered in the adapter registry, users can configure the tool with a single command.
 
 ## 1. Create a new adapter class
 
-Create a new module under `r9s/tools/`, for example:
+Create a new module under `src/r9s/cli_tools/tools/`, for example:
 
 ```text
-r9s/tools/my_tool.py
+src/r9s/cli_tools/tools/my_tool.py
 ```
 
 Inside, define a class that inherits from `ToolIntegration` and sets up basic metadata:
@@ -37,7 +46,7 @@ Inside, define a class that inherits from `ToolIntegration` and sets up basic me
 ```python
 from pathlib import Path
 
-from r9s.tools.base import ToolConfigSetResult, ToolIntegration
+from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
 
 
 class MyToolIntegration(ToolIntegration):
@@ -51,7 +60,16 @@ class MyToolIntegration(ToolIntegration):
         # Where r9s should store backups for this tool
         self._backup_dir = Path.home() / ".r9s" / "backup" / "my-tool"
 
-    def set_config(self, *, base_url: str, api_key: str, model: str) -> ToolConfigSetResult:
+    def set_config(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: str | None = None,
+    ) -> ToolConfigSetResult:
         # Implemented in the next section
         ...
 ```
@@ -61,6 +79,7 @@ Notes:
 - `primary_name` is the canonical CLI name (what you expect users to type).
 - `aliases` lists any additional names you want to resolve to the same tool.
 - `_settings_path` and `_backup_dir` are required for the base class to manage backups and restores.
+- `small_model`, `wire_api`, and `reasoning_effort` are part of the shared adapter interface. If your tool doesn’t use them, accept and ignore them.
 
 ## 2. Implement `set_config`
 
@@ -78,13 +97,22 @@ Example implementation for a JSON‑based config:
 ```python
 import json
 
-from r9s.tools.base import ToolConfigSetResult
+from r9s.cli_tools.tools.base import ToolConfigSetResult
 
 
 class MyToolIntegration(ToolIntegration):
     # primary_name, aliases, __init__ as shown above
 
-    def set_config(self, *, base_url: str, api_key: str, model: str) -> ToolConfigSetResult:
+    def set_config(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        model: str,
+        small_model: str,
+        wire_api: str = "responses",
+        reasoning_effort: str | None = None,
+    ) -> ToolConfigSetResult:
         # 1) Create backup if a config file already exists
         backup_path = self._create_backup_if_exists()
 
@@ -135,28 +163,28 @@ Key points:
   config.json.YYYYMMDDHHMMSS.bak
   ```
 
-## 3. Register the adapter in the CLI
+## 3. Register the adapter in the adapter registry
 
-To make the new tool available to users, register it in `r9s/cli.py`.
+To make the new tool available to users, register it in `src/r9s/cli_tools/tools/registry.py`.
 
-1. Import your integration at the top of `r9s/cli.py`:
+1. Import your integration:
 
    ```python
-   from r9s.tools.my_tool import MyToolIntegration
+   from .my_tool import MyToolIntegration
    ```
 
-2. Instantiate and register it with the `ToolRegistry`:
+2. Instantiate and register it with the registry:
 
    ```python
-   TOOLS = ToolRegistry()
+   APPS = ToolRegistry()
 
    _claude_code = ClaudeCodeIntegration()
    for alias in _claude_code.aliases:
-       TOOLS.register(alias, _claude_code)
+       APPS.register(ToolName(alias), _claude_code)
 
    _my_tool = MyToolIntegration()
    for alias in _my_tool.aliases:
-       TOOLS.register(alias, _my_tool)
+       APPS.register(ToolName(alias), _my_tool)
    ```
 
 After this, the following will work:
@@ -167,6 +195,36 @@ r9s reset my-tool
 ```
 
 Users can also omit the tool name and choose it from the interactive menu.
+
+## 4. (Optional) Support `r9s run <app>`
+
+If your app can be launched from the terminal and can read credentials/endpoint/model from environment variables, you can support:
+
+```bash
+r9s run <app> --model "$R9S_MODEL"
+```
+
+To do that, implement these methods:
+
+- `run_executable() -> str | None`: the executable name, e.g. `"claude"`.
+- `run_env(api_key, base_url, model) -> dict[str, str]`: env vars injected before launching the app.
+
+Example:
+
+```python
+class MyToolIntegration(ToolIntegration):
+    def run_executable(self) -> str:
+        return "mytool"
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> dict[str, str]:
+        return {
+            "MYTOOL_API_KEY": api_key,
+            "MYTOOL_BASE_URL": base_url,
+            "MYTOOL_MODEL": model,
+        }
+```
+
+Apps will be listed under `r9s run -h` automatically if `supports_run()` is true (default: `run_executable() is not None`).
 
 ## 4. Manual testing checklist
 
@@ -197,7 +255,7 @@ Before shipping a new adapter, manually test the basic flows:
    - Confirm the CLI lists backups and restores from the chosen one.
    - Verify the config file content matches the expected backup.
 
-3. **Edge cases**
+   3. **Edge cases**
 
    - No existing config file: `set_config` should create a new config without errors.
    - Corrupted/invalid config file: `set_config` should handle JSON parse errors gracefully and still write a valid config.
@@ -229,6 +287,5 @@ When building new adapters, keep these principles in mind:
 
 Following this guide, adding a new tool adapter should only require:
 
-1. One new class under `r9s/tools/`.
-2. A couple of lines in `r9s/cli.py` to register it.
-
+1. One new class under `src/r9s/cli_tools/tools/`.
+2. A couple of lines in `src/r9s/cli_tools/tools/registry.py` to register it.

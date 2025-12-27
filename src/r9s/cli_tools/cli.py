@@ -1,9 +1,6 @@
 import argparse
 import json
 import os
-import sys
-import threading
-import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -20,10 +17,28 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_list,
     handle_bot_show,
 )
+from r9s.cli_tools.command_cli import (
+    handle_command_create,
+    handle_command_delete,
+    handle_command_list,
+    handle_command_render,
+    handle_command_run,
+    handle_command_show,
+)
+from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
-from r9s.cli_tools.config import get_api_key, resolve_base_url
+from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
+from r9s.cli_tools.tools.registry import (
+    APPS,
+    supported_app_names_for_config,
+    supported_app_names_for_run,
+)
+from r9s.cli_tools.ui.banner import CLI_BANNER
+from r9s.cli_tools.ui.prompts import prompt_choice, prompt_yes_no
+from r9s.cli_tools.ui.spinner import LoadingSpinner
+from r9s.cli_tools.ui.home import print_home
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_CYAN,
@@ -39,108 +54,12 @@ from r9s.cli_tools.ui.terminal import (
 )
 from r9s.cli_tools.update_check import maybe_notify_update
 from r9s.cli_tools.tools.base import ToolConfigSetResult, ToolIntegration
-from r9s.cli_tools.tools.claude_code import ClaudeCodeIntegration
-
-CLI_BANNER = """
-██████╗  ██████╗  ██████╗
-██╔══██╗██╔═══██╗██╔════╝
-██████╔╝╚███████║███████╗
-██╔══██╗ ╚════██║╚════██║
-██║  ██║ ██████╔╝██████╔╝
-╚═╝  ╚═╝ ╚═════╝ ╚═════╝
-""".strip("\n")
-
-
-class ToolRegistry:
-    def __init__(self) -> None:
-        self._registry: Dict[ToolName, ToolIntegration] = {}
-
-    def register(self, name: ToolName, tool: ToolIntegration) -> None:
-        self._registry[name] = tool
-
-    def get(self, name: ToolName) -> Optional[ToolIntegration]:
-        return self._registry.get(name)
-
-    def primary_names(self) -> List[ToolName]:
-        names = sorted({str(tool.primary_name) for tool in self._registry.values()})
-        return [ToolName(name) for name in names]
-
-    def resolve(self, name: ToolName) -> Optional[ToolIntegration]:
-        if name in self._registry:
-            return self._registry[name]
-        normalized = name.lower().replace("_", "-")
-        return self._registry.get(ToolName(normalized))
-
-
-TOOLS = ToolRegistry()
-_claude_code = ClaudeCodeIntegration()
-for alias in _claude_code.aliases:
-    TOOLS.register(ToolName(alias), _claude_code)
 
 
 def masked_key(key: str, visible: int = 4) -> str:
     if len(key) <= visible:
         return "*" * len(key)
     return f"{key[:visible]}***{key[-visible:]}"
-
-
-class LoadingSpinner:
-    """Context manager for displaying a loading animation."""
-
-    def __init__(self, message: str = "Loading"):
-        self.message = message
-        self.running = False
-        self.thread = None
-
-    def _animate(self):
-        dots = 0
-        while self.running:
-            # Print message with animated dots (0-3 dots)
-            sys.stdout.write(f"\r{self.message}{'.' * dots}   ")
-            sys.stdout.flush()
-            dots = (dots + 1) % 4
-            time.sleep(0.5)
-        # Clear the line when done
-        sys.stdout.write("\r" + " " * (len(self.message) + 10) + "\r")
-        sys.stdout.flush()
-
-    def __enter__(self):
-        self.running = True
-        self.thread = threading.Thread(target=self._animate, daemon=True)
-        self.thread.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=1)
-
-
-def prompt_choice(prompt: str, options: List[str], show_options: bool = True) -> str:
-    # Calculate width needed for numbers (e.g., "10)" needs 3 chars)
-    max_num_width = len(f"{len(options)})")
-    if show_options:
-        for idx, value in enumerate(options, start=1):
-            num_str = f"{idx})"
-            # Right-align the number part for consistent spacing
-            print(_style(num_str.rjust(max_num_width), FG_CYAN), value)
-    while True:
-        selection = prompt_text(f"{prompt} (enter number): ")
-        if not selection.isdigit():
-            error("Please enter a valid number.")
-            continue
-        num = int(selection)
-        if 1 <= num <= len(options):
-            return options[num - 1]
-        error("Selection out of range, try again.")
-
-
-def prompt_yes_no(prompt: str, default_no: bool = True) -> bool:
-    suffix = "[y/N]" if default_no else "[Y/n]"
-    answer = prompt_text(f"{prompt} {suffix}: ").lower()
-    if not answer:
-        return not default_no
-    return answer in ("y", "yes")
 
 
 def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
@@ -182,7 +101,11 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
 
 
 def choose_model(
-    base_url: str, api_key: str, preset: Optional[str], lang: str
+    base_url: str,
+    api_key: str,
+    preset: Optional[str],
+    lang: str,
+    tool_name: str = "claude-code",
 ) -> tuple[str, List[str]]:
     """Choose a model and return both the choice and the fetched model list."""
     if preset:
@@ -190,7 +113,14 @@ def choose_model(
     models = fetch_models(base_url, api_key)
     if models:
         info(t("set.available_models", lang))
-        choice = prompt_choice(t("set.select_model", lang), models)
+        # Use tool-specific prompt text
+        if tool_name == "codex":
+            prompt_text_key = "Select model"
+        elif tool_name == "qwen-code":
+            prompt_text_key = "Select model"
+        else:
+            prompt_text_key = t("set.select_model", lang)
+        choice = prompt_choice(prompt_text_key, models)
         return choice, models
     manual = prompt_text(t("set.enter_model", lang))
     while not manual:
@@ -229,21 +159,48 @@ def resolve_api_key(preset: Optional[str]) -> str:
     return key
 
 
+def resolve_base_url_with_validation(preset: Optional[str]) -> str:
+    """Get and validate base_url, prioritizing environment variable."""
+    # 1. If provided via command-line argument, validate and use
+    if preset:
+        if is_valid_url(preset):
+            return preset.rstrip("/")
+        error(f"Invalid base_url format: {preset}")
+
+    # 2. Try reading from environment variable
+    env_url = os.getenv("R9S_BASE_URL")
+    if env_url and is_valid_url(env_url):
+        info(f"Using R9S_BASE_URL from environment: {env_url}")
+        return env_url.rstrip("/")
+
+    # 3. Prompt user for manual input
+    while True:
+        url = prompt_text("R9S_BASE_URL is not set or invalid. Enter base URL: ")
+        if is_valid_url(url):
+            return url.rstrip("/")
+        error("Invalid URL format. Must start with http:// or https://")
+
+
+def supports_reasoning(model_name: str) -> bool:
+    """Check if model supports reasoning_effort parameter."""
+    reasoning_keywords = ["reasoning", "o1", "o3", "think", "reason", "extended"]
+    model_lower = model_name.lower()
+    return any(keyword in model_lower for keyword in reasoning_keywords)
+
+
 def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegration, str]:
     if arg_name:
-        if arg_name.strip().lower() == "cc":
-            arg_name = "claude-code"
-        tool = TOOLS.resolve(ToolName(arg_name))
+        tool = APPS.resolve(ToolName(arg_name))
         if tool:
             return tool, tool.primary_name
-        raise SystemExit(f"Unsupported tool: {arg_name}")
-    available = TOOLS.primary_names()
+        raise SystemExit(f"Unsupported app: {arg_name}")
+    available = APPS.primary_names()
     chosen = prompt_choice(
         t("set.select_tool", lang), [str(name) for name in available]
     )
-    tool = TOOLS.resolve(ToolName(chosen))
+    tool = APPS.resolve(ToolName(chosen))
     if not tool:
-        raise SystemExit(f"Unsupported tool: {chosen}")
+        raise SystemExit(f"Unsupported app: {chosen}")
     return tool, tool.primary_name
 
 
@@ -251,9 +208,45 @@ def handle_set(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     tool, tool_name = select_tool_name(args.app, lang)
     api_key = resolve_api_key(args.api_key)
+
+    # Get base_url with default fallback (https://api.huamedia.tv/v1)
     base_url = resolve_base_url(args.base_url)
-    model, cached_models = choose_model(base_url, api_key, args.model, lang)
-    small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
+    # Validate the URL format - should always be valid with default fallback
+    if not is_valid_url(base_url):
+        # This should rarely happen unless user explicitly set invalid URL
+        error(f"Invalid base_url format: '{base_url}'")
+        error(
+            "Please set a valid R9S_BASE_URL environment variable or use --base-url parameter"
+        )
+        raise SystemExit(1)
+
+    model, cached_models = choose_model(
+        base_url, api_key, args.model, lang, tool.primary_name
+    )
+
+    # Small model selection - skip for codex and qwen-code
+    small_model = ""
+    if tool.primary_name not in ("codex", "qwen-code"):
+        small_model = choose_small_model(base_url, api_key, model, cached_models, lang)
+
+    # Codex-specific configuration
+    wire_api = "responses"  # default
+    reasoning_effort = None
+
+    if tool.primary_name == "codex":
+        # Select wire_api type
+        info("\nSelect wire API type:")
+        wire_api = prompt_choice(
+            "Choose API protocol", ["responses", "chat", "completion"]
+        )
+
+        # Check if model supports reasoning_effort
+        if supports_reasoning(model):
+            info(f"\nModel '{model}' appears to support reasoning effort.")
+            if prompt_yes_no("Configure reasoning effort?", default_no=True):
+                reasoning_effort = prompt_choice(
+                    "Select reasoning effort level", ["low", "medium", "high"]
+                )
 
     # Get config file path from tool if available
     config_path = getattr(tool, "_settings_path", None)
@@ -264,18 +257,38 @@ def handle_set(args: argparse.Namespace) -> None:
         print(t("set.summary_config_file", lang, path=config_path))
     print(t("set.summary_base_url", lang, url=base_url))
     print(t("set.summary_main_model", lang, model=model))
-    print(t("set.summary_small_model", lang, model=small_model))
+    if tool.primary_name not in ("codex", "qwen-code"):
+        print(t("set.summary_small_model", lang, model=small_model))
+    if tool.primary_name == "codex":
+        print(f"Wire API: {wire_api}")
+        if reasoning_effort:
+            print(f"Reasoning effort: {reasoning_effort}")
+    if tool.primary_name == "qwen-code":
+        print(f"Config files: {config_path}, ~/.qwen/.env")
     print(t("set.summary_api_key", lang, apikey=masked_key(api_key)))
     if not prompt_yes_no(t("set.confirm_apply", lang)):
         warning(t("set.cancelled", lang))
         return
 
-    result: ToolConfigSetResult = tool.set_config(
-        base_url=base_url,
-        api_key=api_key,
-        model=model,
-        small_model=small_model,
-    )
+    # Call set_config with appropriate parameters based on tool type
+    if tool.primary_name == "codex":
+        # Codex requires wire_api and optional reasoning_effort
+        result: ToolConfigSetResult = tool.set_config(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            small_model=small_model,
+            wire_api=wire_api,
+            reasoning_effort=reasoning_effort,
+        )
+    else:
+        # Claude Code and other tools use standard parameters
+        result = tool.set_config(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            small_model=small_model,
+        )
     success(t("set.success_written", lang, path=result.target_path))
     if result.backup_path:
         success(t("set.success_backup", lang, path=result.backup_path))
@@ -328,10 +341,15 @@ def build_parser() -> argparse.ArgumentParser:
         "chat", help="Interactive chat (supports piping stdin)"
     )
     chat_parser.add_argument(
-        "action",
+        "bot",
         nargs="?",
-        choices=["resume"],
-        help="Special actions (e.g. resume a saved session)",
+        default=None,
+        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml).",
+    )
+    chat_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume a saved session (interactive selection; requires TTY)",
     )
     chat_parser.add_argument(
         "--lang",
@@ -342,13 +360,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
     chat_parser.add_argument(
-        "--bot", help="Bot name (load defaults from ~/.r9s/bots/<bot>.json)"
-    )
-    chat_parser.add_argument(
         "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
-    )
-    chat_parser.add_argument(
-        "--system-prompt-file", help="Load system prompt from file"
     )
     chat_parser.add_argument(
         "--history-file",
@@ -370,21 +382,57 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Disable streaming output",
     )
+    chat_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    chat_parser.epilog = (
+        "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
+        "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
+        "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
+    )
     chat_parser.set_defaults(func=handle_chat)
 
-    bot_parser = subparsers.add_parser("bot", help="Manage local bots (~/.r9s/bots)")
+    bot_parser = subparsers.add_parser(
+        "bot", help="Manage local bots (~/.r9s/bots/*.toml)"
+    )
     bot_sub = bot_parser.add_subparsers(dest="bot_command")
+    bot_parser.set_defaults(func=lambda _: bot_parser.print_help())
 
     bot_create = bot_sub.add_parser("create", help="Create or update a bot")
     bot_create.add_argument("name", help="Bot name")
-    bot_create.add_argument("--model", help="Model name")
-    bot_create.add_argument("--base-url", help="Base URL")
-    bot_create.add_argument("--system-prompt", help="System prompt text")
-    bot_create.add_argument("--system-prompt-file", help="System prompt file path")
-    bot_create.add_argument("--lang", help="Default UI language (en, zh-CN)")
+    bot_create.add_argument("--description", help="Description (prompts if omitted)")
     bot_create.add_argument(
-        "--ext", action="append", default=[], help="Default chat extension (repeatable)"
+        "--system-prompt", help="System prompt text (prompts if omitted)"
     )
+    bot_create.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="Sampling temperature (optional)",
+    )
+    bot_create.add_argument(
+        "--top-p", type=float, default=None, help="Top-p (optional)"
+    )
+    bot_create.add_argument(
+        "--max-tokens", type=int, default=None, help="Max tokens (optional)"
+    )
+    bot_create.add_argument(
+        "--presence-penalty",
+        type=float,
+        default=None,
+        help="Presence penalty (optional)",
+    )
+    bot_create.add_argument(
+        "--frequency-penalty",
+        type=float,
+        default=None,
+        help="Frequency penalty (optional)",
+    )
+    bot_create.epilog = "Bots are saved as TOML under ~/.r9s/bots/<name>.toml and only contain system_prompt."
     bot_create.set_defaults(func=handle_bot_create)
 
     bot_list = bot_sub.add_parser("list", help="List bots")
@@ -397,6 +445,72 @@ def build_parser() -> argparse.ArgumentParser:
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")
     bot_delete.set_defaults(func=handle_bot_delete)
+
+    command_parser = subparsers.add_parser(
+        "command", help="Manage local commands (~/.r9s/commands/*.toml)"
+    )
+    command_sub = command_parser.add_subparsers(dest="command_command")
+    command_parser.set_defaults(func=lambda _: command_parser.print_help())
+
+    command_create = command_sub.add_parser("create", help="Create or update a command")
+    command_create.add_argument("name", help="Command name")
+    command_create.add_argument(
+        "--description", help="Description (prompts if omitted)"
+    )
+    command_create.add_argument(
+        "--prompt", help="Prompt template text (prompts if omitted)"
+    )
+    command_create.add_argument(
+        "--prompt-file", type=Path, help="Prompt template file path"
+    )
+    command_create.set_defaults(func=handle_command_create)
+
+    command_list = command_sub.add_parser("list", help="List commands")
+    command_list.set_defaults(func=handle_command_list)
+
+    command_show = command_sub.add_parser("show", help="Show command config")
+    command_show.add_argument("name", help="Command name")
+    command_show.set_defaults(func=handle_command_show)
+
+    command_delete = command_sub.add_parser("delete", help="Delete command")
+    command_delete.add_argument("name", help="Command name")
+    command_delete.set_defaults(func=handle_command_delete)
+
+    command_render = command_sub.add_parser("render", help="Render a command prompt")
+    command_render.add_argument("name", help="Command name")
+    command_render.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    command_render.add_argument(
+        "args", nargs=argparse.REMAINDER, help="Arguments for {{args}}"
+    )
+    command_render.set_defaults(func=handle_command_render)
+
+    command_run = command_sub.add_parser("run", help="Run a command (single-turn)")
+    command_run.add_argument("name", help="Command name")
+    command_run.add_argument("--bot", help="Bot name (load system_prompt)")
+    command_run.add_argument("--lang", default=None, help="UI language (en, zh-CN)")
+    command_run.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    command_run.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    command_run.add_argument("--model", help="Model name (overrides R9S_MODEL)")
+    command_run.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Disable streaming output",
+    )
+    command_run.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip confirmation for template shell execution (!{...})",
+    )
+    command_run.add_argument(
+        "args", nargs=argparse.REMAINDER, help="Arguments for {{args}}"
+    )
+    command_run.set_defaults(func=handle_command_run)
 
     run_parser = subparsers.add_parser("run", help="Run an app with r9s env injected")
     run_parser.add_argument("app", help="App name (e.g. claude-code)")
@@ -418,19 +532,16 @@ def build_parser() -> argparse.ArgumentParser:
         nargs=argparse.REMAINDER,
         help="Arguments passed to the underlying command (use `--` to separate)",
     )
+    run_parser.epilog = f"Supported apps: {', '.join(supported_app_names_for_run())}"
     run_parser.set_defaults(func=handle_run)
 
-    set_parser = subparsers.add_parser("set", help="Write r9s config for a tool")
+    set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(
         "--lang",
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
-    primary_apps = [str(x) for x in TOOLS.primary_names()]
-    supported_set = set(primary_apps)
-    if "claude-code" in supported_set:
-        supported_set.add("cc")
-    supported_apps = ", ".join(sorted(supported_set))
+    supported_apps = ", ".join(supported_app_names_for_config())
     set_parser.epilog = f"Supported apps: {supported_apps}"
     set_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     set_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
@@ -452,6 +563,23 @@ def build_parser() -> argparse.ArgumentParser:
     reset_parser.epilog = f"Supported apps: {supported_apps}"
     reset_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     reset_parser.set_defaults(func=handle_reset)
+
+    completion_parser = subparsers.add_parser(
+        "completion", help="Generate shell completion scripts"
+    )
+    completion_parser.add_argument(
+        "shell",
+        nargs="?",
+        default="bash",
+        help="Shell name (bash; planned: zsh, fish)",
+    )
+    completion_parser.set_defaults(func=handle_completion)
+
+    complete_parser = subparsers.add_parser("__complete", help=argparse.SUPPRESS)
+    complete_parser.add_argument("shell", help=argparse.SUPPRESS)
+    complete_parser.add_argument("cword", type=int, help=argparse.SUPPRESS)
+    complete_parser.add_argument("words", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
+    complete_parser.set_defaults(func=handle___complete)
     return parser
 
 
@@ -464,26 +592,29 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
         args = parser.parse_args(argv)
+
         maybe_notify_update()
         if not getattr(args, "command", None):
             lang = resolve_lang(getattr(args, "lang", None))
             print(_style(CLI_BANNER, FG_CYAN))
-            info(t("cli.tagline", lang))
             print()
-            info(t("cli.examples.title", lang))
-            print(t("cli.examples.chat_interactive", lang))
-            print()
-            print(t("cli.examples.chat_pipe", lang))
-            print()
-            print(t("cli.examples.resume", lang))
-            print()
-            print(t("cli.examples.bots", lang))
-            print()
-            print(t("cli.examples.run", lang))
-            print()
-            print(t("cli.examples.configure", lang))
-            print()
-            info(t("cli.examples.more", lang))
+            apps_run = ", ".join(supported_app_names_for_run())
+            apps_config = ", ".join(supported_app_names_for_config())
+            print_home(
+                name=t("cli.title", lang),
+                description=t("cli.tagline", lang),
+                examples_title=t("cli.examples.title", lang),
+                examples=[
+                    t("cli.examples.chat_interactive", lang),
+                    t("cli.examples.chat_pipe", lang),
+                    t("cli.examples.chat_pipe_image", lang),
+                    t("cli.examples.resume", lang),
+                    t("cli.examples.bots", lang),
+                    t("cli.examples.run", lang, apps=apps_run),
+                    t("cli.examples.configure", lang, apps=apps_config),
+                ],
+                footer=t("cli.examples.more", lang),
+            )
             return
         args.func(args)
     except KeyboardInterrupt:

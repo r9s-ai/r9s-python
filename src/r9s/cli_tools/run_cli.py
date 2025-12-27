@@ -4,10 +4,13 @@ import argparse
 import os
 import shutil
 import subprocess
-from typing import Dict, List, Optional
+import sys
+from typing import List, Optional
 
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model
-from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text
+from r9s.cli_tools.tools.registry import APPS, supported_app_names_for_run
+from r9s.cli_tools.ui.terminal import ToolName
+from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text, warning
 
 
 def _require_model(args_model: Optional[str]) -> str:
@@ -24,44 +27,49 @@ def _require_api_key(args_api_key: Optional[str]) -> str:
     return api_key
 
 
-def _anthropic_env(api_key: str, base_url: str, model: str) -> Dict[str, str]:
-    return {
-        "ANTHROPIC_AUTH_TOKEN": api_key,
-        "ANTHROPIC_BASE_URL": base_url,
-        "ANTHROPIC_MODEL": model,
-        "ANTHROPIC_SMALL_FAST_MODEL": model,
-        "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": model,
-        "ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
-    }
-
-
 def handle_run(args: argparse.Namespace) -> None:
     app = (args.app or "").strip().lower()
-    if app in ("claude-code", "claude_code", "claude"):
-        app = "claude-code"
-    if app == "cc":
-        app = "claude-code"
-
-    if app != "claude-code":
+    tool = APPS.resolve(ToolName(app))
+    if not tool:
         raise SystemExit(f"Unsupported app: {args.app}")
+    if not tool.supports_run():
+        supported = ", ".join(supported_app_names_for_run())
+        raise SystemExit(
+            f"Unsupported app for `r9s run`: {args.app} (supported: {supported})"
+        )
 
     api_key = _require_api_key(getattr(args, "api_key", None))
     base_url = resolve_base_url(getattr(args, "base_url", None))
     model = _require_model(getattr(args, "model", None))
 
-    claude = shutil.which("claude")
-    if not claude:
-        raise SystemExit("Command not found: claude (please install Claude Code CLI)")
+    exe = tool.run_executable()
+    if not exe:
+        raise SystemExit(f"Unsupported app for `r9s run`: {args.app}")
+    exe_path = shutil.which(exe)
+    if not exe_path:
+        raise SystemExit(f"Command not found: {exe} (please install the app first)")
 
-    cmd: List[str] = [claude, *list(getattr(args, "args", []) or [])]
+    cmd: List[str] = [exe_path, *list(getattr(args, "args", []) or [])]
     env = os.environ.copy()
-    env.update(_anthropic_env(api_key=api_key, base_url=base_url, model=model))
+    injected_env = tool.run_env(api_key=api_key, base_url=base_url, model=model)
+    env.update(injected_env)
+
+    preflight = tool.run_preflight(injected_env=injected_env)
+    if preflight:
+        warning(preflight)
+        if not getattr(args, "confirm", False):
+            if not sys.stdin.isatty():
+                raise SystemExit(
+                    "Run requires confirmation due to env conflicts, "
+                    "but stdin is not a TTY."
+                )
+            answer = prompt_text("Proceed anyway? [y/N]: ", color=FG_RED).lower()
+            if answer not in ("y", "yes"):
+                error("Cancelled.")
+                return
 
     if getattr(args, "print_env", False):
-        for k in sorted(
-            _anthropic_env(api_key=api_key, base_url=base_url, model=model).keys()
-        ):
+        for k in sorted(injected_env.keys()):
             print(f"{k}={env[k]}")
         return
 
