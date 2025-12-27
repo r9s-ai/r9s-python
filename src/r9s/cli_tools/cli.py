@@ -620,6 +620,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     except KeyboardInterrupt:
         print()
         warning("Goodbye. (Interrupted by Ctrl+C)")
+    except EOFError:
+        # Treat Ctrl+D / closed stdin as a graceful exit in interactive flows.
+        print()
+        return
 
 
 if __name__ == "__main__":

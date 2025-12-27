@@ -29,7 +29,7 @@ Bot 不仅仅是一个 API Endpoint，它是 **System Prompt + 模型参数 + �
 ```bash
 # 创建一个代码审查 Bot
 r9s bot create reviewer \
-    --model "claude-3-5-sonnet-20241022" \
+    --model "gpt-5.2" \
     --system-prompt "你是一个严格的代码审查员。请以 Markdown 列表形式输出审查意见，重点关注：1. 安全漏洞 2. 异常处理 3. 变量命名规范。"
 ```
 

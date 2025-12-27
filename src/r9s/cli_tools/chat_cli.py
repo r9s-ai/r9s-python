@@ -616,7 +616,11 @@ def _resume_select_session(lang: str) -> Optional[Path]:
     for idx, s in enumerate(sessions, start=1):
         print(f"{idx}) {s.display}")
     while True:
-        selection = prompt_text(t("chat.resume.select", lang))
+        try:
+            selection = prompt_text(t("chat.resume.select", lang))
+        except EOFError:
+            print()
+            raise SystemExit(0) from None
         if not selection.isdigit():
             error(t("chat.resume.invalid", lang))
             continue
@@ -633,28 +637,44 @@ class SessionInfo:
     display: str
 
 
+def _format_session_time(updated_at: str, fallback_mtime: float) -> str:
+    try:
+        dt = datetime.fromisoformat(updated_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.astimezone()
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        dt = datetime.fromtimestamp(fallback_mtime).astimezone()
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _list_sessions(root: Path) -> List[SessionInfo]:
     out: List[SessionInfo] = []
     for path in sorted(
         root.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
     ):
+        st = path.stat()
         try:
             rec = _load_history(str(path))
         except Exception:
             continue
-        updated = rec.meta.updated_at or ""
-        base = rec.meta.base_url or "?"
-        model = rec.meta.model or "?"
+        updated_raw = rec.meta.updated_at or ""
+        updated = _format_session_time(updated_raw, st.st_mtime)
         preview = ""
         for msg in reversed(rec.messages):
             content = msg.get("content")
-            if msg.get("role") == "user" and isinstance(content, str):
-                preview = content.replace("\n", " ")
+            if msg.get("role") == "user":
+                preview = (
+                    _content_to_text(content).replace("\n", " ").replace("\\n", " ")
+                )
                 break
         if preview:
             preview = (preview[:60] + "…") if len(preview) > 60 else preview
-        display = f"{path.name}  [{updated}]  {model}  {base}"
+        display = f"{updated}"
         if preview:
             display += f"  - {preview}"
+        else:
+            display += "  - (no prompt)"
         out.append(SessionInfo(path=path, updated_at=updated, display=display))
     return out
