@@ -16,9 +16,11 @@ class RenderContext:
     interactive: bool
     shell_timeout_seconds: int = 10
     shell_max_output_bytes: int = 1024 * 1024
+    file_max_bytes: int = 1024 * 1024
 
 
 _SHELL_RE = re.compile(r"!\{(.*?)\}", flags=re.DOTALL)
+_FILE_RE = re.compile(r"@\{(.*?)\}", flags=re.DOTALL)
 
 
 def _stderr(msg: str) -> None:
@@ -44,7 +46,56 @@ def render_template(template: str, ctx: RenderContext) -> str:
 
     if _SHELL_RE.search(rendered):
         rendered = _SHELL_RE.sub(repl, rendered)
+
+    def repl_file(match: re.Match[str]) -> str:
+        raw = match.group(1).strip()
+        if not raw:
+            return ""
+        return _read_file(raw, ctx)
+
+    if _FILE_RE.search(rendered):
+        rendered = _FILE_RE.sub(repl_file, rendered)
     return rendered
+
+
+def _resolve_file_max_bytes(ctx: RenderContext) -> int:
+    raw = (os.getenv("R9S_FILE_INJECT_MAX_BYTES") or "").strip()
+    if not raw:
+        return ctx.file_max_bytes
+    try:
+        value = int(raw)
+    except ValueError:
+        return ctx.file_max_bytes
+    return value if value > 0 else ctx.file_max_bytes
+
+
+def _read_file(path_spec: str, ctx: RenderContext) -> str:
+    from pathlib import Path
+
+    path = Path(path_spec).expanduser()
+    if not path.is_absolute():
+        path = (Path.cwd() / path).resolve()
+
+    try:
+        data = path.read_bytes()
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"File not found: {path}") from exc
+    except OSError as exc:
+        raise RuntimeError(f"Failed to read file: {path} ({exc})") from exc
+
+    max_bytes = _resolve_file_max_bytes(ctx)
+    if len(data) > max_bytes:
+        raise RuntimeError(
+            f"File too large to inject (max {max_bytes} bytes): {path} ({len(data)} bytes)"
+        )
+    if b"\x00" in data:
+        raise RuntimeError(f"Binary file is not supported for injection: {path}")
+
+    _stderr(f"[r9s] Injecting file: {path} ({len(data)} bytes)")
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError(f"File is not valid UTF-8: {path}") from exc
 
 
 def _confirm_shell(cmd: str) -> None:

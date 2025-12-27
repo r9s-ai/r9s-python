@@ -386,6 +386,19 @@ def handle_chat(args: argparse.Namespace) -> None:
     base_url = resolve_base_url(args.base_url)
     model = resolve_model(args.model)
     system_prompt = resolve_system_prompt(args.system_prompt)
+    system_prompt_rendered: Optional[str] = None
+    if system_prompt:
+        system_prompt_rendered = (
+            render_template(
+                system_prompt,
+                RenderContext(
+                    args_text="",
+                    assume_yes=bool(getattr(args, "yes", False)),
+                    interactive=sys.stdin.isatty(),
+                ),
+            ).strip()
+            or None
+        )
 
     history_path: Optional[str]
     if args.no_history:
@@ -474,7 +487,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                 return
             ctx.history.append(user_msg)
             messages = run_before_request_extensions(
-                exts, _build_messages(system_prompt, ctx.history), ctx
+                exts, _build_messages(system_prompt_rendered, ctx.history), ctx
             )
             assistant_text = (
                 _non_stream_chat(
@@ -568,7 +581,7 @@ def handle_chat(args: argparse.Namespace) -> None:
             user_text = run_user_input_extensions(exts, user_text, ctx)
             ctx.history.append({"role": "user", "content": user_text})
 
-            messages = _build_messages(system_prompt, ctx.history)
+            messages = _build_messages(system_prompt_rendered, ctx.history)
             messages = run_before_request_extensions(exts, messages, ctx)
 
             assistant_text = (
