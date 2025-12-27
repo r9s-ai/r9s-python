@@ -98,6 +98,37 @@ class CodexIntegration(ToolIntegration):
             target_path=self._settings_path, backup_path=backup_path
         )
 
+    def run_executable(self) -> str:
+        return "codex"
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> dict[str, str]:
+        """Return environment variables for running Codex.
+
+        Codex reads API key from the R9S_API_KEY environment variable
+        which should already be set by the user (validated by run_cli.py).
+        All other configs are passed via --config command line flags.
+        """
+        return {}
+
+    def run_args(self, *, base_url: str, model: str) -> list[str]:
+        """Return additional command line arguments for running Codex.
+
+        Uses --config flags to temporarily create a r9s_temp provider
+        that overrides config.toml settings without modifying the file.
+        """
+        provider_name = "r9s_temp"
+        env_key = "R9S_API_KEY"
+        wire_api = "responses"
+
+        return [
+            "--config", f"model_provider={provider_name}",
+            "--config", f"model={model}",
+            "--config", f"model_providers.{provider_name}.name={provider_name}",
+            "--config", f"model_providers.{provider_name}.base_url={base_url}",
+            "--config", f"model_providers.{provider_name}.env_key={env_key}",
+            "--config", f"model_providers.{provider_name}.wire_api={wire_api}",
+        ]
+
     def _read_config(self) -> dict:
         """Read existing TOML config or return empty dict."""
         if not self._settings_path.exists():

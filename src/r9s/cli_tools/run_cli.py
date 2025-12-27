@@ -49,7 +49,12 @@ def handle_run(args: argparse.Namespace) -> None:
     if not exe_path:
         raise SystemExit(f"Command not found: {exe} (please install the app first)")
 
-    cmd: List[str] = [exe_path, *list(getattr(args, "args", []) or [])]
+    # Get extra command line arguments from the tool (e.g., --config flags for Codex)
+    extra_args: List[str] = []
+    if hasattr(tool, "run_args"):
+        extra_args = tool.run_args(base_url=base_url, model=model)
+
+    cmd: List[str] = [exe_path, *extra_args, *list(getattr(args, "args", []) or [])]
     env = os.environ.copy()
     injected_env = tool.run_env(api_key=api_key, base_url=base_url, model=model)
     env.update(injected_env)
