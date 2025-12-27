@@ -103,38 +103,35 @@ def _load_history(path: str) -> SessionRecord:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ValueError(str(exc)) from exc
-    # Backward compatible:
-    # - list[...] => messages only
-    # - {"meta": {...}, "messages": [...]} => full record
-    if isinstance(data, list):
-        now = _utc_now_iso()
-        meta = SessionMeta(
-            session_id=Path(path).stem,
-            created_at=now,
-            updated_at=now,
-            base_url="",
-            model="",
-            system_prompt=None,
-        )
-        return SessionRecord(meta=meta, messages=_coerce_messages(data))
-    if isinstance(data, dict):
-        messages = _coerce_messages(data.get("messages", []))
-        meta_raw = data.get("meta", {}) if isinstance(data.get("meta"), dict) else {}
-        now = _utc_now_iso()
-        meta = SessionMeta(
-            session_id=str(meta_raw.get("session_id") or Path(path).stem),
-            created_at=str(meta_raw.get("created_at") or now),
-            updated_at=str(meta_raw.get("updated_at") or now),
-            base_url=str(meta_raw.get("base_url") or ""),
-            model=str(meta_raw.get("model") or ""),
-            system_prompt=(
-                str(meta_raw.get("system_prompt"))
-                if meta_raw.get("system_prompt")
-                else None
-            ),
-        )
-        return SessionRecord(meta=meta, messages=messages)
-    raise TypeError("history is not a JSON array")
+    if not isinstance(data, dict):
+        raise TypeError("history is not a JSON object")
+    if "meta" not in data or "messages" not in data:
+        raise TypeError("history missing required keys")
+
+    meta_raw = data.get("meta")
+    if not isinstance(meta_raw, dict):
+        raise TypeError("history.meta is not a JSON object")
+
+    messages = _coerce_messages(data.get("messages"))
+
+    required_str_fields = ("session_id", "created_at", "updated_at", "base_url", "model")
+    for field in required_str_fields:
+        if field not in meta_raw or not isinstance(meta_raw[field], str):
+            raise TypeError(f"history.meta.{field} must be a string")
+
+    system_prompt_raw = meta_raw.get("system_prompt")
+    if system_prompt_raw is not None and not isinstance(system_prompt_raw, str):
+        raise TypeError("history.meta.system_prompt must be a string or null")
+
+    meta = SessionMeta(
+        session_id=meta_raw["session_id"],
+        created_at=meta_raw["created_at"],
+        updated_at=meta_raw["updated_at"],
+        base_url=meta_raw["base_url"],
+        model=meta_raw["model"],
+        system_prompt=system_prompt_raw,
+    )
+    return SessionRecord(meta=meta, messages=messages)
 
 
 def _save_history(path: str, record: SessionRecord) -> None:
@@ -433,13 +430,6 @@ def handle_chat(args: argparse.Namespace) -> None:
         if system_prompt is None and record.meta.system_prompt is not None:
             system_prompt = record.meta.system_prompt
 
-        # Fill meta if still missing (backward compatible)
-        if not record.meta.base_url and base_url:
-            record.meta.base_url = base_url
-        if not record.meta.model and model:
-            record.meta.model = model
-        if record.meta.system_prompt is None:
-            record.meta.system_prompt = system_prompt
         record.meta.updated_at = _utc_now_iso()
 
     if not model:
