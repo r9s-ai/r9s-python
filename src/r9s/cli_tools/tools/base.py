@@ -74,6 +74,14 @@ class ToolIntegration:
 
         return {}
 
+    def run_args(self, *, base_url: str, model: str) -> List[str]:
+        """Return additional command line arguments for running this app.
+
+        Some apps (like Codex) may need extra CLI flags to override config.
+        """
+
+        return []
+
     def run_preflight(self, *, injected_env: Dict[str, str]) -> Optional[str]:
         """Return a warning message if `r9s run` may not take effect.
 
