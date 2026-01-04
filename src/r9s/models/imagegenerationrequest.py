@@ -9,6 +9,10 @@ from typing_extensions import NotRequired, TypedDict
 Quality = Literal[
     "standard",
     "hd",
+    # Extended quality options for GPT-Image models
+    "low",
+    "medium",
+    "high",
 ]
 
 
@@ -19,11 +23,34 @@ ImageGenerationRequestResponseFormat = Literal[
 
 
 Size = Literal[
+    # DALL-E 2 sizes
     "256x256",
     "512x512",
     "1024x1024",
+    # DALL-E 3 sizes
     "1792x1024",
     "1024x1792",
+    # GPT-Image-1 / GPT-Image-1.5 sizes
+    "1024x1536",
+    "1536x1024",
+    # Wanx / Ali sizes
+    "720x1280",
+    "1280x720",
+    "512x1024",
+    "1024x768",
+    "576x1024",
+    "1024x576",
+    # Gemini Nano Banana aspect ratios
+    "1:1",
+    "16:9",
+    "9:16",
+    "4:3",
+    "3:4",
+    "3:2",
+    "2:3",
+    "5:4",
+    "4:5",
+    "21:9",
 ]
 
 
@@ -45,6 +72,15 @@ class ImageGenerationRequestTypedDict(TypedDict):
     size: NotRequired[Size]
     style: NotRequired[Style]
     user: NotRequired[str]
+    # Extended parameters for advanced providers
+    negative_prompt: NotRequired[str]
+    r"""Negative prompt to exclude elements (Qwen, Stability). Max 500 chars for Qwen."""
+    seed: NotRequired[int]
+    r"""Random seed for reproducibility. Range: 0-2147483647 for Qwen."""
+    prompt_extend: NotRequired[bool]
+    r"""Enable AI prompt optimization (Qwen-specific)."""
+    watermark: NotRequired[bool]
+    r"""Add watermark to generated images (Qwen-specific)."""
 
 
 class ImageGenerationRequest(BaseModel):
@@ -55,14 +91,40 @@ class ImageGenerationRequest(BaseModel):
     r"""Model name"""
 
     n: Optional[int] = 1
-    r"""Number of images to generate"""
+    r"""Number of images to generate. Range depends on model:
+    - dall-e-2: 1-10
+    - dall-e-3: 1
+    - gpt-image-1: 1
+    - gpt-image-1.5: 1-10
+    - wanx-v1: 1
+    - gemini-*: 1
+    """
 
     quality: Optional[Quality] = "standard"
+    r"""Image quality. Options depend on model:
+    - dall-e-3: 'standard', 'hd'
+    - gpt-image-1/1.5: 'low', 'medium', 'high', 'standard', 'hd'
+    - gemini-*: 'standard' (1K), 'hd' (2K)
+    """
 
     response_format: Optional[ImageGenerationRequestResponseFormat] = "url"
 
     size: Optional[Size] = "1024x1024"
+    r"""Image size. Options depend on model. Can also use aspect ratios for Gemini/Minimax."""
 
     style: Optional[Style] = "vivid"
 
     user: Optional[str] = None
+
+    # Extended parameters for advanced providers
+    negative_prompt: Optional[str] = None
+    r"""Negative prompt to exclude elements (Qwen, Stability). Max 500 chars for Qwen."""
+
+    seed: Optional[int] = None
+    r"""Random seed for reproducibility. Range: 0-2147483647 for Qwen."""
+
+    prompt_extend: Optional[bool] = None
+    r"""Enable AI prompt optimization (Qwen-specific)."""
+
+    watermark: Optional[bool] = None
+    r"""Add watermark to generated images (Qwen-specific)."""
