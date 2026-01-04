@@ -49,10 +49,12 @@ def _toml_quote(value: str) -> str:
 
 
 def _toml_multiline(value: str) -> str:
+    # TOML spec: newline after opening delimiter is trimmed, but trailing newlines are kept.
+    # So we only add leading \n (which gets trimmed), not trailing \n.
     if "'''" not in value:
-        return "'''\n" + value + "\n'''"
+        return "'''\n" + value + "'''"
     if '"""' not in value:
-        return '"""\n' + value + '\n"""'
+        return '"""\n' + value + '"""'
     return _toml_quote(value)
 
 
@@ -371,8 +373,8 @@ class LocalAgentStore(AgentStore):
             instructions=instructions,
             model=model,
             provider=provider,
-        tools=list(tools) if isinstance(tools, list) else [],
-        files=list(files) if isinstance(files, list) else [],
+            tools=list(tools) if isinstance(tools, list) else [],
+            files=list(files) if isinstance(files, list) else [],
             model_params=model_params if isinstance(model_params, dict) else {},
             created_at=now,
             created_by=created_by,
@@ -413,8 +415,8 @@ class LocalAgentStore(AgentStore):
             instructions=instructions,
             model=model,
             provider=provider,
-        tools=list(tools) if isinstance(tools, list) else [],
-        files=list(files) if isinstance(files, list) else [],
+            tools=list(tools) if isinstance(tools, list) else [],
+            files=list(files) if isinstance(files, list) else [],
             model_params=model_params if isinstance(model_params, dict) else {},
             created_at=_utc_now(),
             created_by=created_by,
