@@ -329,6 +329,8 @@ if TYPE_CHECKING:
     from .imagegenerationresponse import (
         ImageGenerationResponse,
         ImageGenerationResponseTypedDict,
+        ImageUsage,
+        ImageUsageTypedDict,
     )
     from .imageobject import ImageObject, ImageObjectTypedDict
     from .imageurl import Detail, ImageURL, ImageURLTypedDict
@@ -700,6 +702,8 @@ __all__ = [
     "ImageGenerationRequestTypedDict",
     "ImageGenerationResponse",
     "ImageGenerationResponseTypedDict",
+    "ImageUsage",
+    "ImageUsageTypedDict",
     "ImageObject",
     "ImageObjectTypedDict",
     "ImageURL",
@@ -1081,6 +1085,8 @@ _dynamic_imports: dict[str, str] = {
     "Style": ".imagegenerationrequest",
     "ImageGenerationResponse": ".imagegenerationresponse",
     "ImageGenerationResponseTypedDict": ".imagegenerationresponse",
+    "ImageUsage": ".imagegenerationresponse",
+    "ImageUsageTypedDict": ".imagegenerationresponse",
     "ImageObject": ".imageobject",
     "ImageObjectTypedDict": ".imageobject",
     "Detail": ".imageurl",

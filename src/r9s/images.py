@@ -20,6 +20,11 @@ class Images(BaseSDK):
         size: Optional[models.Size] = "1024x1024",
         style: Optional[models.Style] = "vivid",
         user: Optional[str] = None,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -37,6 +42,10 @@ class Images(BaseSDK):
         :param size:
         :param style:
         :param user:
+        :param negative_prompt: Negative prompt to exclude elements (Qwen, Stability)
+        :param seed: Random seed for reproducibility
+        :param prompt_extend: Enable AI prompt optimization (Qwen-specific)
+        :param watermark: Add watermark to generated images (Qwen-specific)
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -61,6 +70,10 @@ class Images(BaseSDK):
             size=size,
             style=style,
             user=user,
+            negative_prompt=negative_prompt,
+            seed=seed,
+            prompt_extend=prompt_extend,
+            watermark=watermark,
         )
 
         req = self._build_request(
@@ -170,6 +183,11 @@ class Images(BaseSDK):
         size: Optional[models.Size] = "1024x1024",
         style: Optional[models.Style] = "vivid",
         user: Optional[str] = None,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -187,6 +205,10 @@ class Images(BaseSDK):
         :param size:
         :param style:
         :param user:
+        :param negative_prompt: Negative prompt to exclude elements (Qwen, Stability)
+        :param seed: Random seed for reproducibility
+        :param prompt_extend: Enable AI prompt optimization (Qwen-specific)
+        :param watermark: Add watermark to generated images (Qwen-specific)
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -211,6 +233,10 @@ class Images(BaseSDK):
             size=size,
             style=style,
             user=user,
+            negative_prompt=negative_prompt,
+            seed=seed,
+            prompt_extend=prompt_extend,
+            watermark=watermark,
         )
 
         req = self._build_request_async(

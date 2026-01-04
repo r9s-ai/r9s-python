@@ -42,6 +42,10 @@ with R9S(
 | `size`                                                                                                        | [Optional[models.Size]](../../models/size.md)                                                                 | :heavy_minus_sign:                                                                                            | N/A                                                                                                           |
 | `style`                                                                                                       | [Optional[models.Style]](../../models/style.md)                                                               | :heavy_minus_sign:                                                                                            | N/A                                                                                                           |
 | `user`                                                                                                        | *Optional[str]*                                                                                               | :heavy_minus_sign:                                                                                            | N/A                                                                                                           |
+| `negative_prompt`                                                                                             | *Optional[str]*                                                                                               | :heavy_minus_sign:                                                                                            | Negative prompt to exclude elements (Qwen, Stability)                                                         |
+| `seed`                                                                                                        | *Optional[int]*                                                                                               | :heavy_minus_sign:                                                                                            | Random seed for reproducibility                                                                               |
+| `prompt_extend`                                                                                               | *Optional[bool]*                                                                                              | :heavy_minus_sign:                                                                                            | Enable AI prompt optimization (Qwen-specific)                                                                 |
+| `watermark`                                                                                                   | *Optional[bool]*                                                                                              | :heavy_minus_sign:                                                                                            | Add watermark to generated images (Qwen-specific)                                                             |
 | `retries`                                                                                                     | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                              | :heavy_minus_sign:                                                                                            | Configuration to override the default retry behavior of the client.                                           |
 
 ### Response
@@ -165,3 +169,138 @@ print(url)
 | errors.InternalServerError      | 500                             | application/json                |
 | errors.ServiceUnavailableError  | 503                             | application/json                |
 | errors.R9SDefaultError          | 4XX, 5XX                        | \*/\*                           |
+
+---
+
+## Extended Parameters
+
+Some providers support additional parameters beyond the OpenAI standard:
+
+### GPT-Image-1.5 (Multiple Images)
+
+Generate multiple images in a single request with gpt-image-1.5:
+
+```python
+from r9s import R9S
+
+
+with R9S(api_key="<YOUR_BEARER_TOKEN_HERE>") as client:
+    # Generate 5 images at once (only gpt-image-1.5 supports n>1)
+    result = client.images.create(
+        prompt="A futuristic electric car in a showroom",
+        model="gpt-image-1.5",
+        n=5,                    # 1-10 images supported
+        size="1536x1024",       # Landscape
+        quality="high"
+    )
+
+    # Access all generated images
+    for i, image in enumerate(result.data):
+        print(f"Image {i+1}: {image.url}")
+```
+
+### Negative Prompt (Qwen, Stability)
+
+Specify elements to exclude from the generated image:
+
+```python
+from r9s import R9S
+
+
+with R9S(api_key="<YOUR_BEARER_TOKEN_HERE>") as client:
+    result = client.images.create(
+        prompt="A serene mountain landscape",
+        negative_prompt="people, buildings, cars",
+        model="wanx-v1"
+    )
+```
+
+### Seed (Reproducibility)
+
+Generate consistent results with the same seed:
+
+```python
+from r9s import R9S
+
+
+with R9S(api_key="<YOUR_BEARER_TOKEN_HERE>") as client:
+    result = client.images.create(
+        prompt="A blue dragon",
+        seed=12345,
+        model="wanx-v1"
+    )
+```
+
+### Gemini Nano Banana (Aspect Ratios)
+
+Use aspect ratios for precise image dimensions:
+
+```python
+from r9s import R9S
+
+
+with R9S(api_key="<YOUR_BEARER_TOKEN_HERE>") as client:
+    # Using aspect ratio directly
+    result = client.images.create(
+        prompt="A futuristic cityscape at sunset",
+        model="gemini-2.5-flash-image",
+        size="16:9",        # Landscape aspect ratio
+        quality="hd"        # Maps to 2K resolution
+    )
+
+    # Using pixel dimensions (mapped to aspect ratio)
+    result = client.images.create(
+        prompt="A portrait of a cyberpunk character",
+        model="gemini-2.5-flash-image",
+        size="1024x1792",   # Automatically mapped to 9:16
+    )
+
+    # 4K resolution with Nano Banana Pro
+    result = client.images.create(
+        prompt="Ultra-detailed landscape",
+        model="gemini-3-pro-image-preview",
+        size="1:1",
+        quality="4k"        # Only available on Pro model
+    )
+```
+
+### Provider-Specific Constraints
+
+| Provider | Prompt Max | N Range | Special |
+|----------|------------|---------|---------|
+| OpenAI DALL-E 2 | 1000 | 1-10 | Legacy model |
+| OpenAI DALL-E 3 | 4000 | 1 | High quality |
+| OpenAI gpt-image-1 | 4000 | 1 | |
+| OpenAI gpt-image-1.5 | 4000 | 1-10 | 4x faster, 20% cheaper |
+| Gemini Nano Banana | 32000 | 1 | aspect_ratio, quality->resolution |
+| Gemini Nano Banana Pro | 32000 | 1 | aspect_ratio, 4K support |
+| Qwen/Wanx | 800 | 1 | negative_prompt, seed |
+| Minimax | 1500 | 1-9 | aspect_ratio |
+| CogView | 833 | 1 | |
+
+### Using Image Constraints Helper
+
+The SDK provides a utility module for validating image requests against provider constraints:
+
+```python
+from r9s.utils.image_constraints import (
+    get_model_constraints,
+    validate_image_request,
+)
+
+
+# Get constraints for a model
+constraints = get_model_constraints("wanx-v1")
+print(f"Max prompt length: {constraints.prompt_max}")
+print(f"Supports negative_prompt: {constraints.supports_negative_prompt}")
+
+# Validate a request before sending
+errors = validate_image_request(
+    model="wanx-v1",
+    prompt="A very long prompt...",
+    size="1024x1024",
+    n=1
+)
+if errors:
+    print("Validation errors:", errors)
+```
