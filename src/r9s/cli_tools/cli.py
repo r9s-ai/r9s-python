@@ -17,6 +17,21 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_list,
     handle_bot_show,
 )
+from r9s.cli_tools.agent_cli import (
+    handle_agent_approve,
+    handle_agent_audit,
+    handle_agent_create,
+    handle_agent_deprecate,
+    handle_agent_delete,
+    handle_agent_diff,
+    handle_agent_export,
+    handle_agent_history,
+    handle_agent_import_bot,
+    handle_agent_list,
+    handle_agent_rollback,
+    handle_agent_show,
+    handle_agent_update,
+)
 from r9s.cli_tools.command_cli import (
     handle_command_create,
     handle_command_delete,
@@ -364,6 +379,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
     )
     chat_parser.add_argument(
+        "--agent",
+        help="Agent name (loads system prompt and model from ~/.r9s/agents/<agent>/)",
+    )
+    chat_parser.add_argument(
+        "--var",
+        action="append",
+        default=[],
+        help="Agent template variable (key=value, repeatable)",
+    )
+    chat_parser.add_argument(
         "--history-file",
         help="History file path (default: auto under ~/.r9s/; disabled when --no-history)",
     )
@@ -391,6 +416,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     chat_parser.epilog = (
         "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "
         "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
         "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
@@ -442,6 +468,89 @@ def build_parser() -> argparse.ArgumentParser:
     bot_show = bot_sub.add_parser("show", help="Show bot config")
     bot_show.add_argument("name", help="Bot name")
     bot_show.set_defaults(func=handle_bot_show)
+
+    agent_parser = subparsers.add_parser(
+        "agent", help="Manage versioned agents (~/.r9s/agents/)"
+    )
+    agent_sub = agent_parser.add_subparsers(dest="agent_command")
+    agent_parser.set_defaults(func=lambda _: agent_parser.print_help())
+
+    agent_list = agent_sub.add_parser("list", help="List agents")
+    agent_list.set_defaults(func=handle_agent_list)
+
+    agent_show = agent_sub.add_parser("show", help="Show agent details")
+    agent_show.add_argument("name", help="Agent name")
+    agent_show.set_defaults(func=handle_agent_show)
+
+    agent_create = agent_sub.add_parser("create", help="Create a new agent")
+    agent_create.add_argument("name", help="Agent name")
+    agent_create.add_argument("--description", help="Description (optional)")
+    agent_create.add_argument("--instructions", help="Instructions (prompts if omitted)")
+    agent_create.add_argument("--model", help="Model name")
+    agent_create.add_argument("--provider", help="Provider name (default: r9s)")
+    agent_create.add_argument("--reason", help="Change reason (optional)")
+    agent_create.add_argument("--params", help="Model params JSON (optional)")
+    agent_create.set_defaults(func=handle_agent_create)
+
+    agent_update = agent_sub.add_parser("update", help="Update agent (new version)")
+    agent_update.add_argument("name", help="Agent name")
+    agent_update.add_argument("--instructions", help="Instructions (prompts if omitted)")
+    agent_update.add_argument("--model", help="Model name (optional)")
+    agent_update.add_argument("--provider", help="Provider name (optional)")
+    agent_update.add_argument("--reason", help="Change reason (optional)")
+    agent_update.add_argument(
+        "--bump",
+        choices=["patch", "minor", "major"],
+        default="patch",
+        help="Version bump type",
+    )
+    agent_update.add_argument("--params", help="Model params JSON (optional)")
+    agent_update.set_defaults(func=handle_agent_update)
+
+    agent_delete = agent_sub.add_parser("delete", help="Delete agent")
+    agent_delete.add_argument("name", help="Agent name")
+    agent_delete.set_defaults(func=handle_agent_delete)
+
+    agent_history = agent_sub.add_parser("history", help="Show agent history")
+    agent_history.add_argument("name", help="Agent name")
+    agent_history.set_defaults(func=handle_agent_history)
+
+    agent_diff = agent_sub.add_parser("diff", help="Diff two versions")
+    agent_diff.add_argument("name", help="Agent name")
+    agent_diff.add_argument("v1", help="Version 1")
+    agent_diff.add_argument("v2", help="Version 2")
+    agent_diff.set_defaults(func=handle_agent_diff)
+
+    agent_rollback = agent_sub.add_parser("rollback", help="Rollback to version")
+    agent_rollback.add_argument("name", help="Agent name")
+    agent_rollback.add_argument("--version", required=True, help="Version to set")
+    agent_rollback.set_defaults(func=handle_agent_rollback)
+
+    agent_approve = agent_sub.add_parser("approve", help="Approve a version")
+    agent_approve.add_argument("name", help="Agent name")
+    agent_approve.add_argument("--version", required=True, help="Version to approve")
+    agent_approve.set_defaults(func=handle_agent_approve)
+
+    agent_deprecate = agent_sub.add_parser("deprecate", help="Deprecate a version")
+    agent_deprecate.add_argument("name", help="Agent name")
+    agent_deprecate.add_argument("--version", required=True, help="Version to deprecate")
+    agent_deprecate.set_defaults(func=handle_agent_deprecate)
+
+    agent_audit = agent_sub.add_parser("audit", help="Show audit log")
+    agent_audit.add_argument("name", help="Agent name")
+    agent_audit.add_argument("--last", type=int, default=None, help="Last N entries")
+    agent_audit.add_argument("--request-id", help="Filter by request ID")
+    agent_audit.set_defaults(func=handle_agent_audit)
+
+    agent_export = agent_sub.add_parser("export", help="Export agent as JSON")
+    agent_export.add_argument("name", help="Agent name")
+    agent_export.set_defaults(func=handle_agent_export)
+
+    agent_import_bot = agent_sub.add_parser("import-bot", help="Import bot as agent")
+    agent_import_bot.add_argument("name", help="Bot name (agent name)")
+    agent_import_bot.add_argument("--model", help="Model name")
+    agent_import_bot.add_argument("--provider", help="Provider name (default: r9s)")
+    agent_import_bot.set_defaults(func=handle_agent_import_bot)
 
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")

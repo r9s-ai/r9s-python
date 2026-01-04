@@ -8,11 +8,14 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from r9s import models
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
+from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
+from r9s.agents.template import render as render_agent_template
+from r9s.agents.models import AgentExecution, AgentVersion
 from r9s.cli_tools.commands import list_commands, load_command
 from r9s.cli_tools.template_renderer import RenderContext, render_template
 from r9s.cli_tools.chat_extensions import (
@@ -50,6 +53,14 @@ class SessionMeta:
 class SessionRecord:
     meta: SessionMeta
     messages: List[models.MessageTypedDict]
+
+
+@dataclass
+class ChatResult:
+    text: str
+    request_id: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 def _require_api_key(args_api_key: Optional[str], lang: str) -> str:
@@ -253,7 +264,7 @@ def _stream_chat(
     max_tokens: Optional[int] = None,
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
-) -> str:
+) -> ChatResult:
     spinner = Spinner(prefix or "")
     if sys.stdout.isatty():
         spinner.start()
@@ -269,7 +280,17 @@ def _stream_chat(
         frequency_penalty=frequency_penalty,
     )
     assistant_parts: List[str] = []
+    request_id = ""
+    input_tokens = 0
+    output_tokens = 0
     for event in stream:
+        if not request_id and getattr(event, "id", None):
+            request_id = event.id
+        if getattr(event, "usage", None):
+            usage = event.usage
+            if usage:
+                input_tokens = usage.prompt_tokens
+                output_tokens = usage.completion_tokens
         if not event.choices:
             continue
         delta = event.choices[0].delta
@@ -285,7 +306,12 @@ def _stream_chat(
         spinner.print_prefix()
     print()
     assistant_text = "".join(assistant_parts)
-    return run_after_response_extensions(exts, assistant_text, ctx)
+    return ChatResult(
+        text=run_after_response_extensions(exts, assistant_text, ctx),
+        request_id=request_id,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
 
 
 def _non_stream_chat(
@@ -301,7 +327,7 @@ def _non_stream_chat(
     max_tokens: Optional[int] = None,
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
-) -> str:
+) -> ChatResult:
     res = r9s.chat.create(
         model=model,
         messages=messages,
@@ -319,7 +345,15 @@ def _non_stream_chat(
     if prefix:
         print(prefix, end="", flush=True)
     print(text)
-    return text
+    usage = res.usage
+    input_tokens = usage.prompt_tokens if usage else 0
+    output_tokens = usage.completion_tokens if usage else 0
+    return ChatResult(
+        text=text,
+        request_id=getattr(res, "id", ""),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
 
 
 def _content_to_text(content: Any) -> str:
@@ -355,6 +389,9 @@ def handle_chat(args: argparse.Namespace) -> None:
         piped_stdin_bytes = _read_piped_input_bytes()
 
     bot_or_action = getattr(args, "bot", None)
+    agent_name = getattr(args, "agent", None)
+    if bot_or_action and agent_name:
+        raise SystemExit("Cannot use both bot and agent in the same chat session.")
     if getattr(args, "resume", False):
         if not sys.stdin.isatty():
             raise SystemExit(t("chat.err.resume_requires_tty", lang))
@@ -386,6 +423,34 @@ def handle_chat(args: argparse.Namespace) -> None:
     base_url = resolve_base_url(args.base_url)
     model = resolve_model(args.model)
     system_prompt = resolve_system_prompt(args.system_prompt)
+    agent_version: Optional[AgentVersion] = None
+    agent_generation: Dict[str, Optional[float]] = {}
+    if agent_name:
+        store = LocalAgentStore()
+        try:
+            agent = store.get_agent(agent_name)
+            agent_version = store.get_version(agent_name, agent.current_version)
+        except Exception as exc:
+            raise SystemExit(f"Failed to load agent: {agent_name} ({exc})") from exc
+        if system_prompt is not None:
+            raise SystemExit("Cannot combine --system-prompt with --agent.")
+        variables: Dict[str, str] = {}
+        for spec in getattr(args, "var", []) or []:
+            if "=" not in spec:
+                raise SystemExit(f"Invalid --var format: {spec} (expected key=value)")
+            key, value = spec.split("=", 1)
+            variables[key] = value
+        system_prompt = render_agent_template(agent_version.instructions, variables)
+        if not model:
+            model = agent_version.model
+        params = agent_version.model_params or {}
+        agent_generation = {
+            "temperature": params.get("temperature"),
+            "top_p": params.get("top_p"),
+            "max_tokens": params.get("max_tokens"),
+            "presence_penalty": params.get("presence_penalty"),
+            "frequency_penalty": params.get("frequency_penalty"),
+        }
     system_prompt_rendered: Optional[str] = None
     if system_prompt:
         system_prompt_rendered = (
@@ -489,14 +554,14 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages = run_before_request_extensions(
                 exts, _build_messages(system_prompt_rendered, ctx.history), ctx
             )
-            assistant_text = (
+            result = (
                 _non_stream_chat(
                     r9s,
                     model,
                     messages,
                     ctx,
                     exts,
-                    **bot_generation,
+                    **{**bot_generation, **agent_generation},
                 )
                 if args.no_stream
                 else _stream_chat(
@@ -505,10 +570,14 @@ def handle_chat(args: argparse.Namespace) -> None:
                     messages,
                     ctx,
                     exts,
-                    **bot_generation,
+                    **{**bot_generation, **agent_generation},
                 )
             )
-            ctx.history.append({"role": "assistant", "content": assistant_text})
+            ctx.history.append({"role": "assistant", "content": result.text})
+            if agent_name and agent_version:
+                _record_agent_execution(
+                    agent_name, agent_version, result, record.meta.session_id
+                )
             if history_path:
                 record.meta.updated_at = _utc_now_iso()
                 record.messages = ctx.history
@@ -520,6 +589,9 @@ def handle_chat(args: argparse.Namespace) -> None:
         info(f"{t('chat.model', lang)}: {model}")
         bot_display = bot_or_action or "(none)"
         info(f"bot: {bot_display}")
+        if agent_name:
+            version_display = agent_version.version if agent_version else "(unknown)"
+            info(f"agent: {agent_name} ({version_display})")
         if command_names:
             info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
         if exts:
@@ -584,7 +656,7 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages = _build_messages(system_prompt_rendered, ctx.history)
             messages = run_before_request_extensions(exts, messages, ctx)
 
-            assistant_text = (
+            result = (
                 _non_stream_chat(
                     r9s,
                     model,
@@ -592,7 +664,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx,
                     exts,
                     prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    **bot_generation,
+                    **{**bot_generation, **agent_generation},
                 )
                 if args.no_stream
                 else _stream_chat(
@@ -602,10 +674,15 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx,
                     exts,
                     prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    **bot_generation,
+                    **{**bot_generation, **agent_generation},
                 )
             )
-            ctx.history.append({"role": "assistant", "content": assistant_text})
+            ctx.history.append({"role": "assistant", "content": result.text})
+
+            if agent_name and agent_version:
+                _record_agent_execution(
+                    agent_name, agent_version, result, record.meta.session_id
+                )
 
             if history_path:
                 record.meta.updated_at = _utc_now_iso()
@@ -616,6 +693,26 @@ def handle_chat(args: argparse.Namespace) -> None:
 def _style_prompt(text: str) -> str:
     # 避免在这里引入更多样式依赖：prompt_text 已支持颜色，但我们希望保持提示一致性
     return text
+
+
+def _record_agent_execution(
+    name: str,
+    version: AgentVersion,
+    result: ChatResult,
+    session_id: Optional[str],
+) -> None:
+    execution = AgentExecution(
+        agent_name=name,
+        agent_version=version.version,
+        content_hash=version.content_hash,
+        request_id=result.request_id,
+        model=version.model,
+        provider=version.provider,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+        session_id=session_id,
+    )
+    LocalAuditStore().record(execution)
 
 
 def _resume_select_session(lang: str) -> Optional[Path]:
