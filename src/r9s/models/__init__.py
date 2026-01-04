@@ -310,6 +310,14 @@ if TYPE_CHECKING:
         EngineEmbeddingRequestTypedDict,
     )
     from .functioncall import FunctionCall, FunctionCallTypedDict
+    from .imageeditrequest import (
+        ImageEditRequest,
+        ImageEditRequestTypedDict,
+        ImageEditResponseFormat,
+        ImageEditSize,
+        ImageFile,
+        ImageFileTypedDict,
+    )
     from .imagegenerationrequest import (
         ImageGenerationRequest,
         ImageGenerationRequestResponseFormat,
@@ -681,6 +689,12 @@ __all__ = [
     "FunctionCall",
     "FunctionCallTypedDict",
     "FunctionTypedDict",
+    "ImageEditRequest",
+    "ImageEditRequestTypedDict",
+    "ImageEditResponseFormat",
+    "ImageEditSize",
+    "ImageFile",
+    "ImageFileTypedDict",
     "ImageGenerationRequest",
     "ImageGenerationRequestResponseFormat",
     "ImageGenerationRequestTypedDict",
@@ -1053,6 +1067,12 @@ _dynamic_imports: dict[str, str] = {
     "EngineEmbeddingRequestTypedDict": ".engineembeddingrequest",
     "FunctionCall": ".functioncall",
     "FunctionCallTypedDict": ".functioncall",
+    "ImageEditRequest": ".imageeditrequest",
+    "ImageEditRequestTypedDict": ".imageeditrequest",
+    "ImageEditResponseFormat": ".imageeditrequest",
+    "ImageEditSize": ".imageeditrequest",
+    "ImageFile": ".imageeditrequest",
+    "ImageFileTypedDict": ".imageeditrequest",
     "ImageGenerationRequest": ".imagegenerationrequest",
     "ImageGenerationRequestResponseFormat": ".imagegenerationrequest",
     "ImageGenerationRequestTypedDict": ".imagegenerationrequest",

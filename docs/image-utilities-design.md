@@ -447,14 +447,14 @@ The SDK is generated from OpenAPI specifications using Speakeasy, ensuring:
 
 ## Implementation Spec: Image Editing (Inpainting)
 
-> **STATUS: NOT IMPLEMENTED** - This section provides complete specifications for implementing image editing support.
+> **STATUS: IMPLEMENTED** - Image editing support has been added to the SDK.
 
 ### Gap Analysis
 
 | Feature | Gateway Support | SDK Support | Priority |
 |---------|-----------------|-------------|----------|
 | Image Generation | `POST /v1/images/generations` | `images.create()` | Done |
-| **Image Editing** | `POST /v1/images/edits` | **Missing** | **HIGH** |
+| Image Editing | `POST /v1/images/edits` | `images.edit()` | Done |
 | Image Variations | Not in gateway | N/A | N/A |
 
 ### API Endpoint Specification
