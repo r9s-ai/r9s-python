@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from difflib import unified_diff
+from pathlib import Path
 from typing import Dict, Optional
 
 from r9s.agents.exceptions import AgentExistsError, AgentNotFoundError
@@ -81,6 +85,96 @@ def _parse_params(param_text: Optional[str]) -> Dict[str, object]:
     return data
 
 
+def _read_instructions_file(file_path: str) -> str:
+    """Read instructions from a file."""
+    path = Path(file_path).expanduser()
+    if not path.exists():
+        raise SystemExit(f"File not found: {file_path}")
+    try:
+        content = path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise SystemExit(f"Failed to read file: {exc}") from exc
+    if not content:
+        raise SystemExit("Instructions file is empty")
+    return content
+
+
+def _edit_in_editor(initial_text: str = "", agent_name: str = "") -> str:
+    """Open $EDITOR for editing instructions (like git commit)."""
+    editor = os.environ.get("VISUAL") or os.environ.get("EDITOR", "vi")
+
+    # Prepare initial content with help comments
+    help_text = """
+# Enter instructions for the agent above.
+# Lines starting with '#' will be ignored.
+# Save and close the editor to continue.
+# Leave empty to abort.
+"""
+    if agent_name:
+        help_text = f"# Agent: {agent_name}\n" + help_text
+
+    content = initial_text + "\n" + help_text if initial_text else help_text.lstrip()
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".md", delete=False, encoding="utf-8"
+    ) as f:
+        f.write(content)
+        tmp_path = f.name
+
+    try:
+        result = subprocess.run([editor, tmp_path], check=False)
+        if result.returncode != 0:
+            raise SystemExit(f"Editor exited with code {result.returncode}")
+
+        with open(tmp_path, encoding="utf-8") as f:
+            lines = f.readlines()
+
+        # Filter out comment lines
+        filtered = [line for line in lines if not line.lstrip().startswith("#")]
+        output = "".join(filtered).strip()
+
+        if not output:
+            raise SystemExit("Instructions cannot be empty (aborted)")
+
+        return output
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
+def _get_instructions(args: argparse.Namespace, existing: str = "") -> str:
+    """Get instructions from various sources with priority:
+    1. --instructions-file (highest)
+    2. --edit (opens editor)
+    3. --instructions (inline text)
+    4. Interactive prompt (if TTY)
+    """
+    # Priority 1: File
+    if getattr(args, "instructions_file", None):
+        return _read_instructions_file(args.instructions_file)
+
+    # Priority 2: Editor
+    if getattr(args, "edit", False):
+        return _edit_in_editor(existing, getattr(args, "name", ""))
+
+    # Priority 3: Inline
+    if args.instructions is not None:
+        text = args.instructions.strip()
+        if text:
+            return text
+
+    # Priority 4: Interactive
+    if _is_interactive():
+        info("Enter instructions for this agent.")
+        return _prompt_multiline_required("Instructions (end with empty line):")
+
+    raise SystemExit(
+        "Missing instructions. Use --instructions, --instructions-file, or --edit"
+    )
+
+
 def handle_agent_list(_: argparse.Namespace) -> None:
     names = list_agents()
     if not names:
@@ -115,15 +209,7 @@ def handle_agent_show(args: argparse.Namespace) -> None:
 
 def handle_agent_create(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
-    instructions = args.instructions
-    if instructions is not None:
-        instructions = instructions.strip() or None
-    elif _is_interactive():
-        info("Enter instructions for this agent.")
-        instructions = _prompt_multiline_required("Instructions (end with empty line):")
-    else:
-        raise SystemExit("Missing --instructions (interactive TTY required).")
-
+    instructions = _get_instructions(args)
     model = _require_model(args.model)
     provider = (args.provider or "r9s").strip()
     description = (args.description or "").strip()
@@ -147,15 +233,18 @@ def handle_agent_create(args: argparse.Namespace) -> None:
 
 def handle_agent_update(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
-    instructions = args.instructions
-    if instructions is not None:
-        instructions = instructions.strip() or None
-    elif _is_interactive():
-        info("Enter updated instructions for this agent.")
-        instructions = _prompt_multiline_required("Instructions (end with empty line):")
-    else:
-        raise SystemExit("Missing --instructions (interactive TTY required).")
 
+    # Load existing instructions for editor pre-population
+    existing_instructions = ""
+    if getattr(args, "edit", False):
+        try:
+            agent = load_agent(name)
+            version = load_version(name, agent.current_version)
+            existing_instructions = version.instructions
+        except AgentNotFoundError:
+            pass
+
+    instructions = _get_instructions(args, existing=existing_instructions)
     params = _parse_params(args.params)
 
     store = LocalAgentStore()

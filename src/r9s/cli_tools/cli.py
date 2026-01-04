@@ -485,7 +485,13 @@ def build_parser() -> argparse.ArgumentParser:
     agent_create = agent_sub.add_parser("create", help="Create a new agent")
     agent_create.add_argument("name", help="Agent name")
     agent_create.add_argument("--description", help="Description (optional)")
-    agent_create.add_argument("--instructions", help="Instructions (prompts if omitted)")
+    agent_create.add_argument("--instructions", help="Instructions text (inline)")
+    agent_create.add_argument(
+        "--instructions-file", "-f", help="Read instructions from file"
+    )
+    agent_create.add_argument(
+        "--edit", "-e", action="store_true", help="Open $EDITOR to write instructions"
+    )
     agent_create.add_argument("--model", help="Model name")
     agent_create.add_argument("--provider", help="Provider name (default: r9s)")
     agent_create.add_argument("--reason", help="Change reason (optional)")
@@ -494,7 +500,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     agent_update = agent_sub.add_parser("update", help="Update agent (new version)")
     agent_update.add_argument("name", help="Agent name")
-    agent_update.add_argument("--instructions", help="Instructions (prompts if omitted)")
+    agent_update.add_argument("--instructions", help="Instructions text (inline)")
+    agent_update.add_argument(
+        "--instructions-file", "-f", help="Read instructions from file"
+    )
+    agent_update.add_argument(
+        "--edit",
+        "-e",
+        action="store_true",
+        help="Open $EDITOR to edit instructions (pre-populated with current)",
+    )
     agent_update.add_argument("--model", help="Model name (optional)")
     agent_update.add_argument("--provider", help="Provider name (optional)")
     agent_update.add_argument("--reason", help="Change reason (optional)")
