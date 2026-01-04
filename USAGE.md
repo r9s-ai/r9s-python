@@ -66,7 +66,28 @@ r9s chat --lang zh-CN --model "$R9S_MODEL"
 r9s bot create reviewer --system-prompt "You are a helpful assistant"
 r9s chat reviewer
 
-# 8) Create and use a command (local, prompt template only)
+# 8) Create and use a versioned agent (local, with history/audit)
+#
+# Agents are saved under: ~/.r9s/agents/<name>/
+#
+r9s agent create support \
+  --instructions "You are a support agent for {{company}}." \
+  --model "$R9S_MODEL"
+r9s chat --agent support --var company="Acme Corp"
+
+# 9) Update an agent (creates a new version)
+r9s agent update support \
+  --instructions "You are a support agent for {{company}}. Be concise." \
+  --reason "Improve clarity"
+r9s agent history support
+r9s agent diff support 1.0.0 1.0.1
+r9s agent approve support --version 1.0.1
+r9s agent audit support --last 5
+
+# 10) Import a bot as an agent
+r9s agent import-bot reviewer --model "$R9S_MODEL"
+
+# 11) Create and use a command (local, prompt template only)
 #
 # Commands are saved as TOML under: ~/.r9s/commands/<name>.toml
 # In interactive chat, commands become /<name> slash commands.
@@ -77,6 +98,27 @@ r9s chat reviewer
 r9s command create summarize --prompt "Summarize: {{args}}"
 # In chat: /summarize hello world
 
-# 9) Run Claude Code with r9s env injected (supported: claude-code, cc)
+# 12) Run Claude Code with r9s env injected (supported: claude-code, cc)
 r9s run cc --model "$R9S_MODEL"
+```
+
+## CLI: Agents
+
+```bash
+# List agents and view details
+r9s agent list
+r9s agent show support
+
+# Roll back to a specific version
+r9s agent rollback support --version 1.0.0
+
+# Deprecate a version
+r9s agent deprecate support --version 1.0.0
+```
+
+### Agent Environment Variables
+
+```
+R9S_AGENTS_DIR   # Override the default agents directory (~/.r9s/agents)
+R9S_AGENT_USER   # Default "created_by" for agent versions
 ```
