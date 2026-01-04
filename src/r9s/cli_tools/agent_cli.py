@@ -160,19 +160,19 @@ def handle_agent_update(args: argparse.Namespace) -> None:
 
     store = LocalAgentStore()
     try:
-    update_kwargs = {
-        "instructions": instructions,
-        "model": args.model,
-        "provider": args.provider,
-        "change_reason": args.reason or "",
-        "bump": args.bump,
-    }
-    if params:
-        update_kwargs["model_params"] = params
-    version = store.update(
-        name,
-        **update_kwargs,
-    )
+        update_kwargs = {
+            "instructions": instructions,
+            "model": args.model,
+            "provider": args.provider,
+            "change_reason": args.reason or "",
+            "bump": args.bump,
+        }
+        if params:
+            update_kwargs["model_params"] = params
+        version = store.update(
+            name,
+            **update_kwargs,
+        )
     except AgentNotFoundError as exc:
         raise SystemExit(str(exc)) from exc
     success(f"Updated agent: {name} -> {version.version}")
