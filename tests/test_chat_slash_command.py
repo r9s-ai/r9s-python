@@ -36,8 +36,13 @@ class _ChatStub:
         class _Msg:
             content = "ok"
 
+        class _Usage:
+            prompt_tokens = 10
+            completion_tokens = 5
+
         class _Resp:
             choices = [type("C", (), {"message": _Msg()})()]
+            usage = _Usage()
 
         return _Resp()
 
@@ -90,6 +95,8 @@ def test_chat_slash_command_executes_command(monkeypatch: pytest.MonkeyPatch) ->
             "no_stream": True,
             "yes": True,
             "bot": None,
+            "agent": None,
+            "var": [],
         },
     )()
 
