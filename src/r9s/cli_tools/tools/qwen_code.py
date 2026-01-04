@@ -164,3 +164,27 @@ OPENAI_MODEL={model}
                 shutil.copy2(env_backup, self._env_path)
 
         return self._settings_path
+
+    def run_executable(self) -> str:
+        """Return the executable name for running qwen-code."""
+        return "qwen"
+
+    def run_env(self, *, api_key: str, base_url: str, model: str) -> dict[str, str]:
+        """Return environment variables for running qwen-code.
+
+        Maps R9S configuration to OpenAI-compatible environment variables
+        that qwen-code expects.
+        """
+        return {
+            "OPENAI_API_KEY": api_key,
+            "OPENAI_BASE_URL": base_url,
+            "OPENAI_MODEL": model,
+        }
+
+    def run_args(self, *, base_url: str, model: str) -> list[str]:
+        """Return additional command line arguments for running qwen-code.
+
+        qwen-code reads configuration from environment variables,
+        so no additional CLI arguments are needed.
+        """
+        return []

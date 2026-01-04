@@ -27,6 +27,7 @@ from r9s.cli_tools.command_cli import (
 )
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
+from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
@@ -535,6 +536,157 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.epilog = f"Supported apps: {', '.join(supported_app_names_for_run())}"
     run_parser.set_defaults(func=handle_run)
 
+    # Image generation and editing commands
+    images_parser = subparsers.add_parser(
+        "images", help="Generate and edit images"
+    )
+    images_sub = images_parser.add_subparsers(dest="images_command")
+    images_parser.set_defaults(func=lambda _: images_parser.print_help())
+
+    # r9s images generate
+    images_generate = images_sub.add_parser(
+        "generate", help="Generate images from text prompts"
+    )
+    images_generate.add_argument(
+        "prompt",
+        nargs="?",
+        default=None,
+        help="Image description prompt (or pipe via stdin)",
+    )
+    images_generate.add_argument(
+        "-o", "--output",
+        help="Output file or directory (prints URL if not specified)",
+    )
+    images_generate.add_argument(
+        "-m", "--model",
+        help="Model name (e.g., dall-e-3, gpt-image-1.5, wanx-v1)",
+    )
+    images_generate.add_argument(
+        "-s", "--size",
+        help="Image size (e.g., 1024x1024) or aspect ratio (e.g., 16:9)",
+    )
+    images_generate.add_argument(
+        "-q", "--quality",
+        choices=["standard", "hd", "low", "medium", "high"],
+        help="Image quality",
+    )
+    images_generate.add_argument(
+        "-n",
+        type=int,
+        default=1,
+        help="Number of images to generate (1-10, model dependent)",
+    )
+    images_generate.add_argument(
+        "--style",
+        choices=["vivid", "natural"],
+        help="Image style (DALL-E 3)",
+    )
+    images_generate.add_argument(
+        "--negative-prompt",
+        help="Elements to exclude from the image (Qwen, Stability)",
+    )
+    images_generate.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed for reproducibility",
+    )
+    images_generate.add_argument(
+        "--prompt-extend",
+        action="store_true",
+        default=None,
+        help="Enable AI prompt optimization (Qwen)",
+    )
+    images_generate.add_argument(
+        "--no-prompt-extend",
+        action="store_false",
+        dest="prompt_extend",
+        help="Disable AI prompt optimization (Qwen)",
+    )
+    images_generate.add_argument(
+        "--watermark",
+        action="store_true",
+        default=None,
+        help="Add watermark to generated images (Qwen)",
+    )
+    images_generate.add_argument(
+        "--no-watermark",
+        action="store_false",
+        dest="watermark",
+        help="Disable watermark (Qwen)",
+    )
+    images_generate.add_argument(
+        "-f", "--format",
+        choices=["url", "b64"],
+        help="Response format (default: url, or b64 if -o specified)",
+    )
+    images_generate.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_generate.epilog = (
+        "Examples:\n"
+        "  r9s images generate \"A serene mountain landscape\"\n"
+        "  r9s images generate \"A blue dragon\" -o dragon.png\n"
+        "  r9s images generate \"A car\" -m gpt-image-1.5 -n 3 -o ./cars/\n"
+        "  r9s images generate \"A forest\" --model wanx-v1 --negative-prompt \"people\"\n"
+        "  cat prompt.txt | r9s images generate -o result.png"
+    )
+    images_generate.set_defaults(func=handle_image_generate)
+
+    # r9s images edit
+    images_edit = images_sub.add_parser(
+        "edit", help="Edit an existing image using a text prompt"
+    )
+    images_edit.add_argument(
+        "image",
+        help="Path to the image file to edit (PNG, <4MB)",
+    )
+    images_edit.add_argument(
+        "prompt",
+        help="Text description of desired edit",
+    )
+    images_edit.add_argument(
+        "-o", "--output",
+        help="Output file or directory (prints URL if not specified)",
+    )
+    images_edit.add_argument(
+        "--mask",
+        help="Path to mask PNG (transparent areas indicate where to edit)",
+    )
+    images_edit.add_argument(
+        "-m", "--model",
+        help="Model name (e.g., dall-e-2)",
+    )
+    images_edit.add_argument(
+        "-s", "--size",
+        choices=["256x256", "512x512", "1024x1024"],
+        help="Output size",
+    )
+    images_edit.add_argument(
+        "-n",
+        type=int,
+        default=1,
+        help="Number of images to generate (1-10)",
+    )
+    images_edit.add_argument(
+        "-f", "--format",
+        choices=["url", "b64"],
+        help="Response format (default: url, or b64 if -o specified)",
+    )
+    images_edit.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_edit.epilog = (
+        "Examples:\n"
+        "  r9s images edit photo.png \"Add a red hat\" -o edited.png\n"
+        "  r9s images edit photo.png \"Change background\" --mask mask.png -o result.png\n"
+        "  r9s images edit input.png \"Make vintage\" -n 3 -o ./variations/"
+    )
+    images_edit.set_defaults(func=handle_image_edit)
+
     set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(
         "--lang",
@@ -620,6 +772,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     except KeyboardInterrupt:
         print()
         warning("Goodbye. (Interrupted by Ctrl+C)")
+    except EOFError:
+        # Treat Ctrl+D / closed stdin as a graceful exit in interactive flows.
+        print()
+        return
 
 
 if __name__ == "__main__":

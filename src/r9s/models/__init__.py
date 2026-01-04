@@ -310,6 +310,14 @@ if TYPE_CHECKING:
         EngineEmbeddingRequestTypedDict,
     )
     from .functioncall import FunctionCall, FunctionCallTypedDict
+    from .imageeditrequest import (
+        ImageEditRequest,
+        ImageEditRequestTypedDict,
+        ImageEditResponseFormat,
+        ImageEditSize,
+        ImageFile,
+        ImageFileTypedDict,
+    )
     from .imagegenerationrequest import (
         ImageGenerationRequest,
         ImageGenerationRequestResponseFormat,
@@ -321,6 +329,8 @@ if TYPE_CHECKING:
     from .imagegenerationresponse import (
         ImageGenerationResponse,
         ImageGenerationResponseTypedDict,
+        ImageUsage,
+        ImageUsageTypedDict,
     )
     from .imageobject import ImageObject, ImageObjectTypedDict
     from .imageurl import Detail, ImageURL, ImageURLTypedDict
@@ -681,11 +691,19 @@ __all__ = [
     "FunctionCall",
     "FunctionCallTypedDict",
     "FunctionTypedDict",
+    "ImageEditRequest",
+    "ImageEditRequestTypedDict",
+    "ImageEditResponseFormat",
+    "ImageEditSize",
+    "ImageFile",
+    "ImageFileTypedDict",
     "ImageGenerationRequest",
     "ImageGenerationRequestResponseFormat",
     "ImageGenerationRequestTypedDict",
     "ImageGenerationResponse",
     "ImageGenerationResponseTypedDict",
+    "ImageUsage",
+    "ImageUsageTypedDict",
     "ImageObject",
     "ImageObjectTypedDict",
     "ImageURL",
@@ -1053,6 +1071,12 @@ _dynamic_imports: dict[str, str] = {
     "EngineEmbeddingRequestTypedDict": ".engineembeddingrequest",
     "FunctionCall": ".functioncall",
     "FunctionCallTypedDict": ".functioncall",
+    "ImageEditRequest": ".imageeditrequest",
+    "ImageEditRequestTypedDict": ".imageeditrequest",
+    "ImageEditResponseFormat": ".imageeditrequest",
+    "ImageEditSize": ".imageeditrequest",
+    "ImageFile": ".imageeditrequest",
+    "ImageFileTypedDict": ".imageeditrequest",
     "ImageGenerationRequest": ".imagegenerationrequest",
     "ImageGenerationRequestResponseFormat": ".imagegenerationrequest",
     "ImageGenerationRequestTypedDict": ".imagegenerationrequest",
@@ -1061,6 +1085,8 @@ _dynamic_imports: dict[str, str] = {
     "Style": ".imagegenerationrequest",
     "ImageGenerationResponse": ".imagegenerationresponse",
     "ImageGenerationResponseTypedDict": ".imagegenerationresponse",
+    "ImageUsage": ".imagegenerationresponse",
+    "ImageUsageTypedDict": ".imagegenerationresponse",
     "ImageObject": ".imageobject",
     "ImageObjectTypedDict": ".imageobject",
     "Detail": ".imageurl",

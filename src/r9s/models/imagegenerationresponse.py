@@ -3,16 +3,56 @@
 from __future__ import annotations
 from .imageobject import ImageObject, ImageObjectTypedDict
 from r9s.types import BaseModel
-from typing import List
-from typing_extensions import TypedDict
+from typing import List, Optional
+from typing_extensions import NotRequired, TypedDict
+
+
+class ImageUsageTypedDict(TypedDict):
+    """Usage information for image generation (provider-dependent)."""
+    prompt_tokens: NotRequired[int]
+    image_tokens: NotRequired[int]
+    input_text_tokens: NotRequired[int]
+    output_image_tokens: NotRequired[int]
+    width: NotRequired[int]
+    height: NotRequired[int]
+    image_count: NotRequired[int]
+
+
+class ImageUsage(BaseModel):
+    """Usage information for image generation (provider-dependent)."""
+
+    prompt_tokens: Optional[int] = None
+    r"""Token count for the prompt."""
+
+    image_tokens: Optional[int] = None
+    r"""Token count for the generated image (GPT-Image-1/1.5)."""
+
+    input_text_tokens: Optional[int] = None
+    r"""Input text token count (Qwen)."""
+
+    output_image_tokens: Optional[int] = None
+    r"""Output image token count (Qwen)."""
+
+    width: Optional[int] = None
+    r"""Generated image width (Qwen)."""
+
+    height: Optional[int] = None
+    r"""Generated image height (Qwen)."""
+
+    image_count: Optional[int] = None
+    r"""Number of images generated (Qwen)."""
 
 
 class ImageGenerationResponseTypedDict(TypedDict):
     created: int
     data: List[ImageObjectTypedDict]
+    usage: NotRequired[ImageUsageTypedDict]
 
 
 class ImageGenerationResponse(BaseModel):
     created: int
 
     data: List[ImageObject]
+
+    usage: Optional[ImageUsage] = None
+    r"""Usage information for image generation (provider-dependent)."""
