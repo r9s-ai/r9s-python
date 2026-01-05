@@ -294,6 +294,162 @@ auth = "token:${GITHUB_TOKEN}"
 
 ---
 
+## Security Considerations
+
+### Trust Levels
+
+Skills are assigned trust levels based on their source:
+
+| Source | Trust Level | Script Execution | User Confirmation |
+|--------|-------------|------------------|-------------------|
+| Local (user-created) | High | Allowed | None |
+| Local (installed) | Medium | Allowed | On first run |
+| r9s Registry | Medium | Allowed | On install |
+| GitHub public | Low | Sandboxed | On install + first run |
+| HTTPS URL | Untrusted | Blocked by default | Explicit opt-in |
+
+### Script Execution Sandboxing
+
+Skills may include executable scripts in `scripts/`. These present code execution risks:
+
+```python
+@dataclass
+class ScriptPolicy:
+    allow_network: bool = False          # Block outbound connections
+    allow_filesystem: bool = False       # Restrict to skill directory
+    allow_env_vars: bool = False         # Block environment access
+    timeout_seconds: int = 30            # Kill long-running scripts
+    allowed_commands: List[str] = field(default_factory=list)  # Allowlist
+```
+
+**Implementation options:**
+1. **Phase 1 (MVP)**: Scripts require explicit `--allow-scripts` flag
+2. **Phase 2**: Use `firejail` or `bubblewrap` on Linux, `sandbox-exec` on macOS
+3. **Phase 3**: Container-based isolation for full sandboxing
+
+```bash
+# User must explicitly opt-in to script execution
+r9s agent chat reviewer --allow-scripts
+
+# Or configure globally
+r9s config set skills.allow_scripts true
+```
+
+### Remote Skill Verification
+
+For skills installed from remote sources:
+
+1. **Checksum verification**: Compare SHA-256 hash against registry manifest
+2. **Signature verification** (Phase 4): GPG-signed skills from trusted publishers
+3. **Content scanning**: Reject skills containing suspicious patterns
+
+```python
+class SkillVerifier:
+    SUSPICIOUS_PATTERNS = [
+        r'subprocess\.call.*shell=True',
+        r'os\.system\(',
+        r'eval\(',
+        r'exec\(',
+        r'\bsudo\b',
+        r'rm\s+-rf\s+/',
+        r'curl.*\|\s*sh',
+    ]
+
+    def verify_checksum(self, path: Path, expected: str) -> bool:
+        """Verify SHA-256 matches registry manifest."""
+
+    def scan_content(self, path: Path) -> List[SecurityWarning]:
+        """Scan for suspicious patterns in scripts."""
+```
+
+### Path Traversal Prevention
+
+Skill names and resource paths must be validated:
+
+```python
+def validate_skill_name(name: str) -> bool:
+    """Prevent directory traversal in skill names."""
+    if '..' in name or name.startswith('/'):
+        raise InvalidSkillError(f"Invalid skill name: {name}")
+    if not re.match(r'^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]?$', name):
+        raise InvalidSkillError(f"Skill name must be lowercase alphanumeric with hyphens")
+    return True
+
+def safe_path_join(base: Path, *parts: str) -> Path:
+    """Join paths safely, preventing traversal outside base."""
+    result = base.joinpath(*parts).resolve()
+    if not result.is_relative_to(base.resolve()):
+        raise SecurityError(f"Path traversal detected: {parts}")
+    return result
+```
+
+### Credential Handling
+
+Auth tokens in config must be protected:
+
+1. **Environment variable interpolation**: Tokens stored as `${VAR_NAME}`, resolved at runtime
+2. **File permissions**: Config files created with `0600` permissions
+3. **No credential logging**: Auth headers redacted in debug output
+4. **Credential rotation**: `r9s config unset` securely removes values
+
+```python
+def resolve_auth(auth_spec: str) -> str:
+    """Resolve auth spec, expanding environment variables."""
+    if match := re.match(r'\$\{(\w+)\}', auth_spec):
+        var_name = match.group(1)
+        value = os.environ.get(var_name)
+        if not value:
+            raise ConfigError(f"Environment variable {var_name} not set")
+        return auth_spec.replace(match.group(0), value)
+    return auth_spec
+```
+
+### Installation Warnings
+
+Remote skill installation displays security warnings:
+
+```
+$ r9s skill install https://example.com/unknown-skill.zip
+
+⚠️  Security Warning
+────────────────────
+Source: https://example.com/unknown-skill.zip
+Trust level: UNTRUSTED
+
+This skill is from an unverified source. It may contain:
+- Malicious scripts that execute on your system
+- Code that accesses sensitive files or credentials
+- Network calls to external services
+
+The following scripts will be installed:
+  - scripts/run.sh (1.2 KB)
+  - scripts/setup.py (0.8 KB)
+
+Script execution is BLOCKED by default for untrusted sources.
+
+Continue installation? [y/N]:
+```
+
+### Audit Logging
+
+Track skill operations for security review:
+
+```python
+# ~/.r9s/logs/skill-audit.log
+{
+    "timestamp": "2026-01-05T10:30:00Z",
+    "action": "install",
+    "skill": "code-review",
+    "source": "github:owner/repo",
+    "source_url": "https://github.com/owner/repo",
+    "checksum": "sha256:abc123...",
+    "user": "ubuntu",
+    "scripts_allowed": false
+}
+```
+
+---
+
 ## API Design (Future SaaS)
 
 ### Registry API
