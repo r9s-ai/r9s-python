@@ -4,6 +4,8 @@
 
 r9s supports the [Agent Skills open standard](https://agentskills.io/specification) to provide reusable, shareable capabilities for agents. Skills package procedural knowledge into modules that agents can discover and apply.
 
+This document focuses on the initial CLI-driven experience and the data model required to load skills locally, with a path toward remote installation and agent integration.
+
 ## Architecture
 
 ```
@@ -24,7 +26,7 @@ r9s supports the [Agent Skills open standard](https://agentskills.io/specificati
                           ▼
                  ┌─────────────────┐
                  │   r9s agent     │
-                 │  skills = [...]  │
+                 │  skills = [...] │
                  └─────────────────┘
 ```
 
@@ -37,6 +39,15 @@ r9s supports the [Agent Skills open standard](https://agentskills.io/specificati
 | GitHub | `github:owner/repo` | From GitHub repository |
 | GitHub with path | `github:owner/repo/path/to/skill` | Specific path in repo |
 | HTTPS URL | `https://example.com/skill.zip` | Direct download |
+
+### Reference Resolution
+
+1. **Local name**: resolve to `~/.r9s/skills/<name>`.
+2. **r9s registry**: map `r9s:<name>` → `https://registry.r9s.ai/skills/<name>`.
+3. **GitHub**: map `github:owner/repo[/path]` → `https://github.com/<owner>/<repo>/archive/refs/heads/main.zip` and then extract `path` if provided.
+4. **HTTPS**: download zip directly; validate top-level directory has `SKILL.md`.
+
+If a ref cannot be resolved, return a `SkillNotFoundError` with a hint for valid formats.
 
 ## Skill Directory Structure
 
@@ -62,6 +73,7 @@ metadata:
   author: r9s-ai
   version: 1.0.0
   tags: [code, review, security]
+allowed-tools: bash rg
 ---
 
 # Code Review Skill
@@ -91,6 +103,14 @@ Detailed implementation guidance loaded when skill is activated (<5000 tokens re
 - **compatibility**: Environment requirements (up to 500 chars)
 - **metadata**: Key-value pairs (author, version, tags, etc.)
 - **allowed-tools**: Space-delimited pre-approved tools
+
+### Validation Rules
+
+- `name` must match `^[a-z0-9-]{1,64}$` and directory name.
+- `description` length: 1–1024.
+- YAML frontmatter must parse and be a mapping.
+- `allowed-tools` is a list of tool identifiers separated by spaces in YAML or list form.
+- Any additional keys in frontmatter are stored under `metadata` but must be JSON-serializable.
 
 ---
 
@@ -186,6 +206,7 @@ class Skill:
     scripts: List[str] = field(default_factory=list)
     references: List[str] = field(default_factory=list)
     assets: List[str] = field(default_factory=list)
+    allowed_tools: List[str] = field(default_factory=list)
 ```
 
 ### Agent Update
@@ -273,6 +294,17 @@ class SkillLoader:
 
 ---
 
+## Error Handling
+
+- **Invalid skill**: raise `InvalidSkillError` with a validation report.
+- **Missing skill**: raise `SkillNotFoundError` for local or remote refs.
+- **I/O errors**: surface `OSError` with user-facing guidance in the CLI.
+- **Remote download**: include HTTP status and retryable hint when applicable.
+
+CLI should convert errors into human-readable messages and non-zero exit codes.
+
+---
+
 ## Configuration
 
 ### ~/.r9s/config.toml
@@ -350,6 +382,14 @@ tests/
 ├── test_skill_installer.py     # Install flow tests
 └── test_skill_cli.py           # CLI integration tests
 ```
+
+---
+
+## Open Questions
+
+- Should `allowed-tools` be enforced in CLI, or only passed to the agent runtime?
+- How should git-based sources resolve default branches (main vs master)?
+- Should `skill install` support signed archives for integrity verification?
 
 ---
 
