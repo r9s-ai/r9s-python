@@ -43,6 +43,13 @@ from r9s.cli_tools.command_cli import (
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit
+from r9s.cli_tools.skill_cli import (
+    handle_skill_create,
+    handle_skill_delete,
+    handle_skill_list,
+    handle_skill_show,
+    handle_skill_validate,
+)
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
@@ -570,6 +577,44 @@ def build_parser() -> argparse.ArgumentParser:
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")
     bot_delete.set_defaults(func=handle_bot_delete)
+
+    skill_parser = subparsers.add_parser(
+        "skill", help="Manage local skills (~/.r9s/skills/)"
+    )
+    skill_sub = skill_parser.add_subparsers(dest="skill_command")
+    skill_parser.set_defaults(func=lambda _: skill_parser.print_help())
+
+    skill_list = skill_sub.add_parser("list", help="List skills")
+    skill_list.set_defaults(func=handle_skill_list)
+
+    skill_show = skill_sub.add_parser("show", help="Show skill details")
+    skill_show.add_argument("name", help="Skill name")
+    skill_show.set_defaults(func=handle_skill_show)
+
+    skill_create = skill_sub.add_parser("create", help="Create or update a skill")
+    skill_create.add_argument("name", help="Skill name")
+    skill_create.add_argument("--description", help="Description (optional)")
+    skill_create.add_argument("--instructions", help="Instructions text (optional)")
+    skill_create.add_argument("--license", help="License (optional)")
+    skill_create.add_argument("--compatibility", help="Compatibility (optional)")
+    skill_create.add_argument("--file", "-f", help="Load SKILL.md content from file")
+    skill_create.add_argument(
+        "--edit", "-e", action="store_true", help="Open $EDITOR to edit SKILL.md"
+    )
+    skill_create.set_defaults(func=handle_skill_create)
+
+    skill_validate = skill_sub.add_parser("validate", help="Validate a skill")
+    skill_validate.add_argument("name", help="Skill name")
+    skill_validate.add_argument(
+        "--allow-scripts",
+        action="store_true",
+        help="Allow skills that include scripts/",
+    )
+    skill_validate.set_defaults(func=handle_skill_validate)
+
+    skill_delete = skill_sub.add_parser("delete", help="Delete a skill")
+    skill_delete.add_argument("name", help="Skill name")
+    skill_delete.set_defaults(func=handle_skill_delete)
 
     command_parser = subparsers.add_parser(
         "command", help="Manage local commands (~/.r9s/commands/*.toml)"
