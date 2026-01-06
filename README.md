@@ -4,6 +4,8 @@ The official Python SDK and CLI for the r9s API.
 
 ## Quick start
 
+**Requires Python 3.11+**
+
 Install:
 
 ```bash
@@ -90,6 +92,7 @@ See all options:
 r9s -h
 r9s chat -h
 r9s bot -h
+r9s command -h
 r9s run -h
 ```
 
@@ -111,3 +114,29 @@ with R9S() as r9s:
 ```
 
 Advanced SDK usage: [docs/sdk-advanced.md](docs/sdk-advanced.md)
+
+## Development
+
+Clone and install in editable mode with dev dependencies:
+
+```bash
+git clone https://github.com/r9s-ai/r9s-python.git
+cd r9s-python
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e ".[dev,test]"
+```
+
+Run tests:
+
+```bash
+pytest
+```
+
+Run linting/type checks:
+
+```bash
+ruff check src/
+pyright
+mypy src/
+```
