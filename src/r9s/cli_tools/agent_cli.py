@@ -146,12 +146,16 @@ def _edit_in_editor(initial_text: str = "", agent_name: str = "") -> str:
 
 def _get_instructions(args: argparse.Namespace, existing: str = "") -> str:
     """Get instructions from various sources with priority:
-    1. --instructions-file (highest)
-    2. --edit (opens editor)
-    3. --instructions (inline text)
-    4. Interactive prompt (if TTY)
+
+    1. --instructions-file (highest) - explicit file path
+    2. --edit - opens $EDITOR
+    3. --instructions @filename - file reference (like curl, gh)
+       - @- reads from stdin
+       - @@ escapes literal @ (e.g., "@@mention" -> "@mention")
+    4. --instructions "text" - inline text
+    5. Interactive prompt (if TTY)
     """
-    # Priority 1: File
+    # Priority 1: Explicit file flag
     if getattr(args, "instructions_file", None):
         return _read_instructions_file(args.instructions_file)
 
@@ -159,13 +163,31 @@ def _get_instructions(args: argparse.Namespace, existing: str = "") -> str:
     if getattr(args, "edit", False):
         return _edit_in_editor(existing, getattr(args, "name", ""))
 
-    # Priority 3: Inline
-    if args.instructions is not None:
-        text = args.instructions.strip()
+    # Priority 3 & 4: Inline or @filename convention
+    instr = getattr(args, "instructions", None)
+    if instr is not None:
+        text = instr.strip()
         if text:
+            if text.startswith("@"):
+                # @@ escape sequence: "@@text" -> "@text"
+                if text.startswith("@@"):
+                    return text[1:]
+                # @filename convention (like curl, gh)
+                filename = text[1:].strip()
+                if not filename:
+                    raise SystemExit(
+                        "Invalid --instructions: '@' must be followed by a filename (or @- for stdin)"
+                    )
+                # @- reads from stdin
+                if filename == "-":
+                    content = sys.stdin.read().strip()
+                    if not content:
+                        raise SystemExit("No instructions provided on stdin")
+                    return content
+                return _read_instructions_file(filename)
             return text
 
-    # Priority 4: Interactive
+    # Priority 5: Interactive
     if _is_interactive():
         info("Enter instructions for this agent.")
         return _prompt_multiline_required("Instructions (end with empty line):")

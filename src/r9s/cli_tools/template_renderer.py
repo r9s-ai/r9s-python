@@ -102,7 +102,7 @@ def _confirm_shell(cmd: str) -> None:
     _stderr(f"[r9s] About to run: {cmd}")
     answer = prompt_text("Run this command? [y/N]: ", color=FG_RED).strip().lower()
     if answer not in ("y", "yes"):
-        raise RuntimeError("Cancelled by user.")
+        raise SystemExit("Cancelled.")
 
 
 def _run_shell(cmd: str, ctx: RenderContext) -> str:
