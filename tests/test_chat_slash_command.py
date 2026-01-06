@@ -71,9 +71,19 @@ def test_chat_slash_command_executes_command(monkeypatch: pytest.MonkeyPatch) ->
     )
 
     # Provide inputs: slash command then exit
-    inputs = iter(["/summarize hello", "/exit"])
+    inputs = ["/summarize hello", "/exit"]
+    input_idx = {"i": 0}
+
+    def fake_input(*_, **__):
+        result = inputs[input_idx["i"]]
+        input_idx["i"] += 1
+        return result
+
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.prompt_text", fake_input)
+    # Also patch chat_prompt for prompt_toolkit integration
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.chat_prompt", fake_input)
     monkeypatch.setattr(
-        "r9s.cli_tools.chat_cli.prompt_text", lambda *_, **__: next(inputs)
+        "r9s.cli_tools.chat_cli.create_chat_session", lambda *_, **__: None
     )
 
     stub = _R9SStub()

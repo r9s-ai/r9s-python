@@ -421,6 +421,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip confirmation for template shell execution (!{...})",
     )
+    chat_parser.add_argument(
+        "--rich",
+        action="store_true",
+        help="Enable rich markdown rendering (requires: pip install r9s[rich])",
+    )
     chat_parser.epilog = (
         "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
         "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "

@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import shutil
+import subprocess
 import sys
 import uuid
 from dataclasses import dataclass
@@ -34,6 +36,8 @@ from r9s.cli_tools.config import (
     resolve_system_prompt,
 )
 from r9s.cli_tools.i18n import resolve_lang, t
+from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
+from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
 from r9s.sdk import R9S
@@ -61,6 +65,31 @@ class ChatResult:
     request_id: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
+
+
+def _copy_to_clipboard(text: str) -> None:
+    """Copy text to system clipboard. Raises RuntimeError on failure."""
+    if sys.platform == "darwin":
+        cmd = ["pbcopy"]
+    elif shutil.which("xclip"):
+        cmd = ["xclip", "-selection", "clipboard"]
+    elif shutil.which("xsel"):
+        cmd = ["xsel", "--clipboard", "--input"]
+    elif sys.platform == "win32":
+        cmd = ["clip"]
+    else:
+        raise RuntimeError("No clipboard utility found (pbcopy/xclip/xsel/clip)")
+    subprocess.run(cmd, input=text.encode("utf-8"), check=True)
+
+
+def _get_last_assistant_response(history: List[Dict[str, Any]]) -> Optional[str]:
+    """Get the last assistant message from history."""
+    for msg in reversed(history):
+        if msg.get("role") == "assistant":
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                return content
+    return None
 
 
 def _require_api_key(args_api_key: Optional[str], lang: str) -> str:
@@ -178,6 +207,8 @@ def _print_help_lang(lang: str) -> None:
     info(t("chat.commands.title", lang))
     print(t("chat.commands.exit", lang))
     print(t("chat.commands.clear", lang))
+    print(t("chat.commands.copy", lang))
+    print(t("chat.commands.save", lang))
     print(t("chat.commands.help", lang))
 
 
@@ -322,6 +353,7 @@ def _non_stream_chat(
     exts: List[Any],
     *,
     prefix: Optional[str] = None,
+    use_rich: bool = False,
     temperature: Optional[float] = None,
     top_p: Optional[float] = None,
     max_tokens: Optional[int] = None,
@@ -344,7 +376,11 @@ def _non_stream_chat(
     text = run_after_response_extensions(exts, text, ctx)
     if prefix:
         print(prefix, end="", flush=True)
-    print(text)
+    if use_rich and is_rich_available():
+        print()  # Newline after prefix
+        print_markdown(text)
+    else:
+        print(text)
     usage = res.usage
     input_tokens = usage.prompt_tokens if usage else 0
     output_tokens = usage.completion_tokens if usage else 0
@@ -554,6 +590,9 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages = run_before_request_extensions(
                 exts, _build_messages(system_prompt_rendered, ctx.history), ctx
             )
+            # Check if rich rendering is enabled
+            use_rich = getattr(args, "rich", False) or is_rich_enabled()
+
             result = (
                 _non_stream_chat(
                     r9s,
@@ -561,6 +600,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     messages,
                     ctx,
                     exts,
+                    use_rich=use_rich,
                     **{**bot_generation, **agent_generation},
                 )
                 if args.no_stream
@@ -574,6 +614,19 @@ def handle_chat(args: argparse.Namespace) -> None:
                 )
             )
             ctx.history.append({"role": "assistant", "content": result.text})
+
+            # Display token usage (to stderr so it doesn't interfere with piped output)
+            if result.input_tokens or result.output_tokens:
+                print(
+                    t(
+                        "chat.msg.tokens",
+                        lang,
+                        input=result.input_tokens,
+                        output=result.output_tokens,
+                    ),
+                    file=sys.stderr,
+                )
+
             if agent_name and agent_version:
                 _record_agent_execution(
                     agent_name, agent_version, result, record.meta.session_id
@@ -602,10 +655,15 @@ def handle_chat(args: argparse.Namespace) -> None:
         _print_help_lang(lang)
         print()
 
+        # Create prompt session with history support
+        prompt_session = create_chat_session()
+
         while True:
             try:
-                user_text = prompt_text(
-                    _style_prompt(t("chat.prompt.user", lang)), color=FG_CYAN
+                user_text = chat_prompt(
+                    prompt_session,
+                    _style_prompt(t("chat.prompt.user", lang)),
+                    color=FG_CYAN,
                 )
             except EOFError:
                 print()
@@ -613,6 +671,10 @@ def handle_chat(args: argparse.Namespace) -> None:
 
             if not user_text:
                 continue
+
+            # Handle common exit commands (without slash)
+            if user_text.lower() in ("exit", "quit", "bye"):
+                return
 
             if user_text.startswith("/"):
                 cmd = user_text.strip()
@@ -624,6 +686,33 @@ def handle_chat(args: argparse.Namespace) -> None:
                 if cmd == "/clear":
                     ctx.history.clear()
                     info(t("chat.msg.history_cleared", lang))
+                    continue
+                if cmd == "/copy":
+                    last_response = _get_last_assistant_response(ctx.history)
+                    if not last_response:
+                        error(t("chat.err.no_response", lang))
+                        continue
+                    try:
+                        _copy_to_clipboard(last_response)
+                        info(t("chat.msg.copied", lang))
+                    except Exception as exc:
+                        error(t("chat.err.copy_failed", lang, err=str(exc)))
+                    continue
+                if cmd.startswith("/save ") or cmd == "/save":
+                    parts_save = cmd.split(" ", 1)
+                    if len(parts_save) < 2 or not parts_save[1].strip():
+                        error(t("chat.err.save_no_path", lang))
+                        continue
+                    save_path = Path(parts_save[1].strip()).expanduser()
+                    last_response = _get_last_assistant_response(ctx.history)
+                    if not last_response:
+                        error(t("chat.err.no_response", lang))
+                        continue
+                    try:
+                        save_path.write_text(last_response, encoding="utf-8")
+                        info(t("chat.msg.saved", lang, path=str(save_path)))
+                    except Exception as exc:
+                        error(t("chat.err.save_failed", lang, err=str(exc)))
                     continue
                 parts = cmd[1:].split(" ", 1)
                 command_name = parts[0]
@@ -656,6 +745,9 @@ def handle_chat(args: argparse.Namespace) -> None:
             messages = _build_messages(system_prompt_rendered, ctx.history)
             messages = run_before_request_extensions(exts, messages, ctx)
 
+            # Check if rich rendering is enabled (--rich flag or R9S_RICH env)
+            use_rich = getattr(args, "rich", False) or is_rich_enabled()
+
             result = (
                 _non_stream_chat(
                     r9s,
@@ -664,6 +756,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ctx,
                     exts,
                     prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                    use_rich=use_rich,
                     **{**bot_generation, **agent_generation},
                 )
                 if args.no_stream
@@ -678,6 +771,17 @@ def handle_chat(args: argparse.Namespace) -> None:
                 )
             )
             ctx.history.append({"role": "assistant", "content": result.text})
+
+            # Display token usage
+            if result.input_tokens or result.output_tokens:
+                info(
+                    t(
+                        "chat.msg.tokens",
+                        lang,
+                        input=result.input_tokens,
+                        output=result.output_tokens,
+                    )
+                )
 
             if agent_name and agent_version:
                 _record_agent_execution(
