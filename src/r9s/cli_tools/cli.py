@@ -43,6 +43,7 @@ from r9s.cli_tools.command_cli import (
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit
+from r9s.cli_tools.models_cli import handle_models_list
 from r9s.cli_tools.skill_cli import (
     handle_skill_create,
     handle_skill_delete,
@@ -860,6 +861,22 @@ def build_parser() -> argparse.ArgumentParser:
         "  r9s images edit input.png \"Make vintage\" -n 3 -o ./variations/"
     )
     images_edit.set_defaults(func=handle_image_edit)
+
+    # Models command
+    models_parser = subparsers.add_parser(
+        "models", help="List available models from the API"
+    )
+    models_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    models_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    models_parser.add_argument(
+        "--details", "-d", action="store_true", help="Show model details (owner, created)"
+    )
+    models_parser.add_argument(
+        "--lang",
+        default=None,
+        help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
+    )
+    models_parser.set_defaults(func=handle_models_list)
 
     set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(

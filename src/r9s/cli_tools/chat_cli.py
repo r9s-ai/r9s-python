@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from r9s import models
+from r9s import errors, models
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
@@ -748,28 +748,45 @@ def handle_chat(args: argparse.Namespace) -> None:
             # Check if rich rendering is enabled (--rich flag or R9S_RICH env)
             use_rich = getattr(args, "rich", False) or is_rich_enabled()
 
-            result = (
-                _non_stream_chat(
-                    r9s,
-                    model,
-                    messages,
-                    ctx,
-                    exts,
-                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    use_rich=use_rich,
-                    **{**bot_generation, **agent_generation},
+            try:
+                result = (
+                    _non_stream_chat(
+                        r9s,
+                        model,
+                        messages,
+                        ctx,
+                        exts,
+                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        use_rich=use_rich,
+                        **{**bot_generation, **agent_generation},
+                    )
+                    if args.no_stream
+                    else _stream_chat(
+                        r9s,
+                        model,
+                        messages,
+                        ctx,
+                        exts,
+                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        **{**bot_generation, **agent_generation},
+                    )
                 )
-                if args.no_stream
-                else _stream_chat(
-                    r9s,
-                    model,
-                    messages,
-                    ctx,
-                    exts,
-                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    **{**bot_generation, **agent_generation},
-                )
-            )
+            except errors.AuthenticationError as exc:
+                error(f"Authentication failed: {exc}")
+                ctx.history.pop()  # Remove the user message we just added
+                continue
+            except errors.RateLimitError as exc:
+                error(f"Rate limit exceeded: {exc}")
+                ctx.history.pop()
+                continue
+            except errors.PermissionDeniedError as exc:
+                error(f"Permission denied: {exc}")
+                ctx.history.pop()
+                continue
+            except errors.R9SError as exc:
+                error(f"API error: {exc}")
+                ctx.history.pop()
+                continue
             ctx.history.append({"role": "assistant", "content": result.text})
 
             # Display token usage
