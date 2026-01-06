@@ -115,6 +115,21 @@ r9s models
 r9s models --details  # Show owner and creation date
 ```
 
+Audio (TTS, transcription, translation):
+
+```bash
+# Text to speech
+r9s audio speech "Hello world" -o hello.mp3
+r9s audio speech "Welcome" -o welcome.wav -v nova
+
+# Speech to text (transcription)
+r9s audio transcribe recording.mp3
+r9s audio transcribe meeting.wav -o transcript.txt -f text
+
+# Translate audio to English
+r9s audio translate chinese_audio.mp3 -o english.txt
+```
+
 See all options:
 
 ```bash
@@ -122,6 +137,7 @@ r9s -h
 r9s chat -h
 r9s agent -h
 r9s command -h
+r9s audio -h
 r9s models -h
 r9s run -h
 ```

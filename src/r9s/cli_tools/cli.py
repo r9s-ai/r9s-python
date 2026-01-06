@@ -43,6 +43,11 @@ from r9s.cli_tools.command_cli import (
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit
+from r9s.cli_tools.audio_cli import (
+    handle_audio_speech,
+    handle_audio_transcribe,
+    handle_audio_translate,
+)
 from r9s.cli_tools.models_cli import handle_models_list
 from r9s.cli_tools.skill_cli import (
     handle_skill_create,
@@ -861,6 +866,134 @@ def build_parser() -> argparse.ArgumentParser:
         "  r9s images edit input.png \"Make vintage\" -n 3 -o ./variations/"
     )
     images_edit.set_defaults(func=handle_image_edit)
+
+    # Audio commands (TTS, ASR, translation)
+    audio_parser = subparsers.add_parser(
+        "audio", help="Text-to-speech, transcription, and translation"
+    )
+    audio_sub = audio_parser.add_subparsers(dest="audio_command")
+    audio_parser.set_defaults(func=lambda _: audio_parser.print_help())
+
+    # r9s audio speech (TTS)
+    audio_speech = audio_sub.add_parser(
+        "speech", help="Convert text to speech (TTS)"
+    )
+    audio_speech.add_argument(
+        "text",
+        nargs="?",
+        default=None,
+        help="Text to convert to speech (or pipe via stdin)",
+    )
+    audio_speech.add_argument(
+        "-o", "--output",
+        required=True,
+        help="Output audio file path (e.g., output.mp3)",
+    )
+    audio_speech.add_argument(
+        "-m", "--model",
+        default="tts-1",
+        help="TTS model (default: tts-1)",
+    )
+    audio_speech.add_argument(
+        "-v", "--voice",
+        default="alloy",
+        choices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        help="Voice type (default: alloy)",
+    )
+    audio_speech.add_argument(
+        "-s", "--speed",
+        type=float,
+        help="Speech speed (0.25 to 4.0, default: 1.0)",
+    )
+    audio_speech.add_argument(
+        "-f", "--format",
+        choices=["mp3", "opus", "aac", "flac", "wav", "pcm"],
+        help="Audio format (default: mp3)",
+    )
+    audio_speech.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_speech.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_speech.epilog = (
+        "Examples:\n"
+        "  r9s audio speech \"Hello world\" -o hello.mp3\n"
+        "  r9s audio speech \"Welcome\" -o welcome.wav -v nova -f wav\n"
+        "  echo \"Hello\" | r9s audio speech -o hello.mp3"
+    )
+    audio_speech.set_defaults(func=handle_audio_speech)
+
+    # r9s audio transcribe (ASR)
+    audio_transcribe = audio_sub.add_parser(
+        "transcribe", help="Transcribe audio to text (ASR)"
+    )
+    audio_transcribe.add_argument(
+        "audio",
+        help="Audio file to transcribe",
+    )
+    audio_transcribe.add_argument(
+        "-o", "--output",
+        help="Output text file (prints to stdout if not specified)",
+    )
+    audio_transcribe.add_argument(
+        "-m", "--model",
+        default="whisper-1",
+        help="ASR model (default: whisper-1)",
+    )
+    audio_transcribe.add_argument(
+        "-l", "--language",
+        help="Audio language (ISO-639-1 code, e.g., en, zh, ja)",
+    )
+    audio_transcribe.add_argument(
+        "-p", "--prompt",
+        help="Optional prompt to guide transcription style",
+    )
+    audio_transcribe.add_argument(
+        "-f", "--format",
+        choices=["json", "text", "srt", "verbose_json", "vtt"],
+        help="Output format (default: json)",
+    )
+    audio_transcribe.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_transcribe.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_transcribe.epilog = (
+        "Examples:\n"
+        "  r9s audio transcribe recording.mp3\n"
+        "  r9s audio transcribe meeting.wav -o transcript.txt -f text\n"
+        "  r9s audio transcribe audio.mp3 -l zh -o chinese.srt -f srt"
+    )
+    audio_transcribe.set_defaults(func=handle_audio_transcribe)
+
+    # r9s audio translate
+    audio_translate = audio_sub.add_parser(
+        "translate", help="Translate audio to English text"
+    )
+    audio_translate.add_argument(
+        "audio",
+        help="Audio file to translate",
+    )
+    audio_translate.add_argument(
+        "-o", "--output",
+        help="Output text file (prints to stdout if not specified)",
+    )
+    audio_translate.add_argument(
+        "-m", "--model",
+        default="whisper-1",
+        help="Model (default: whisper-1)",
+    )
+    audio_translate.add_argument(
+        "-p", "--prompt",
+        help="Optional prompt to guide translation style",
+    )
+    audio_translate.add_argument(
+        "-f", "--format",
+        choices=["json", "text"],
+        help="Output format (default: json)",
+    )
+    audio_translate.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_translate.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_translate.epilog = (
+        "Examples:\n"
+        "  r9s audio translate chinese_speech.mp3\n"
+        "  r9s audio translate french_audio.wav -o english.txt -f text"
+    )
+    audio_translate.set_defaults(func=handle_audio_translate)
 
     # Models command
     models_parser = subparsers.add_parser(
