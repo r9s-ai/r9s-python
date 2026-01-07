@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from r9s import R9S, errors
-from r9s.cli_tools.config import get_api_key, resolve_base_url
+from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_tts_model, resolve_stt_model
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.ui.spinner import LoadingSpinner
 from r9s.cli_tools.ui.terminal import error, info, success
@@ -46,7 +46,7 @@ def handle_audio_speech(args: argparse.Namespace) -> None:
     # Build request kwargs
     kwargs = {
         "input": text,
-        "model": args.model or "tts-1",
+        "model": resolve_tts_model(args.model),
         "voice": args.voice or "alloy",
     }
 
@@ -91,7 +91,7 @@ def handle_audio_transcribe(args: argparse.Namespace) -> None:
     # Build request kwargs
     kwargs = {
         "file": {"file_name": audio_path.name, "content": audio_data},
-        "model": args.model or "whisper-1",
+        "model": resolve_stt_model(args.model),
     }
 
     if args.language:
@@ -144,7 +144,7 @@ def handle_audio_translate(args: argparse.Namespace) -> None:
     # Build request kwargs
     kwargs = {
         "file": {"file_name": audio_path.name, "content": audio_data},
-        "model": args.model or "whisper-1",
+        "model": resolve_stt_model(args.model),
     }
 
     if args.prompt:

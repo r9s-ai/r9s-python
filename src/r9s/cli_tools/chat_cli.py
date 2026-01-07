@@ -209,6 +209,7 @@ def _print_help_lang(lang: str) -> None:
     print(t("chat.commands.clear", lang))
     print(t("chat.commands.copy", lang))
     print(t("chat.commands.save", lang))
+    print(t("chat.commands.model", lang))
     print(t("chat.commands.help", lang))
 
 
@@ -713,6 +714,17 @@ def handle_chat(args: argparse.Namespace) -> None:
                         info(t("chat.msg.saved", lang, path=str(save_path)))
                     except Exception as exc:
                         error(t("chat.err.save_failed", lang, err=str(exc)))
+                    continue
+                if cmd.startswith("/model ") or cmd == "/model":
+                    parts_model = cmd.split(" ", 1)
+                    if len(parts_model) < 2 or not parts_model[1].strip():
+                        info(t("chat.msg.current_model", lang, model=model))
+                        continue
+                    new_model = parts_model[1].strip()
+                    model = new_model
+                    ctx.model = new_model
+                    record.meta.model = new_model
+                    info(t("chat.msg.model_switched", lang, model=new_model))
                     continue
                 parts = cmd[1:].split(" ", 1)
                 command_name = parts[0]

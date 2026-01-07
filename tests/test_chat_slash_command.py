@@ -115,3 +115,58 @@ def test_chat_slash_command_executes_command(monkeypatch: pytest.MonkeyPatch) ->
     call = stub.chat.calls[-1]
     assert call["stream"] is False
     assert call["messages"][-1]["content"] == "Say hello"
+
+
+def test_chat_model_command_switches_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that /model <name> switches the model for subsequent requests."""
+    # Force interactive mode
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+
+    # No custom commands
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.list_commands", lambda: [])
+
+    # Provide inputs: switch model, send message, exit
+    inputs = ["/model gpt-4o", "hello", "/exit"]
+    input_idx = {"i": 0}
+
+    def fake_input(*_, **__):
+        result = inputs[input_idx["i"]]
+        input_idx["i"] += 1
+        return result
+
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.prompt_text", fake_input)
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.chat_prompt", fake_input)
+    monkeypatch.setattr(
+        "r9s.cli_tools.chat_cli.create_chat_session", lambda *_, **__: None
+    )
+
+    stub = _R9SStub()
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.R9S", lambda **_: stub)
+    monkeypatch.setenv("R9S_MODEL", "initial-model")
+
+    args = type(
+        "Args",
+        (),
+        {
+            "lang": None,
+            "api_key": "k",
+            "base_url": None,
+            "model": None,
+            "system_prompt": None,
+            "history_file": None,
+            "no_history": True,
+            "ext": [],
+            "no_stream": True,
+            "yes": True,
+            "bot": None,
+            "agent": None,
+            "var": [],
+        },
+    )()
+
+    handle_chat(args)
+    assert stub.chat.calls
+    call = stub.chat.calls[-1]
+    # The model should have been switched to gpt-4o
+    assert call["model"] == "gpt-4o"
