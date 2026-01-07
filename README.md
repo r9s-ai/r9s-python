@@ -144,12 +144,12 @@ r9s run -h
 
 ## Python SDK usage
 
-Minimal example:
+Minimal example (reads `R9S_API_KEY` and optional `R9S_BASE_URL` from the environment):
 
 ```python
-from r9s import R9S
+from r9s.client import R9S
 
-with R9S() as r9s:
+with R9S.from_env() as r9s:
 
     res = r9s.chat.create(model="gpt-4o-mini", messages=[
         {
