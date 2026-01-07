@@ -357,7 +357,7 @@ def handle_reset(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="r9s",
-        description="r9s CLI: chat, manage bots, and configure local tools to use the r9s API.",
+        description="r9s CLI: chat, manage agents, and configure local tools to use the r9s API.",
     )
     parser.add_argument(
         "--lang",
@@ -373,7 +373,7 @@ def build_parser() -> argparse.ArgumentParser:
         "bot",
         nargs="?",
         default=None,
-        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml).",
+        help="[DEPRECATED] Bot name. Use --agent instead.",
     )
     chat_parser.add_argument(
         "--resume",
@@ -433,7 +433,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Enable rich markdown rendering (requires: pip install r9s[rich])",
     )
     chat_parser.epilog = (
-        "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
         "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "
         "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
@@ -442,7 +441,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.set_defaults(func=handle_chat)
 
     bot_parser = subparsers.add_parser(
-        "bot", help="Manage local bots (~/.r9s/bots/*.toml)"
+        "bot", help="[DEPRECATED] Use 'r9s agent' instead"
     )
     bot_sub = bot_parser.add_subparsers(dest="bot_command")
     bot_parser.set_defaults(func=lambda _: bot_parser.print_help())
@@ -498,6 +497,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     agent_show = agent_sub.add_parser("show", help="Show agent details")
     agent_show.add_argument("name", help="Agent name")
+    agent_show.add_argument(
+        "--instructions", "-i", action="store_true", help="Show full instructions"
+    )
     agent_show.set_defaults(func=handle_agent_show)
 
     agent_create = agent_sub.add_parser("create", help="Create a new agent")
@@ -510,7 +512,7 @@ def build_parser() -> argparse.ArgumentParser:
     agent_create.add_argument(
         "--edit", "-e", action="store_true", help="Open $EDITOR to write instructions"
     )
-    agent_create.add_argument("--model", help="Model name")
+    agent_create.add_argument("--model", help="Model name (default: R9S_MODEL)")
     agent_create.add_argument("--provider", help="Provider name (default: r9s)")
     agent_create.add_argument("--reason", help="Change reason (optional)")
     agent_create.add_argument("--params", help="Model params JSON (optional)")
@@ -581,7 +583,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     agent_import_bot = agent_sub.add_parser("import-bot", help="Import bot as agent")
     agent_import_bot.add_argument("name", help="Bot name (agent name)")
-    agent_import_bot.add_argument("--model", help="Model name")
+    agent_import_bot.add_argument("--model", help="Model name (default: R9S_MODEL)")
     agent_import_bot.add_argument("--provider", help="Provider name (default: r9s)")
     agent_import_bot.set_defaults(func=handle_agent_import_bot)
 
@@ -1085,7 +1087,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                     t("cli.examples.chat_pipe", lang),
                     t("cli.examples.chat_pipe_image", lang),
                     t("cli.examples.resume", lang),
-                    t("cli.examples.bots", lang),
+                    t("cli.examples.agents", lang),
                     t("cli.examples.run", lang, apps=apps_run),
                     t("cli.examples.configure", lang, apps=apps_config),
                 ],
