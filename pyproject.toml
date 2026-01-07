@@ -26,7 +26,6 @@ dependencies = [
     "prompt-toolkit >=3.0.0",
     "pydantic >=2.11.2",
     "pyyaml >=6.0",
-    "pytest>=9.0.2",
     "python-dotenv >=1.0.1",
     "tomli-w >=1.0.0",
 ]
