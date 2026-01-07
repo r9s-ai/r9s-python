@@ -27,6 +27,26 @@ def resolve_model(args_model: Optional[str]) -> str:
     return (args_model or os.getenv("R9S_MODEL") or "gpt-5-nano").strip()
 
 
+def resolve_image_model(args_model: Optional[str], default: str = "dall-e-3") -> str:
+    """Resolve image model: args > R9S_IMAGE_MODEL > R9S_MODEL > default."""
+    return (
+        args_model
+        or os.getenv("R9S_IMAGE_MODEL")
+        or os.getenv("R9S_MODEL")
+        or default
+    ).strip()
+
+
+def resolve_tts_model(args_model: Optional[str], default: str = "tts-1") -> str:
+    """Resolve TTS model: args > R9S_TTS_MODEL > default."""
+    return (args_model or os.getenv("R9S_TTS_MODEL") or default).strip()
+
+
+def resolve_stt_model(args_model: Optional[str], default: str = "whisper-1") -> str:
+    """Resolve STT model: args > R9S_STT_MODEL > default."""
+    return (args_model or os.getenv("R9S_STT_MODEL") or default).strip()
+
+
 def resolve_system_prompt(
     args_system_prompt: Optional[str],
 ) -> Optional[str]:

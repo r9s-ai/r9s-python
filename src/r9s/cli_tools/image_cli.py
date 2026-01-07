@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from r9s.cli_tools.config import get_api_key, resolve_base_url
+from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_image_model
 from r9s.cli_tools.ui.spinner import LoadingSpinner
 from r9s.cli_tools.ui.terminal import error, info, success, warning
 
@@ -88,12 +88,11 @@ def handle_image_generate(args: argparse.Namespace) -> None:
     # Build request kwargs
     kwargs = {
         "prompt": prompt,
+        "model": resolve_image_model(args.model),
         "n": n,
         "response_format": response_format,
     }
 
-    if args.model:
-        kwargs["model"] = args.model
     if args.size:
         kwargs["size"] = args.size
     if args.quality:
@@ -198,12 +197,11 @@ def handle_image_edit(args: argparse.Namespace) -> None:
     kwargs = {
         "image": {"file_name": image_path.name, "content": image_data},
         "prompt": prompt,
+        "model": resolve_image_model(args.model),
         "n": n,
         "response_format": response_format,
     }
 
-    if args.model:
-        kwargs["model"] = args.model
     if args.size:
         kwargs["size"] = args.size
     if mask_data:
