@@ -32,7 +32,7 @@ EOF
 export R9S_API_KEY="your_api_key"
 ```
 
-The CLI automatically loads `.env` from the current directory. Disable with `R9S_NO_DOTENV=1`.
+The CLI automatically loads `.env` from the current directory (SDK usage does not auto-load). Disable with `R9S_NO_DOTENV=1`.
 
 ## CLI usage
 
