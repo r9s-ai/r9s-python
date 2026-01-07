@@ -24,6 +24,7 @@ from r9s.agents.local_store import (
 )
 from r9s.agents.models import AgentStatus
 from r9s.cli_tools.bots import load_bot
+from r9s.cli_tools.ui.rich_output import print_markdown
 from r9s.cli_tools.ui.terminal import (
     FG_RED,
     FG_YELLOW,
@@ -63,14 +64,20 @@ def _prompt_multiline_required(message: str) -> str:
     return out
 
 
-def _require_model(model: Optional[str]) -> str:
+def _resolve_model(model: Optional[str]) -> str:
+    """Resolve model from argument, environment, or interactive prompt."""
     if model and model.strip():
         return model.strip()
+    # Fall back to R9S_MODEL environment variable
+    env_model = os.environ.get("R9S_MODEL", "").strip()
+    if env_model:
+        return env_model
+    # Interactive prompt as last resort
     if _is_interactive():
-        model = prompt_text("Model: ")
+        model = prompt_text("Model (or set R9S_MODEL): ")
         if model:
             return model
-    raise SystemExit("model is required")
+    raise SystemExit("model is required (use --model or set R9S_MODEL)")
 
 
 def _parse_params(param_text: Optional[str]) -> Dict[str, object]:
@@ -227,12 +234,16 @@ def handle_agent_show(args: argparse.Namespace) -> None:
     print(f"- status: {version.status.value}")
     if version.variables:
         print(f"- variables: {', '.join(version.variables)}")
+    if getattr(args, "instructions", False):
+        print()
+        header("Instructions")
+        print_markdown(version.instructions)
 
 
 def handle_agent_create(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
     instructions = _get_instructions(args)
-    model = _require_model(args.model)
+    model = _resolve_model(args.model)
     provider = (args.provider or "r9s").strip()
     description = (args.description or "").strip()
     params = _parse_params(args.params)
@@ -248,8 +259,10 @@ def handle_agent_create(args: argparse.Namespace) -> None:
             change_reason=args.reason or "",
             model_params=params,
         )
-    except AgentExistsError as exc:
-        raise SystemExit(str(exc)) from exc
+    except AgentExistsError:
+        raise SystemExit(
+            f"Agent '{name}' already exists. Use 'r9s agent update {name}' to modify it."
+        )
     success(f"Created agent: {agent.name} (version {agent.current_version})")
 
 
@@ -418,7 +431,7 @@ def handle_agent_export(args: argparse.Namespace) -> None:
 
 def handle_agent_import_bot(args: argparse.Namespace) -> None:
     name = _require_name(args.name)
-    model = _require_model(args.model)
+    model = _resolve_model(args.model)
     bot = load_bot(name)
     if not bot.system_prompt:
         raise SystemExit("Bot has no system_prompt to import.")
