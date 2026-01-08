@@ -60,6 +60,26 @@ Style = Literal[
 ]
 
 
+ImageGenerationBackground = Literal[
+    "transparent",
+    "opaque",
+    "auto",
+]
+
+
+ImageGenerationModeration = Literal[
+    "low",
+    "auto",
+]
+
+
+ImageGenerationOutputFormat = Literal[
+    "png",
+    "jpeg",
+    "webp",
+]
+
+
 class ImageGenerationRequestTypedDict(TypedDict):
     prompt: str
     r"""Image description prompt"""
@@ -72,6 +92,19 @@ class ImageGenerationRequestTypedDict(TypedDict):
     size: NotRequired[Size]
     style: NotRequired[Style]
     user: NotRequired[str]
+    # GPT Image model parameters
+    background: NotRequired[ImageGenerationBackground]
+    r"""Background transparency setting (transparent/opaque/auto). GPT models only."""
+    moderation: NotRequired[ImageGenerationModeration]
+    r"""Content moderation level (low/auto). GPT models only."""
+    output_compression: NotRequired[int]
+    r"""Compression level (0-100%) for webp/jpeg. GPT models only."""
+    output_format: NotRequired[ImageGenerationOutputFormat]
+    r"""Output format (png/jpeg/webp). GPT models only."""
+    partial_images: NotRequired[int]
+    r"""Number of partial images for streaming (0-3). GPT models only."""
+    stream: NotRequired[bool]
+    r"""Enable streaming mode. GPT models only."""
     # Extended parameters for advanced providers
     negative_prompt: NotRequired[str]
     r"""Negative prompt to exclude elements (Qwen, Stability). Max 500 chars for Qwen."""
@@ -115,6 +148,25 @@ class ImageGenerationRequest(BaseModel):
     style: Optional[Style] = "vivid"
 
     user: Optional[str] = None
+
+    # GPT Image model parameters
+    background: Optional[ImageGenerationBackground] = None
+    r"""Background transparency setting (transparent/opaque/auto). Only for GPT image models. Defaults to auto."""
+
+    moderation: Optional[ImageGenerationModeration] = None
+    r"""Content moderation level (low/auto). Only for GPT image models. Defaults to auto."""
+
+    output_compression: Optional[int] = None
+    r"""Compression level (0-100%) for webp/jpeg output formats. Only for GPT image models. Defaults to 100."""
+
+    output_format: Optional[ImageGenerationOutputFormat] = None
+    r"""Output format (png/jpeg/webp). Only for GPT image models. Defaults to png."""
+
+    partial_images: Optional[int] = None
+    r"""Number of partial images for streaming (0-3). Only for GPT image models with stream=True. Defaults to 0."""
+
+    stream: Optional[bool] = None
+    r"""Enable streaming mode. Only for GPT image models. Defaults to false."""
 
     # Extended parameters for advanced providers
     negative_prompt: Optional[str] = None

@@ -17,8 +17,8 @@ def basic_completion():
     print("Example 1: Basic Text Completion")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini", prompt="Once upon a time", max_tokens=50
         )
         print("Prompt: Once upon a time")
@@ -32,8 +32,8 @@ def completion_with_options():
     print("Example 2: Completion with Options")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="Write a haiku about coding",
             max_tokens=100,
@@ -51,8 +51,8 @@ def streaming_completion():
     print("Example 3: Streaming Completion")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="List 3 benefits of unit testing:\n1.",
             max_tokens=150,
@@ -72,9 +72,9 @@ def code_completion():
     print("Example 4: Code Completion")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         code_prompt = "def fibonacci(n):"
-        res = r9_s.completions.create(
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt=code_prompt,
             max_tokens=80,
@@ -90,8 +90,8 @@ def completion_with_stop_sequences():
     print("Example 5: Completion with Stop Sequences")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="Write a Python function to check if a number is prime:\n\n```python\n",
             max_tokens=200,
@@ -107,8 +107,8 @@ def multiple_completions():
     print("Example 6: Multiple Completions")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="The best programming language is",
             max_tokens=30,
@@ -126,8 +126,8 @@ def completion_with_echo():
     print("Example 7: Completion with Echo")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="The capital of France is",
             max_tokens=20,
@@ -143,8 +143,8 @@ def completion_with_penalties():
     print("Example 8: Completion with Penalties")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.completions.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.completions.create(
             model="gpt-4o-mini",
             prompt="Write three creative ways to say hello:",
             max_tokens=100,
@@ -161,12 +161,12 @@ def completion_with_seed():
     print("Example 9: Completion with Seed (Reproducible)")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         seed = 42
         prompt = "Random number between 1 and 100:"
 
         # First call
-        res1 = r9_s.completions.create(
+        res1 = r9s.completions.create(
             model="gpt-4o-mini",
             prompt=prompt,
             max_tokens=20,
@@ -175,7 +175,7 @@ def completion_with_seed():
         )
 
         # Second call with same seed
-        res2 = r9_s.completions.create(
+        res2 = r9s.completions.create(
             model="gpt-4o-mini",
             prompt=prompt,
             max_tokens=20,

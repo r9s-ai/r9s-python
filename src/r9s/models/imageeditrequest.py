@@ -41,15 +41,33 @@ ImageEditResponseFormat = Literal["url", "b64_json"]
 
 ImageEditSize = Literal["256x256", "512x512", "1024x1024"]
 
+ImageEditBackground = Literal["transparent", "opaque", "auto"]
+
+ImageEditInputFidelity = Literal["high", "low"]
+
+ImageEditModeration = Literal["low", "auto"]
+
+ImageEditOutputFormat = Literal["png", "jpeg", "webp"]
+
+ImageEditQuality = Literal["auto", "high", "medium", "low", "hd", "standard"]
+
 
 class ImageEditRequestTypedDict(TypedDict):
     image: ImageFileTypedDict
     prompt: str
     model: NotRequired[str]
     mask: NotRequired[ImageFileTypedDict]
+    background: NotRequired[ImageEditBackground]
+    input_fidelity: NotRequired[ImageEditInputFidelity]
+    moderation: NotRequired[ImageEditModeration]
     n: NotRequired[int]
+    output_compression: NotRequired[int]
+    output_format: NotRequired[ImageEditOutputFormat]
+    partial_images: NotRequired[int]
+    quality: NotRequired[ImageEditQuality]
     size: NotRequired[ImageEditSize]
     response_format: NotRequired[ImageEditResponseFormat]
+    stream: NotRequired[bool]
     user: NotRequired[str]
 
 
@@ -88,3 +106,27 @@ class ImageEditRequest(BaseModel):
 
     user: Annotated[Optional[str], FieldMetadata(multipart=True)] = None
     r"""Unique identifier for end-user tracking."""
+
+    background: Annotated[Optional[ImageEditBackground], FieldMetadata(multipart=True)] = None
+    r"""Background transparency setting (GPT image models only)."""
+
+    input_fidelity: Annotated[Optional[ImageEditInputFidelity], FieldMetadata(multipart=True)] = "low"
+    r"""Input image feature matching level (gpt-image-1 only)."""
+
+    moderation: Annotated[Optional[ImageEditModeration], FieldMetadata(multipart=True)] = None
+    r"""Content moderation level: low or auto (GPT image models)."""
+
+    output_compression: Annotated[Optional[int], FieldMetadata(multipart=True)] = None
+    r"""Compression level 0-100% (GPT image models with webp/jpeg)."""
+
+    output_format: Annotated[Optional[ImageEditOutputFormat], FieldMetadata(multipart=True)] = None
+    r"""Output format: png, jpeg, or webp (GPT image models only)."""
+
+    partial_images: Annotated[Optional[int], FieldMetadata(multipart=True)] = 0
+    r"""Number of partial images for streaming (0-3)."""
+
+    quality: Annotated[Optional[ImageEditQuality], FieldMetadata(multipart=True)] = None
+    r"""Image quality setting."""
+
+    stream: Annotated[Optional[bool], FieldMetadata(multipart=True)] = None
+    r"""Enable streaming mode (GPT image models only)."""

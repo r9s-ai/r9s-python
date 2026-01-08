@@ -4,22 +4,31 @@ from .basesdk import BaseSDK
 from r9s import errors, models, utils
 from r9s._hooks import HookContext
 from r9s.types import OptionalNullable, UNSET
+from r9s.utils import eventstreaming
 from r9s.utils.unmarshal_json_response import unmarshal_json_response
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Literal, Mapping, Optional, Union, overload
 
 
 class Images(BaseSDK):
+    @overload
     def create(
         self,
         *,
         prompt: str,
         model: Optional[str] = None,
         n: Optional[int] = 1,
-        quality: Optional[models.Quality] = "standard",
-        response_format: Optional[models.ImageGenerationRequestResponseFormat] = "url",
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
         size: Optional[models.Size] = "1024x1024",
-        style: Optional[models.Style] = "vivid",
+        style: Optional[models.Style] = None,
         user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Union[Literal[False], None] = None,
         # Extended parameters for advanced providers
         negative_prompt: Optional[str] = None,
         seed: Optional[int] = None,
@@ -30,6 +39,67 @@ class Images(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.ImageGenerationResponse:
+        ...
+
+    @overload
+    def create(
+        self,
+        *,
+        prompt: str,
+        model: Optional[str] = None,
+        n: Optional[int] = 1,
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
+        size: Optional[models.Size] = "1024x1024",
+        style: Optional[models.Style] = None,
+        user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Literal[True] = ...,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStream[models.CreateImageGenerationResponseBody]:
+        ...
+
+    def create(
+        self,
+        *,
+        prompt: str,
+        model: Optional[str] = None,
+        n: Optional[int] = 1,
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
+        size: Optional[models.Size] = "1024x1024",
+        style: Optional[models.Style] = None,
+        user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Optional[bool] = None,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> Union[models.ImageGenerationResponse, eventstreaming.EventStream[models.CreateImageGenerationResponseBody]]:
         r"""Create image
 
         Generate images from text prompts
@@ -42,6 +112,12 @@ class Images(BaseSDK):
         :param size:
         :param style:
         :param user:
+        :param background: Background transparency setting (GPT models only)
+        :param moderation: Content moderation level (GPT models only)
+        :param output_compression: Compression level for webp/jpeg (GPT models only)
+        :param output_format: Output format (GPT models only)
+        :param partial_images: Number of partial images for streaming (GPT models only)
+        :param stream: Enable streaming mode (GPT models only)
         :param negative_prompt: Negative prompt to exclude elements (Qwen, Stability)
         :param seed: Random seed for reproducibility
         :param prompt_extend: Enable AI prompt optimization (Qwen-specific)
@@ -70,6 +146,12 @@ class Images(BaseSDK):
             size=size,
             style=style,
             user=user,
+            background=background,
+            moderation=moderation,
+            output_compression=output_compression,
+            output_format=output_format,
+            partial_images=partial_images,
+            stream=stream,
             negative_prompt=negative_prompt,
             seed=seed,
             prompt_extend=prompt_extend,
@@ -86,7 +168,7 @@ class Images(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="application/json",
+            accept_header_value="text/event-stream" if stream else "application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
@@ -125,44 +207,62 @@ class Images(BaseSDK):
                 "5XX",
             ],
             retry_config=retry_config,
+            stream=True,
         )
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ImageGenerationResponse, http_res)
+            http_res_text = utils.stream_to_text(http_res)
+            return unmarshal_json_response(
+                models.ImageGenerationResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStream(
+                http_res,
+                lambda raw: utils.unmarshal_json(raw, models.CreateImageGenerationResponseBody),
+                sentinel="[DONE]",
+                client_ref=self,
+            )
         if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res
+                errors.BadRequestErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res)
+            raise errors.BadRequestError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.AuthenticationErrorData, http_res, http_res_text
             )
-            raise errors.AuthenticationError(response_data, http_res)
+            raise errors.AuthenticationError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.PermissionDeniedErrorData, http_res
+                errors.PermissionDeniedErrorData, http_res, http_res_text
             )
-            raise errors.PermissionDeniedError(response_data, http_res)
+            raise errors.PermissionDeniedError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.UnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityErrorData, http_res, http_res_text
             )
-            raise errors.UnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "429", "application/json"):
-            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res)
-            raise errors.RateLimitError(response_data, http_res)
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res, http_res_text)
+            raise errors.RateLimitError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.InternalServerErrorData, http_res
+                errors.InternalServerErrorData, http_res, http_res_text
             )
-            raise errors.InternalServerError(response_data, http_res)
+            raise errors.InternalServerError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "503", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.ServiceUnavailableErrorData, http_res
+                errors.ServiceUnavailableErrorData, http_res, http_res_text
             )
-            raise errors.ServiceUnavailableError(response_data, http_res)
+            raise errors.ServiceUnavailableError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = utils.stream_to_text(http_res)
             raise errors.R9SDefaultError("API error occurred", http_res, http_res_text)
@@ -171,6 +271,68 @@ class Images(BaseSDK):
             raise errors.R9SDefaultError("API error occurred", http_res, http_res_text)
 
         raise errors.R9SDefaultError("Unexpected response received", http_res)
+
+    @overload
+    async def create_async(
+        self,
+        *,
+        prompt: str,
+        model: Optional[str] = None,
+        n: Optional[int] = 1,
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
+        size: Optional[models.Size] = "1024x1024",
+        style: Optional[models.Style] = None,
+        user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Union[Literal[False], None] = None,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> models.ImageGenerationResponse:
+        ...
+
+    @overload
+    async def create_async(
+        self,
+        *,
+        prompt: str,
+        model: Optional[str] = None,
+        n: Optional[int] = 1,
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
+        size: Optional[models.Size] = "1024x1024",
+        style: Optional[models.Style] = None,
+        user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Literal[True] = ...,
+        # Extended parameters for advanced providers
+        negative_prompt: Optional[str] = None,
+        seed: Optional[int] = None,
+        prompt_extend: Optional[bool] = None,
+        watermark: Optional[bool] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStreamAsync[models.CreateImageGenerationResponseBody]:
+        ...
 
     async def create_async(
         self,
@@ -178,11 +340,18 @@ class Images(BaseSDK):
         prompt: str,
         model: Optional[str] = None,
         n: Optional[int] = 1,
-        quality: Optional[models.Quality] = "standard",
-        response_format: Optional[models.ImageGenerationRequestResponseFormat] = "url",
+        quality: Optional[models.Quality] = None,
+        response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
         size: Optional[models.Size] = "1024x1024",
-        style: Optional[models.Style] = "vivid",
+        style: Optional[models.Style] = None,
         user: Optional[str] = None,
+        # GPT Image model parameters
+        background: Optional[models.ImageGenerationBackground] = None,
+        moderation: Optional[models.ImageGenerationModeration] = None,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageGenerationOutputFormat] = None,
+        partial_images: Optional[int] = None,
+        stream: Optional[bool] = None,
         # Extended parameters for advanced providers
         negative_prompt: Optional[str] = None,
         seed: Optional[int] = None,
@@ -192,7 +361,7 @@ class Images(BaseSDK):
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
-    ) -> models.ImageGenerationResponse:
+    ) -> Union[models.ImageGenerationResponse, eventstreaming.EventStreamAsync[models.CreateImageGenerationResponseBody]]:
         r"""Create image
 
         Generate images from text prompts
@@ -205,6 +374,12 @@ class Images(BaseSDK):
         :param size:
         :param style:
         :param user:
+        :param background: Background transparency setting (GPT models only)
+        :param moderation: Content moderation level (GPT models only)
+        :param output_compression: Compression level for webp/jpeg (GPT models only)
+        :param output_format: Output format (GPT models only)
+        :param partial_images: Number of partial images for streaming (GPT models only)
+        :param stream: Enable streaming mode (GPT models only)
         :param negative_prompt: Negative prompt to exclude elements (Qwen, Stability)
         :param seed: Random seed for reproducibility
         :param prompt_extend: Enable AI prompt optimization (Qwen-specific)
@@ -233,6 +408,12 @@ class Images(BaseSDK):
             size=size,
             style=style,
             user=user,
+            background=background,
+            moderation=moderation,
+            output_compression=output_compression,
+            output_format=output_format,
+            partial_images=partial_images,
+            stream=stream,
             negative_prompt=negative_prompt,
             seed=seed,
             prompt_extend=prompt_extend,
@@ -249,7 +430,7 @@ class Images(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="application/json",
+            accept_header_value="text/event-stream" if stream else "application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
@@ -288,44 +469,62 @@ class Images(BaseSDK):
                 "5XX",
             ],
             retry_config=retry_config,
+            stream=True,
         )
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ImageGenerationResponse, http_res)
+            http_res_text = await utils.stream_to_text_async(http_res)
+            return unmarshal_json_response(
+                models.ImageGenerationResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStreamAsync(
+                http_res,
+                lambda raw: utils.unmarshal_json(raw, models.CreateImageGenerationResponseBody),
+                sentinel="[DONE]",
+                client_ref=self,
+            )
         if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res
+                errors.BadRequestErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res)
+            raise errors.BadRequestError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.AuthenticationErrorData, http_res, http_res_text
             )
-            raise errors.AuthenticationError(response_data, http_res)
+            raise errors.AuthenticationError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.PermissionDeniedErrorData, http_res
+                errors.PermissionDeniedErrorData, http_res, http_res_text
             )
-            raise errors.PermissionDeniedError(response_data, http_res)
+            raise errors.PermissionDeniedError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.UnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityErrorData, http_res, http_res_text
             )
-            raise errors.UnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "429", "application/json"):
-            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res)
-            raise errors.RateLimitError(response_data, http_res)
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res, http_res_text)
+            raise errors.RateLimitError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.InternalServerErrorData, http_res
+                errors.InternalServerErrorData, http_res, http_res_text
             )
-            raise errors.InternalServerError(response_data, http_res)
+            raise errors.InternalServerError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "503", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.ServiceUnavailableErrorData, http_res
+                errors.ServiceUnavailableErrorData, http_res, http_res_text
             )
-            raise errors.ServiceUnavailableError(response_data, http_res)
+            raise errors.ServiceUnavailableError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.R9SDefaultError("API error occurred", http_res, http_res_text)
@@ -335,22 +534,96 @@ class Images(BaseSDK):
 
         raise errors.R9SDefaultError("Unexpected response received", http_res)
 
+    @overload
     def edit(
         self,
         *,
-        image: Union[models.ImageFile, models.ImageFileTypedDict],
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
         prompt: str,
-        model: Optional[str] = None,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
         mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
         n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
         size: Optional[models.ImageEditSize] = "1024x1024",
-        response_format: Optional[models.ImageEditResponseFormat] = "url",
+        stream: Union[Literal[False], None] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.ImageGenerationResponse:
+        ...
+
+    @overload
+    def edit(
+        self,
+        *,
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
+        prompt: str,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
+        mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
+        n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
+        size: Optional[models.ImageEditSize] = "1024x1024",
+        stream: Literal[True] = ...,
+        user: Optional[str] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStream[models.EditImageResponseBody]:
+        ...
+
+    def edit(
+        self,
+        *,
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
+        prompt: str,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
+        mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
+        n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
+        size: Optional[models.ImageEditSize] = "1024x1024",
+        stream: Optional[bool] = None,
+        user: Optional[str] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> Union[models.ImageGenerationResponse, eventstreaming.EventStream[models.EditImageResponseBody]]:
         r"""Edit image
 
         Edit an existing image using a text prompt (inpainting).
@@ -378,14 +651,25 @@ class Images(BaseSDK):
         else:
             base_url = self._get_url(base_url, url_variables)
 
+        # Handle list of images - use first image if list is provided
+        image_to_use = image[0] if isinstance(image, list) else image
+
         request = models.ImageEditRequest(
-            image=utils.get_pydantic_model(image, models.ImageFile),
+            image=utils.get_pydantic_model(image_to_use, models.ImageFile),
             prompt=prompt,
-            model=model,
+            background=background,
+            input_fidelity=input_fidelity,
             mask=utils.get_pydantic_model(mask, models.ImageFile) if mask else None,
+            model=model,
+            moderation=moderation,
             n=n,
-            size=size,
+            output_compression=output_compression,
+            output_format=output_format,
+            partial_images=partial_images,
+            quality=quality,
             response_format=response_format,
+            size=size,
+            stream=stream,
             user=user,
         )
 
@@ -399,7 +683,7 @@ class Images(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="application/json",
+            accept_header_value="text/event-stream" if stream else "application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
@@ -438,44 +722,62 @@ class Images(BaseSDK):
                 "5XX",
             ],
             retry_config=retry_config,
+            stream=True,
         )
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ImageGenerationResponse, http_res)
+            http_res_text = utils.stream_to_text(http_res)
+            return unmarshal_json_response(
+                models.ImageGenerationResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStream(
+                http_res,
+                lambda raw: utils.unmarshal_json(raw, models.EditImageResponseBody),
+                sentinel="[DONE]",
+                client_ref=self,
+            )
         if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res
+                errors.BadRequestErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res)
+            raise errors.BadRequestError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.AuthenticationErrorData, http_res, http_res_text
             )
-            raise errors.AuthenticationError(response_data, http_res)
+            raise errors.AuthenticationError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.PermissionDeniedErrorData, http_res
+                errors.PermissionDeniedErrorData, http_res, http_res_text
             )
-            raise errors.PermissionDeniedError(response_data, http_res)
+            raise errors.PermissionDeniedError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.UnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityErrorData, http_res, http_res_text
             )
-            raise errors.UnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "429", "application/json"):
-            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res)
-            raise errors.RateLimitError(response_data, http_res)
+            http_res_text = utils.stream_to_text(http_res)
+            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res, http_res_text)
+            raise errors.RateLimitError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.InternalServerErrorData, http_res
+                errors.InternalServerErrorData, http_res, http_res_text
             )
-            raise errors.InternalServerError(response_data, http_res)
+            raise errors.InternalServerError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "503", "application/json"):
+            http_res_text = utils.stream_to_text(http_res)
             response_data = unmarshal_json_response(
-                errors.ServiceUnavailableErrorData, http_res
+                errors.ServiceUnavailableErrorData, http_res, http_res_text
             )
-            raise errors.ServiceUnavailableError(response_data, http_res)
+            raise errors.ServiceUnavailableError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = utils.stream_to_text(http_res)
             raise errors.R9SDefaultError("API error occurred", http_res, http_res_text)
@@ -485,22 +787,96 @@ class Images(BaseSDK):
 
         raise errors.R9SDefaultError("Unexpected response received", http_res)
 
+    @overload
     async def edit_async(
         self,
         *,
-        image: Union[models.ImageFile, models.ImageFileTypedDict],
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
         prompt: str,
-        model: Optional[str] = None,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
         mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
         n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
         size: Optional[models.ImageEditSize] = "1024x1024",
-        response_format: Optional[models.ImageEditResponseFormat] = "url",
+        stream: Union[Literal[False], None] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> models.ImageGenerationResponse:
+        ...
+
+    @overload
+    async def edit_async(
+        self,
+        *,
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
+        prompt: str,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
+        mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
+        n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
+        size: Optional[models.ImageEditSize] = "1024x1024",
+        stream: Literal[True] = ...,
+        user: Optional[str] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> eventstreaming.EventStreamAsync[models.EditImageResponseBody]:
+        ...
+
+    async def edit_async(
+        self,
+        *,
+        image: Union[
+            models.ImageFile,
+            models.ImageFileTypedDict,
+            list[Union[models.ImageFile, models.ImageFileTypedDict]]
+        ],
+        prompt: str,
+        background: Optional[models.ImageEditBackground] = None,
+        input_fidelity: Optional[models.ImageEditInputFidelity] = "low",
+        mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
+        model: Optional[str] = None,
+        moderation: Optional[models.ImageEditModeration] = None,
+        n: Optional[int] = 1,
+        output_compression: Optional[int] = None,
+        output_format: Optional[models.ImageEditOutputFormat] = None,
+        partial_images: Optional[int] = 0,
+        quality: Optional[models.ImageEditQuality] = None,
+        response_format: Optional[models.ImageEditResponseFormat] = None,
+        size: Optional[models.ImageEditSize] = "1024x1024",
+        stream: Optional[bool] = None,
+        user: Optional[str] = None,
+        retries: OptionalNullable[utils.RetryConfig] = UNSET,
+        server_url: Optional[str] = None,
+        timeout_ms: Optional[int] = None,
+        http_headers: Optional[Mapping[str, str]] = None,
+    ) -> Union[models.ImageGenerationResponse, eventstreaming.EventStreamAsync[models.EditImageResponseBody]]:
         r"""Edit image
 
         Edit an existing image using a text prompt (inpainting).
@@ -528,14 +904,25 @@ class Images(BaseSDK):
         else:
             base_url = self._get_url(base_url, url_variables)
 
+        # Handle list of images - use first image if list is provided
+        image_to_use = image[0] if isinstance(image, list) else image
+
         request = models.ImageEditRequest(
-            image=utils.get_pydantic_model(image, models.ImageFile),
+            image=utils.get_pydantic_model(image_to_use, models.ImageFile),
             prompt=prompt,
-            model=model,
+            background=background,
+            input_fidelity=input_fidelity,
             mask=utils.get_pydantic_model(mask, models.ImageFile) if mask else None,
+            model=model,
+            moderation=moderation,
             n=n,
-            size=size,
+            output_compression=output_compression,
+            output_format=output_format,
+            partial_images=partial_images,
+            quality=quality,
             response_format=response_format,
+            size=size,
+            stream=stream,
             user=user,
         )
 
@@ -549,7 +936,7 @@ class Images(BaseSDK):
             request_has_path_params=False,
             request_has_query_params=True,
             user_agent_header="user-agent",
-            accept_header_value="application/json",
+            accept_header_value="text/event-stream" if stream else "application/json",
             http_headers=http_headers,
             security=self.sdk_configuration.security,
             get_serialized_body=lambda: utils.serialize_request_body(
@@ -588,44 +975,62 @@ class Images(BaseSDK):
                 "5XX",
             ],
             retry_config=retry_config,
+            stream=True,
         )
 
         response_data: Any = None
         if utils.match_response(http_res, "200", "application/json"):
-            return unmarshal_json_response(models.ImageGenerationResponse, http_res)
+            http_res_text = await utils.stream_to_text_async(http_res)
+            return unmarshal_json_response(
+                models.ImageGenerationResponse, http_res, http_res_text
+            )
+        if utils.match_response(http_res, "200", "text/event-stream"):
+            return eventstreaming.EventStreamAsync(
+                http_res,
+                lambda raw: utils.unmarshal_json(raw, models.EditImageResponseBody),
+                sentinel="[DONE]",
+                client_ref=self,
+            )
         if utils.match_response(http_res, "400", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.BadRequestErrorData, http_res
+                errors.BadRequestErrorData, http_res, http_res_text
             )
-            raise errors.BadRequestError(response_data, http_res)
+            raise errors.BadRequestError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "401", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.AuthenticationErrorData, http_res, http_res_text
             )
-            raise errors.AuthenticationError(response_data, http_res)
+            raise errors.AuthenticationError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "403", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.PermissionDeniedErrorData, http_res
+                errors.PermissionDeniedErrorData, http_res, http_res_text
             )
-            raise errors.PermissionDeniedError(response_data, http_res)
+            raise errors.PermissionDeniedError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "422", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.UnprocessableEntityErrorData, http_res
+                errors.UnprocessableEntityErrorData, http_res, http_res_text
             )
-            raise errors.UnprocessableEntityError(response_data, http_res)
+            raise errors.UnprocessableEntityError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "429", "application/json"):
-            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res)
-            raise errors.RateLimitError(response_data, http_res)
+            http_res_text = await utils.stream_to_text_async(http_res)
+            response_data = unmarshal_json_response(errors.RateLimitErrorData, http_res, http_res_text)
+            raise errors.RateLimitError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "500", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.InternalServerErrorData, http_res
+                errors.InternalServerErrorData, http_res, http_res_text
             )
-            raise errors.InternalServerError(response_data, http_res)
+            raise errors.InternalServerError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "503", "application/json"):
+            http_res_text = await utils.stream_to_text_async(http_res)
             response_data = unmarshal_json_response(
-                errors.ServiceUnavailableErrorData, http_res
+                errors.ServiceUnavailableErrorData, http_res, http_res_text
             )
-            raise errors.ServiceUnavailableError(response_data, http_res)
+            raise errors.ServiceUnavailableError(response_data, http_res, http_res_text)
         if utils.match_response(http_res, "4XX", "*"):
             http_res_text = await utils.stream_to_text_async(http_res)
             raise errors.R9SDefaultError("API error occurred", http_res, http_res_text)

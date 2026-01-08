@@ -17,8 +17,8 @@ def basic_chat():
     print("Example 1: Basic Chat")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "Hello, how are you?"}],
         )
@@ -32,8 +32,8 @@ def chat_with_system_prompt():
     print("Example 2: Chat with System Prompt")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -51,8 +51,8 @@ def streaming_chat():
     print("Example 3: Streaming Chat")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "Tell me a short story about a cat"}],
             stream=True,
@@ -74,7 +74,7 @@ def chat_with_tools():
     print("Example 4: Chat with Tool Calls")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         # Define tools
         tools = [
             {
@@ -102,7 +102,7 @@ def chat_with_tools():
         ]
 
         # First request
-        res = r9_s.chat.create(
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "user", "content": "What's the weather like in San Francisco?"}
@@ -147,7 +147,7 @@ def chat_with_tools():
                 },
             ]
 
-            final_res = r9_s.chat.create(
+            final_res = r9s.chat.create(
                 model="gpt-4o-mini",
                 messages=messages,  # type: ignore
                 tools=tools,  # type: ignore
@@ -161,7 +161,7 @@ def multi_turn_conversation():
     print("Example 5: Multi-turn Conversation")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         messages = [
             {"role": "system", "content": "You are a knowledgeable programming tutor."},
             {"role": "user", "content": "How do I create a list in Python?"},
@@ -172,7 +172,7 @@ def multi_turn_conversation():
             {"role": "user", "content": "How do I add items to it?"},
         ]
 
-        res = r9_s.chat.create(
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=messages,  # type: ignore
             max_tokens=500,
@@ -187,8 +187,8 @@ def json_mode_output():
     print("Example 6: JSON Mode Output")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -212,8 +212,8 @@ def structured_json_output():
     print("Example 7: Structured JSON Output with Schema")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -249,8 +249,8 @@ def vision_input():
     print("Example 8: Vision Input")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -278,7 +278,7 @@ def forced_tool_call():
     print("Example 9: Forced Tool Call")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         tools = [
             {
                 "type": "function",
@@ -305,7 +305,7 @@ def forced_tool_call():
             },
         ]
 
-        res = r9_s.chat.create(
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": "Tell me about the weather"}],
             tools=tools,  # type: ignore
@@ -327,7 +327,7 @@ def parallel_tool_calls():
     print("Example 10: Parallel Tool Calls")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         tools = [
             {
                 "type": "function",
@@ -343,7 +343,7 @@ def parallel_tool_calls():
             }
         ]
 
-        res = r9_s.chat.create(
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {
@@ -372,8 +372,8 @@ def with_metadata():
     print("Example 11: With Metadata and User Tracking")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.chat.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.chat.create(
             model="gpt-4o-mini",
             messages=[
                 {

@@ -15,8 +15,8 @@ def simple_text_input():
     print("Example 1: Simple Text Input")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input="Tell me a joke about programming",
             instructions="You are a funny assistant",
@@ -36,8 +36,8 @@ def with_messages():
     print("Example 2: Using Message Array")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input=[
                 {
@@ -59,8 +59,8 @@ def multi_turn_conversation():
     print("Example 3: Multi-turn Conversation")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input=[
                 {
@@ -90,8 +90,8 @@ def with_tools():
     print("Example 4: Request with Tool Calls")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input=[
                 {
@@ -127,8 +127,8 @@ def streaming_response():
     print("Example 5: Streaming Response")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input="Write a short poem about the ocean",
             instructions="You are a creative poet",
@@ -150,8 +150,8 @@ def json_mode():
     print("Example 6: JSON Mode Output")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input="Extract person information and return as JSON: John Smith is 35 years old and works as a software engineer in San Francisco",
             instructions="Extract structured data and output in JSON format",
@@ -171,8 +171,8 @@ def json_schema():
     print("Example 7: Structured JSON with Schema")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input="Generate a user profile for software developer Alice Chen in JSON format",
             instructions="Create a detailed user profile following the schema",
@@ -208,8 +208,8 @@ def with_metadata():
     print("Example 8: Request with Metadata")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-4o-mini",
             input="Summarize the key points from our discussion",
             instructions="You are a meeting assistant",
@@ -233,8 +233,8 @@ def reasoning_mode():
     print("Example 9: Reasoning Mode")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        res = r9_s.responses.create(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        res = r9s.responses.create(
             model="gpt-5-codex",
             input="A farmer needs to transport a fox, a chicken, and a bag of grain across a river. The boat can only carry the farmer and one item. If left alone, the fox will eat the chicken, and the chicken will eat the grain. How can the farmer get everything across safely?",
             instructions="Think through this step by step",
