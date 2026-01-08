@@ -435,6 +435,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip confirmation for template shell execution (!{...})",
     )
     chat_parser.add_argument(
+        "--allow-scripts",
+        action="store_true",
+        help="Allow skill scripts (%{...}) to execute",
+    )
+    chat_parser.add_argument(
         "--rich",
         action="store_true",
         help="Enable rich markdown rendering (requires: pip install r9s[rich])",

@@ -43,3 +43,8 @@ class ScriptPolicy:
     """
 
     allow_scripts: bool = False
+    allow_network: bool = False
+    allow_filesystem: bool = False
+    allow_env_vars: bool = False
+    timeout_seconds: int = 30
+    allowed_commands: List[str] = field(default_factory=list)

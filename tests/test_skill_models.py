@@ -19,3 +19,8 @@ def test_skill_models_defaults() -> None:
 
     policy = ScriptPolicy()
     assert policy.allow_scripts is False
+    assert policy.allow_network is False
+    assert policy.allow_filesystem is False
+    assert policy.allow_env_vars is False
+    assert policy.timeout_seconds == 30
+    assert policy.allowed_commands == []
