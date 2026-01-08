@@ -398,6 +398,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Agent name (loads system prompt and model from ~/.r9s/agents/<agent>/)",
     )
     chat_parser.add_argument(
+        "--agent-version",
+        dest="agent_version",
+        metavar="VERSION",
+        help="Agent version to use (default: current_version from agent manifest)",
+    )
+    chat_parser.add_argument(
         "--var",
         action="append",
         default=[],
@@ -438,7 +444,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument(
         "--allow-scripts",
         action="store_true",
-        help="Allow skill scripts (%{...}) to execute",
+        help="Allow skill scripts (%%{...}) to execute",
     )
     chat_parser.add_argument(
         "--rich",

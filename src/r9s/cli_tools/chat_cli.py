@@ -627,7 +627,8 @@ def handle_chat(args: argparse.Namespace) -> None:
         store = LocalAgentStore()
         try:
             agent = store.get_agent(agent_name)
-            agent_version = store.get_version(agent_name, agent.current_version)
+            version_to_load = getattr(args, "agent_version", None) or agent.current_version
+            agent_version = store.get_version(agent_name, version_to_load)
         except Exception as exc:
             raise SystemExit(f"Failed to load agent: {agent_name} ({exc})") from exc
         if system_prompt is not None:
