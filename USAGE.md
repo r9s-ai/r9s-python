@@ -87,7 +87,10 @@ r9s agent audit support --last 5
 # 10) Import a bot as an agent
 r9s agent import-bot reviewer --model "$R9S_MODEL"
 
-# 11) Create and use a command (local, prompt template only)
+# 11) Pull an agent definition from git/HTTP
+r9s agent pull github:my-org/agent-definitions --path agents/support
+
+# 12) Create and use a command (local, prompt template only)
 #
 # Commands are saved as TOML under: ~/.r9s/commands/<name>.toml
 # In interactive chat, commands become /<name> slash commands.
@@ -98,7 +101,7 @@ r9s agent import-bot reviewer --model "$R9S_MODEL"
 r9s command create summarize --prompt "Summarize: {{args}}"
 # In chat: /summarize hello world
 
-# 12) Run Claude Code with r9s env injected (supported: claude-code, cc)
+# 13) Run Claude Code with r9s env injected (supported: claude-code, cc)
 r9s run cc --model "$R9S_MODEL"
 ```
 
@@ -114,6 +117,9 @@ r9s agent rollback support --version 1.0.0
 
 # Deprecate a version
 r9s agent deprecate support --version 1.0.0
+
+# Pull an agent definition from git/HTTP
+r9s agent pull github:my-org/agent-definitions --path agents/support
 ```
 
 ### Agent Environment Variables

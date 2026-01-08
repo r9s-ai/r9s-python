@@ -175,6 +175,28 @@ required = ["order_id"]
 {"execution_id":"exec_001","agent_version":"1.2.0","content_hash":"sha256:a1b2c3...","request_id":"msg_abc","model":"claude-sonnet-4-20250514","timestamp":"2024-01-25T10:15:32Z"}
 ```
 
+### Remote Distribution (Git/HTTP)
+
+Agent definitions can be stored in a Git repository or hosted as an archive for distribution.
+The CLI can fetch bundles from a Git ref or HTTP URL and install them locally.
+
+```
+agent-bundle/
+├── agent.toml
+└── versions/
+    ├── 1.0.0.toml
+    └── 1.1.0.toml
+```
+
+Example:
+
+```bash
+r9s agent pull github:my-org/agent-definitions --path agents/support
+```
+
+The pull flow validates manifests, ensures version integrity (content hashes),
+and rejects unsafe archive paths or symlinks to avoid security risks.
+
 ### CLI Commands
 
 ```bash
@@ -202,6 +224,7 @@ r9s chat --agent <name> --var key=value
 r9s agent audit <name> --last 10
 r9s agent audit --request-id <id>
 r9s agent export <name> --format json
+r9s agent pull <ref> --path agents/support
 ```
 
 ### Python API

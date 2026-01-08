@@ -28,6 +28,7 @@ from r9s.cli_tools.agent_cli import (
     handle_agent_history,
     handle_agent_import_bot,
     handle_agent_list,
+    handle_agent_pull,
     handle_agent_rollback,
     handle_agent_show,
     handle_agent_update,
@@ -586,6 +587,17 @@ def build_parser() -> argparse.ArgumentParser:
     agent_import_bot.add_argument("--model", help="Model name (default: R9S_MODEL)")
     agent_import_bot.add_argument("--provider", help="Provider name (default: r9s)")
     agent_import_bot.set_defaults(func=handle_agent_import_bot)
+
+    agent_pull = agent_sub.add_parser(
+        "pull", help="Fetch an agent definition from git or HTTP"
+    )
+    agent_pull.add_argument("ref", help="git ref, local path, or HTTP archive URL")
+    agent_pull.add_argument(
+        "--path", help="Optional subdirectory within the repo/archive"
+    )
+    agent_pull.add_argument("--name", help="Override agent name")
+    agent_pull.add_argument("--force", action="store_true", help="Overwrite existing agent")
+    agent_pull.set_defaults(func=handle_agent_pull)
 
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")

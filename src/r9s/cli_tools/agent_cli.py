@@ -3,9 +3,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
+import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
+import urllib.request
+import zipfile
 from datetime import datetime, timezone
 from difflib import unified_diff
 from pathlib import Path
@@ -15,10 +20,12 @@ from r9s.agents.exceptions import AgentExistsError, AgentNotFoundError
 from r9s.agents.local_store import (
     LocalAgentStore,
     LocalAuditStore,
+    agent_path,
     delete_agent,
     list_agents,
     load_agent,
     load_version,
+    read_agent_name_from_manifest,
     save_agent,
     save_version,
 )
@@ -202,6 +209,151 @@ def _get_instructions(args: argparse.Namespace, existing: str = "") -> str:
     raise SystemExit(
         "Missing instructions. Use --instructions, --instructions-file, or --edit"
     )
+
+
+def _is_within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+    except ValueError:
+        return False
+    return True
+
+
+def _is_git_ref(ref: str) -> bool:
+    if ref.startswith("github:"):
+        return True
+    if ref.startswith("git@") or ref.startswith("ssh://"):
+        return True
+    return ref.endswith(".git")
+
+
+def _normalize_git_ref(ref: str) -> str:
+    if not ref.startswith("github:"):
+        return ref
+    slug = ref[len("github:") :].strip("/")
+    if not slug or "/" not in slug:
+        raise SystemExit("Invalid GitHub reference (expected github:owner/repo)")
+    return f"https://github.com/{slug}.git"
+
+
+def _clone_repo(ref: str, dest: Path) -> None:
+    repo = _normalize_git_ref(ref)
+    result = subprocess.run(
+        ["git", "clone", "--depth", "1", repo, str(dest)],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip() or result.stdout.strip()
+        raise SystemExit(f"git clone failed: {stderr or 'unknown error'}")
+
+
+def _download_archive(url: str, dest: Path, max_bytes: int = 50 * 1024 * 1024) -> Path:
+    request = urllib.request.Request(url, headers={"User-Agent": "r9s-agent-pull"})
+    with urllib.request.urlopen(request) as response:
+        size = response.headers.get("Content-Length")
+        if size and int(size) > max_bytes:
+            raise SystemExit("Archive too large to download")
+        out_path = dest / Path(url).name
+        total = 0
+        with open(out_path, "wb") as handle:
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    raise SystemExit("Archive exceeds size limit")
+                handle.write(chunk)
+    return out_path
+
+
+def _safe_extract_zip(archive: Path, dest: Path) -> None:
+    with zipfile.ZipFile(archive) as zf:
+        for member in zf.infolist():
+            if stat.S_IFMT(member.external_attr >> 16) == stat.S_IFLNK:
+                raise SystemExit("Archive contains symlinks")
+            target = dest / member.filename
+            if not _is_within(target, dest):
+                raise SystemExit("Archive contains invalid paths")
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member) as src, open(target, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+
+
+def _safe_extract_tar(archive: Path, dest: Path) -> None:
+    with tarfile.open(archive) as tf:
+        for member in tf.getmembers():
+            target = dest / member.name
+            if not _is_within(target, dest):
+                raise SystemExit("Archive contains invalid paths")
+            if member.issym() or member.islnk():
+                raise SystemExit("Archive contains symlinks")
+            if not (member.isdir() or member.isreg()):
+                raise SystemExit("Archive contains unsupported entries")
+        tf.extractall(dest)
+
+
+def _resolve_bundle_path(root: Path, path: Optional[str]) -> Path:
+    base = root
+    if path:
+        base = (root / path).resolve()
+    if not base.exists():
+        raise SystemExit("Bundle path not found")
+    if not base.is_dir():
+        raise SystemExit("Bundle path must be a directory")
+    if not _is_within(base, root):
+        raise SystemExit("Bundle path escapes repository")
+    return base
+
+
+def _copy_agent_bundle(src: Path, dest: Path, name_override: Optional[str]) -> str:
+    manifest = src / "agent.toml"
+    if not manifest.exists() or not manifest.is_file() or manifest.is_symlink():
+        raise SystemExit("agent.toml not found in bundle")
+    versions_dir = src / "versions"
+    if (
+        not versions_dir.exists()
+        or not versions_dir.is_dir()
+        or versions_dir.is_symlink()
+    ):
+        raise SystemExit("versions/ directory not found in bundle")
+
+    agent_name = read_agent_name_from_manifest(manifest)
+    final_name = name_override.strip() if name_override else agent_name
+    if not final_name:
+        raise SystemExit("agent name cannot be empty")
+
+    dest.mkdir(parents=True, exist_ok=True)
+    dest_manifest = dest / "agent.toml"
+    shutil.copy2(manifest, dest_manifest)
+
+    dest_versions = dest / "versions"
+    dest_versions.mkdir(parents=True, exist_ok=True)
+    for entry in versions_dir.iterdir():
+        if entry.is_symlink():
+            raise SystemExit("Bundle contains symlinks")
+        if entry.is_file() and entry.suffix == ".toml":
+            shutil.copy2(entry, dest_versions / entry.name)
+
+    if final_name != agent_name:
+        agent_data = load_agent(final_name)
+        agent_data.name = final_name
+        save_agent(agent_data)
+
+    return final_name
+
+
+def _cleanup_agent_dir(name: str) -> None:
+    try:
+        delete_agent(name)
+    except Exception:
+        pass
 
 
 def handle_agent_list(_: argparse.Namespace) -> None:
@@ -452,3 +604,59 @@ def handle_agent_import_bot(args: argparse.Namespace) -> None:
         },
     )
     success(f"Imported bot '{name}' as agent.")
+
+
+def handle_agent_pull(args: argparse.Namespace) -> None:
+    ref = args.ref.strip()
+    name_override = (args.name or "").strip() or None
+    path = args.path
+    force = getattr(args, "force", False)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_root = Path(temp_dir)
+        if _is_git_ref(ref):
+            repo_dir = temp_root / "repo"
+            _clone_repo(ref, repo_dir)
+            bundle_root = _resolve_bundle_path(repo_dir, path)
+        else:
+            local_path = Path(ref).expanduser()
+            if local_path.exists():
+                bundle_root = _resolve_bundle_path(local_path, path)
+            elif ref.startswith("http://") or ref.startswith("https://"):
+                try:
+                    archive = _download_archive(ref, temp_root)
+                except Exception as exc:
+                    raise SystemExit(f"Failed to download archive: {exc}") from exc
+                extract_dir = temp_root / "extract"
+                extract_dir.mkdir(parents=True, exist_ok=True)
+                if archive.suffix == ".zip":
+                    _safe_extract_zip(archive, extract_dir)
+                elif archive.name.endswith((".tar.gz", ".tgz")):
+                    _safe_extract_tar(archive, extract_dir)
+                else:
+                    raise SystemExit("Unsupported archive format (use .zip or .tar.gz)")
+                bundle_root = _resolve_bundle_path(extract_dir, path)
+            else:
+                raise SystemExit("Unsupported source (use git ref, local path, or HTTP archive)")
+
+        manifest = bundle_root / "agent.toml"
+        agent_name = read_agent_name_from_manifest(manifest)
+        final_name = name_override or agent_name
+        dest = agent_path(final_name)
+
+        if dest.exists():
+            if not force:
+                raise SystemExit(f"Agent already exists: {final_name} (use --force)")
+            _cleanup_agent_dir(final_name)
+
+        final_name = _copy_agent_bundle(bundle_root, dest, name_override)
+        try:
+            agent = load_agent(final_name)
+            load_version(final_name, agent.current_version)
+            for version_file in (dest / "versions").glob("*.toml"):
+                load_version(final_name, version_file.stem)
+        except Exception as exc:
+            _cleanup_agent_dir(final_name)
+            raise SystemExit(f"Invalid agent bundle: {exc}") from exc
+
+    success(f"Pulled agent '{final_name}'")
