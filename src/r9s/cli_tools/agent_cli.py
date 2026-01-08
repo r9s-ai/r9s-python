@@ -296,7 +296,14 @@ def _safe_extract_tar(archive: Path, dest: Path) -> None:
                 raise SystemExit("Archive contains symlinks")
             if not (member.isdir() or member.isreg()):
                 raise SystemExit("Archive contains unsupported entries")
-        tf.extractall(dest)
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                extracted = tf.extractfile(member)
+                if extracted is not None:
+                    with open(target, "wb") as dst:
+                        shutil.copyfileobj(extracted, dst)
 
 
 def _resolve_bundle_path(root: Path, path: Optional[str]) -> Path:
