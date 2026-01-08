@@ -53,6 +53,7 @@ from r9s.cli_tools.models_cli import handle_models_list
 from r9s.cli_tools.skill_cli import (
     handle_skill_create,
     handle_skill_delete,
+    handle_skill_install,
     handle_skill_list,
     handle_skill_show,
     handle_skill_validate,
@@ -615,13 +616,37 @@ def build_parser() -> argparse.ArgumentParser:
     agent_pull = agent_sub.add_parser(
         "pull", help="Fetch an agent definition from git or HTTP"
     )
-    agent_pull.add_argument("ref", help="git ref, local path, or HTTP archive URL")
+    agent_pull.add_argument(
+        "ref",
+        help=(
+            "GitHub URL, git ref, local path, or HTTP archive URL. Examples:\n"
+            "  github:owner/repo/path/to/agent\n"
+            "  github:owner/repo/path/to/agent@branch\n"
+            "  github:owner/repo --path path/to/agent"
+        ),
+    )
     agent_pull.add_argument(
         "--path", help="Optional subdirectory within the repo/archive"
     )
     agent_pull.add_argument("--name", help="Override agent name")
     agent_pull.add_argument("--force", action="store_true", help="Overwrite existing agent")
     agent_pull.set_defaults(func=handle_agent_pull)
+
+    # Alias: 'install' as synonym for 'pull' (consistency with r9s skill install)
+    agent_install = agent_sub.add_parser(
+        "install", help="Install an agent from GitHub (alias for pull)"
+    )
+    agent_install.add_argument(
+        "ref",
+        help=(
+            "GitHub URL or shorthand. Examples:\n"
+            "  github:owner/repo/path/to/agent\n"
+            "  github:owner/repo/path/to/agent@branch"
+        ),
+    )
+    agent_install.add_argument("--name", "-n", help="Override agent name")
+    agent_install.add_argument("--force", "-f", action="store_true", help="Overwrite existing agent")
+    agent_install.set_defaults(func=handle_agent_pull, path=None)
 
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")
@@ -664,6 +689,26 @@ def build_parser() -> argparse.ArgumentParser:
     skill_delete = skill_sub.add_parser("delete", help="Delete a skill")
     skill_delete.add_argument("name", help="Skill name")
     skill_delete.set_defaults(func=handle_skill_delete)
+
+    skill_install = skill_sub.add_parser(
+        "install", help="Install a skill from GitHub"
+    )
+    skill_install.add_argument(
+        "url",
+        help=(
+            "GitHub URL or shorthand. Examples:\n"
+            "  github:owner/repo/path/to/skill\n"
+            "  github:owner/repo/path/to/skill@branch\n"
+            "  https://github.com/owner/repo/tree/branch/path"
+        ),
+    )
+    skill_install.add_argument(
+        "--name", "-n", help="Override skill name (default: derived from path)"
+    )
+    skill_install.add_argument(
+        "--force", "-f", action="store_true", help="Overwrite existing skill"
+    )
+    skill_install.set_defaults(func=handle_skill_install)
 
     command_parser = subparsers.add_parser(
         "command", help="Manage local commands (~/.r9s/commands/*.toml)"
