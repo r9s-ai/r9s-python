@@ -403,6 +403,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Agent template variable (key=value, repeatable)",
     )
     chat_parser.add_argument(
+        "--skill",
+        action="append",
+        default=[],
+        help="Load skill by name (repeatable, combines with agent skills)",
+    )
+    chat_parser.add_argument(
         "--history-file",
         help="History file path (default: auto under ~/.r9s/; disabled when --no-history)",
     )
@@ -435,6 +441,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     chat_parser.epilog = (
         "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "
+        "Skills: `r9s chat --skill <name>` loads skill instructions from ~/.r9s/skills/<name>/. "
         "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
         "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
@@ -517,6 +524,12 @@ def build_parser() -> argparse.ArgumentParser:
     agent_create.add_argument("--provider", help="Provider name (default: r9s)")
     agent_create.add_argument("--reason", help="Change reason (optional)")
     agent_create.add_argument("--params", help="Model params JSON (optional)")
+    agent_create.add_argument(
+        "--skill",
+        action="append",
+        default=[],
+        help="Skill to include (repeatable)",
+    )
     agent_create.set_defaults(func=handle_agent_create)
 
     agent_update = agent_sub.add_parser("update", help="Update agent (new version)")
@@ -541,6 +554,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Version bump type",
     )
     agent_update.add_argument("--params", help="Model params JSON (optional)")
+    agent_update.add_argument(
+        "--skill",
+        action="append",
+        default=None,
+        help="Skill to include (repeatable, replaces existing skills)",
+    )
     agent_update.set_defaults(func=handle_agent_update)
 
     agent_delete = agent_sub.add_parser("delete", help="Delete agent")

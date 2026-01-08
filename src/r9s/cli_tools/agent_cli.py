@@ -393,6 +393,8 @@ def handle_agent_show(args: argparse.Namespace) -> None:
     print(f"- status: {version.status.value}")
     if version.variables:
         print(f"- variables: {', '.join(version.variables)}")
+    if version.skills:
+        print(f"- skills: {', '.join(version.skills)}")
     if getattr(args, "instructions", False):
         print()
         header("Instructions")
@@ -406,6 +408,7 @@ def handle_agent_create(args: argparse.Namespace) -> None:
     provider = (args.provider or "r9s").strip()
     description = (args.description or "").strip()
     params = _parse_params(args.params)
+    skills = getattr(args, "skill", []) or []
 
     store = LocalAgentStore()
     try:
@@ -417,6 +420,7 @@ def handle_agent_create(args: argparse.Namespace) -> None:
             description=description,
             change_reason=args.reason or "",
             model_params=params,
+            skills=skills,
         )
     except AgentExistsError:
         raise SystemExit(
@@ -452,6 +456,10 @@ def handle_agent_update(args: argparse.Namespace) -> None:
         }
         if params:
             update_kwargs["model_params"] = params
+        # Only update skills if --skill was explicitly provided
+        skills = getattr(args, "skill", None)
+        if skills is not None:
+            update_kwargs["skills"] = skills
         version = store.update(
             name,
             **update_kwargs,
