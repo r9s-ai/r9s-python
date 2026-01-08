@@ -4,9 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
-from r9s.skills.exceptions import SkillNotFoundError
+from r9s.skills.exceptions import SecurityError, SkillNotFoundError
 from r9s.skills.local_store import load_skill, skill_path
 from r9s.skills.models import Skill
+from r9s.skills.validator import ensure_within_root
 
 
 def load_skills(skill_refs: List[str], warn_fn=None) -> List[Skill]:
@@ -40,10 +41,19 @@ def load_skills(skill_refs: List[str], warn_fn=None) -> List[Skill]:
 
 
 def resolve_skill_script(script_name: str, skills: List[Skill]) -> Optional[Path]:
-    """Resolve a skill script path if it exists in loaded skills."""
+    """Resolve a skill script path if it exists in loaded skills.
+
+    Returns None if the script is not found or if path traversal is detected.
+    """
     for skill in skills:
         if script_name in skill.scripts:
-            return skill_path(skill.name) / script_name
+            skill_dir = skill_path(skill.name)
+            script_path = (skill_dir / script_name).resolve()
+            try:
+                ensure_within_root(skill_dir, script_path)
+            except SecurityError:
+                return None
+            return script_path
     return None
 
 

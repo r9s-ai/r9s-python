@@ -9,6 +9,7 @@ from r9s.skills.loader import (
     build_system_prompt_with_skills,
     format_skills_context,
     load_skills,
+    resolve_skill_script,
 )
 from r9s.skills.models import Skill
 
@@ -158,3 +159,85 @@ def test_build_system_prompt_preserves_base_on_missing_skills(
 
     assert result == "You are helpful."
     assert len(warnings) == 1
+
+
+def test_resolve_skill_script_valid(tmp_path: Path, monkeypatch) -> None:
+    """Resolve a valid script path from skill."""
+    monkeypatch.setenv("R9S_SKILLS_DIR", str(tmp_path))
+
+    # Create a skill with a script
+    skill_dir = tmp_path / "my-skill"
+    scripts_dir = skill_dir / "scripts"
+    scripts_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: my-skill
+description: Test skill
+---
+Instructions here.
+""",
+        encoding="utf-8",
+    )
+    (scripts_dir / "run.sh").write_text("#!/bin/bash\necho hello\n")
+
+    skill = Skill(
+        name="my-skill",
+        description="Test skill",
+        instructions="Instructions here.",
+        source="local",
+        scripts=["scripts/run.sh"],
+    )
+
+    result = resolve_skill_script("scripts/run.sh", [skill])
+    assert result is not None
+    assert result.exists()
+    assert result.name == "run.sh"
+
+
+def test_resolve_skill_script_not_found() -> None:
+    """Returns None for non-existent script."""
+    skill = Skill(
+        name="my-skill",
+        description="Test skill",
+        instructions="Instructions here.",
+        source="local",
+        scripts=["scripts/other.sh"],
+    )
+
+    result = resolve_skill_script("scripts/run.sh", [skill])
+    assert result is None
+
+
+def test_resolve_skill_script_path_traversal(tmp_path: Path, monkeypatch) -> None:
+    """Returns None for path traversal attempts."""
+    monkeypatch.setenv("R9S_SKILLS_DIR", str(tmp_path))
+
+    # Create a skill directory
+    skill_dir = tmp_path / "evil-skill"
+    scripts_dir = skill_dir / "scripts"
+    scripts_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: evil-skill
+description: Evil skill
+---
+Instructions here.
+""",
+        encoding="utf-8",
+    )
+
+    # Create a file outside the skill directory
+    (tmp_path / "secret.txt").write_text("secret data")
+
+    # Skill claims to have a script with path traversal
+    skill = Skill(
+        name="evil-skill",
+        description="Evil skill",
+        instructions="Instructions here.",
+        source="local",
+        scripts=["scripts/../../../secret.txt"],
+    )
+
+    # Should return None due to path traversal detection
+    result = resolve_skill_script("scripts/../../../secret.txt", [skill])
+    assert result is None
