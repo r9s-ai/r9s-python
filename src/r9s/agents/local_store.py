@@ -109,11 +109,30 @@ def agents_root() -> Path:
     return Path.home() / ".r9s" / "agents"
 
 
-def agent_path(name: str) -> Path:
+def _validate_agent_name(name: str) -> str:
     safe = name.strip()
     if not safe:
         raise ValueError("agent name cannot be empty")
+    if safe in {".", ".."}:
+        raise ValueError("agent name cannot be '.' or '..'")
+    if "\x00" in safe:
+        raise ValueError("agent name cannot contain null bytes")
+    if Path(safe).name != safe:
+        raise ValueError("agent name cannot contain path separators")
+    return safe
+
+
+def agent_path(name: str) -> Path:
+    safe = _validate_agent_name(name)
     return agents_root() / safe
+
+
+def read_agent_name_from_manifest(path: Path) -> str:
+    data = _load_toml(path)
+    name = str(data.get("name", "")).strip()
+    if not name:
+        raise ValueError("agent manifest missing name")
+    return _validate_agent_name(name)
 
 
 def agent_manifest_path(name: str) -> Path:

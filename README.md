@@ -72,6 +72,9 @@ r9s agent create code-reviewer \
   --model gpt-5-mini
 
 r9s chat --agent code-reviewer --var language=Python --var focus_areas="security, performance"
+
+# Pull an agent definition from git
+r9s agent pull github:my-org/agent-definitions --path agents/reviewer
 ```
 
 Commands (saved as TOML under `~/.r9s/commands/<name>.toml`, prompt template only):
