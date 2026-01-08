@@ -302,49 +302,51 @@ def _stream_chat(
     if sys.stdout.isatty():
         spinner.start()
 
-    stream = r9s.chat.create(
-        model=model,
-        messages=messages,
-        stream=True,
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty,
-    )
-    assistant_parts: List[str] = []
-    request_id = ""
-    input_tokens = 0
-    output_tokens = 0
-    for event in stream:
-        if not request_id and getattr(event, "id", None):
-            request_id = event.id
-        if getattr(event, "usage", None):
-            usage = event.usage
-            if usage:
-                input_tokens = usage.prompt_tokens
-                output_tokens = usage.completion_tokens
-        if not event.choices:
-            continue
-        delta = event.choices[0].delta
-        if delta.content:
-            spinner.stop_and_clear()
-            piece = run_stream_delta_extensions(exts, delta.content, ctx)
-            assistant_parts.append(piece)
-            if prefix and not spinner.prefix_printed:
-                spinner.print_prefix()
-            print(piece, end="", flush=True)
-    spinner.stop_and_clear()
-    if prefix and not spinner.prefix_printed:
-        spinner.print_prefix()
-    print()
-    assistant_text = "".join(assistant_parts)
-    return ChatResult(
-        text=run_after_response_extensions(exts, assistant_text, ctx),
-        request_id=request_id,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-    )
+    try:
+        stream = r9s.chat.create(
+            model=model,
+            messages=messages,
+            stream=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+        )
+        assistant_parts: List[str] = []
+        request_id = ""
+        input_tokens = 0
+        output_tokens = 0
+        for event in stream:
+            if not request_id and getattr(event, "id", None):
+                request_id = event.id
+            if getattr(event, "usage", None):
+                usage = event.usage
+                if usage:
+                    input_tokens = usage.prompt_tokens
+                    output_tokens = usage.completion_tokens
+            if not event.choices:
+                continue
+            delta = event.choices[0].delta
+            if delta.content:
+                spinner.stop_and_clear()
+                piece = run_stream_delta_extensions(exts, delta.content, ctx)
+                assistant_parts.append(piece)
+                if prefix and not spinner.prefix_printed:
+                    spinner.print_prefix()
+                print(piece, end="", flush=True)
+        if prefix and not spinner.prefix_printed:
+            spinner.print_prefix()
+        print()
+        assistant_text = "".join(assistant_parts)
+        return ChatResult(
+            text=run_after_response_extensions(exts, assistant_text, ctx),
+            request_id=request_id,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+    finally:
+        spinner.stop_and_clear()
 
 
 def _non_stream_chat(
