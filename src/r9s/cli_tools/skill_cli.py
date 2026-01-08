@@ -21,6 +21,11 @@ from r9s.cli_tools.ui.terminal import (
     warning,
 )
 from r9s.skills.exceptions import InvalidSkillError, SecurityError, SkillNotFoundError
+from r9s.skills.github import (
+    check_and_install_dependencies,
+    install_skill_from_github,
+    parse_github_url,
+)
 from r9s.skills.local_store import (
     delete_skill,
     list_skills,
@@ -208,3 +213,52 @@ def handle_skill_delete(args: argparse.Namespace) -> None:
         error(str(exc))
         return
     success(f"Deleted: {path}")
+
+
+def handle_skill_install(args: argparse.Namespace) -> None:
+    """Install a skill from GitHub."""
+    url = args.url.strip()
+    if not url:
+        raise SystemExit("URL is required")
+
+    # Parse URL to show what we're installing
+    try:
+        ref = parse_github_url(url)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    skill_name = args.name or ref.skill_name
+    info(f"Installing skill '{skill_name}' from {ref.owner}/{ref.repo}...")
+    info(f"  Path: {ref.path}")
+    info(f"  Branch: {ref.branch}")
+
+    # Install the skill
+    try:
+        path = install_skill_from_github(
+            url,
+            name=args.name,
+            force=args.force,
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    success(f"Installed: {path}")
+
+    # Check for dependencies
+    deps = check_and_install_dependencies(path)
+    if deps:
+        header("Dependencies found (requirements.txt)")
+        for dep in deps:
+            print(f"  - {dep}")
+        info("Install with: pip install -r " + str(path / "requirements.txt"))
+
+    # Check for scripts
+    scripts_dir = path / "scripts"
+    if scripts_dir.exists() and any(scripts_dir.iterdir()):
+        warning("This skill contains scripts. Use --allow-scripts flag when running.")
+
+    # Show usage hint
+    print()
+    info(f"Usage: r9s chat --skill {skill_name}")

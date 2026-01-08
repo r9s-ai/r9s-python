@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
 import os
 import shutil
@@ -227,13 +228,51 @@ def _is_git_ref(ref: str) -> bool:
     return ref.endswith(".git")
 
 
+@dataclass
+class GitHubRef:
+    """Parsed GitHub reference with optional path and branch."""
+
+    owner: str
+    repo: str
+    path: Optional[str] = None
+    branch: str = "main"
+
+
+def _parse_github_ref(ref: str) -> GitHubRef:
+    """Parse github:owner/repo[/path][@branch] format.
+
+    Supports:
+    - github:owner/repo
+    - github:owner/repo/path/to/agent
+    - github:owner/repo/path/to/agent@branch
+    - github:owner/repo@branch
+    """
+    if not ref.startswith("github:"):
+        raise ValueError("Not a github: reference")
+
+    rest = ref[7:].strip("/")  # Remove "github:" prefix
+
+    # Check for @branch suffix
+    branch = "main"
+    if "@" in rest:
+        rest, branch = rest.rsplit("@", 1)
+
+    parts = rest.split("/")
+    if len(parts) < 2:
+        raise SystemExit("Invalid GitHub reference (expected github:owner/repo)")
+
+    owner = parts[0]
+    repo = parts[1]
+    path = "/".join(parts[2:]) if len(parts) > 2 else None
+
+    return GitHubRef(owner=owner, repo=repo, path=path, branch=branch)
+
+
 def _normalize_git_ref(ref: str) -> str:
     if not ref.startswith("github:"):
         return ref
-    slug = ref[len("github:") :].strip("/")
-    if not slug or "/" not in slug:
-        raise SystemExit("Invalid GitHub reference (expected github:owner/repo)")
-    return f"https://github.com/{slug}.git"
+    parsed = _parse_github_ref(ref)
+    return f"https://github.com/{parsed.owner}/{parsed.repo}.git"
 
 
 def _clone_repo(ref: str, dest: Path) -> None:
@@ -626,6 +665,15 @@ def handle_agent_pull(args: argparse.Namespace) -> None:
     name_override = (args.name or "").strip() or None
     path = args.path
     force = getattr(args, "force", False)
+
+    # Extract path from github:owner/repo/path format if present
+    if ref.startswith("github:") and not path:
+        try:
+            parsed = _parse_github_ref(ref)
+            if parsed.path:
+                path = parsed.path
+        except (ValueError, SystemExit):
+            pass  # Fall through to existing error handling
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_root = Path(temp_dir)
