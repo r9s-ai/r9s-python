@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import base64
+import fnmatch
 import json
+import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -18,7 +21,8 @@ from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.agents.models import AgentExecution, AgentVersion
-from r9s.skills.loader import build_system_prompt_with_skills
+from r9s.skills.loader import format_skills_context, load_skills, resolve_skill_script
+from r9s.skills.models import ScriptPolicy, Skill
 from r9s.cli_tools.commands import list_commands, load_command
 from r9s.cli_tools.template_renderer import RenderContext, render_template
 from r9s.cli_tools.chat_extensions import (
@@ -68,6 +72,11 @@ class ChatResult:
     output_tokens: int = 0
 
 
+@dataclass
+class ScriptCommandState:
+    buffer: str = ""
+
+
 def _copy_to_clipboard(text: str) -> None:
     """Copy text to system clipboard. Raises RuntimeError on failure."""
     if sys.platform == "darwin":
@@ -81,6 +90,127 @@ def _copy_to_clipboard(text: str) -> None:
     else:
         raise RuntimeError("No clipboard utility found (pbcopy/xclip/xsel/clip)")
     subprocess.run(cmd, input=text.encode("utf-8"), check=True)
+
+
+def _append_skills_context(base_prompt: str, skills: List[Skill]) -> str:
+    skills_context = format_skills_context(skills)
+    if not skills_context:
+        return base_prompt
+    if base_prompt:
+        return f"{base_prompt}\n{skills_context}"
+    return skills_context
+
+
+def _is_allowed_script_command(
+    cmd_name: str, policy: ScriptPolicy, *, is_skill_script: bool
+) -> bool:
+    if not policy.allow_scripts:
+        return False
+    if policy.allowed_commands:
+        return any(
+            fnmatch.fnmatch(cmd_name, pattern) for pattern in policy.allowed_commands
+        )
+    return is_skill_script
+
+
+def _execute_script_command(
+    raw_cmd: str, skills: List[Skill], policy: ScriptPolicy
+) -> None:
+    try:
+        parts = shlex.split(raw_cmd)
+    except ValueError:
+        return
+    if not parts:
+        return
+
+    cmd_name = parts[0]
+    resolved_path = None
+    is_skill_script = False
+    if cmd_name.startswith("scripts/"):
+        resolved_path = resolve_skill_script(cmd_name, skills)
+        if resolved_path is None:
+            return
+        if not resolved_path.exists() or not resolved_path.is_file():
+            return
+        if not os.access(resolved_path, os.X_OK):
+            return
+        is_skill_script = True
+
+    if not _is_allowed_script_command(cmd_name, policy, is_skill_script=is_skill_script):
+        return
+
+    command = parts
+    if resolved_path is not None:
+        command = [str(resolved_path)] + parts[1:]
+
+    try:
+        subprocess.run(
+            command,
+            check=False,
+            timeout=policy.timeout_seconds,
+        )
+    except Exception:
+        return
+
+
+def _process_script_commands(
+    text: str, *, skills: List[Skill], policy: ScriptPolicy, execute: bool = True
+) -> str:
+    if not text:
+        return text
+    output: List[str] = []
+    idx = 0
+    while True:
+        start = text.find("%{", idx)
+        if start == -1:
+            output.append(text[idx:])
+            break
+        end = text.find("}", start + 2)
+        if end == -1:
+            output.append(text[idx:])
+            break
+        output.append(text[idx:start])
+        cmd = text[start + 2 : end].strip()
+        if cmd and execute:
+            _execute_script_command(cmd, skills, policy)
+        idx = end + 1
+    return "".join(output)
+
+
+def _process_script_command_stream_delta(
+    text: str,
+    *,
+    state: ScriptCommandState,
+    skills: List[Skill],
+    policy: ScriptPolicy,
+    execute: bool = True,
+) -> str:
+    buffer = state.buffer + text
+    output: List[str] = []
+    idx = 0
+    while True:
+        start = buffer.find("%{", idx)
+        if start == -1:
+            output.append(buffer[idx:])
+            state.buffer = ""
+            break
+        end = buffer.find("}", start + 2)
+        if end == -1:
+            output.append(buffer[idx:start])
+            state.buffer = buffer[start:]
+            break
+        output.append(buffer[idx:start])
+        cmd = buffer[start + 2 : end].strip()
+        if cmd and execute:
+            _execute_script_command(cmd, skills, policy)
+        idx = end + 1
+    return "".join(output)
+
+
+def _flush_script_command_stream(state: ScriptCommandState) -> str:
+    leftover = state.buffer
+    state.buffer = ""
+    return leftover
 
 
 def _get_last_assistant_response(history: List[Dict[str, Any]]) -> Optional[str]:
@@ -290,6 +420,8 @@ def _stream_chat(
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
     exts: List[Any],
+    skills: List[Skill],
+    script_policy: ScriptPolicy,
     *,
     prefix: Optional[str] = None,
     temperature: Optional[float] = None,
@@ -314,9 +446,11 @@ def _stream_chat(
             frequency_penalty=frequency_penalty,
         )
         assistant_parts: List[str] = []
+        assistant_parts_raw: List[str] = []
         request_id = ""
         input_tokens = 0
         output_tokens = 0
+        script_state = ScriptCommandState()
         for event in stream:
             if not request_id and getattr(event, "id", None):
                 request_id = event.id
@@ -331,16 +465,33 @@ def _stream_chat(
             if delta.content:
                 spinner.stop_and_clear()
                 piece = run_stream_delta_extensions(exts, delta.content, ctx)
+                assistant_parts_raw.append(piece)
+                piece = _process_script_command_stream_delta(
+                    piece,
+                    state=script_state,
+                    skills=skills,
+                    policy=script_policy,
+                    execute=False,
+                )
                 assistant_parts.append(piece)
                 if prefix and not spinner.prefix_printed:
                     spinner.print_prefix()
                 print(piece, end="", flush=True)
         if prefix and not spinner.prefix_printed:
             spinner.print_prefix()
+        tail = _flush_script_command_stream(script_state)
+        if tail:
+            assistant_parts.append(tail)
+            print(tail, end="", flush=True)
         print()
         assistant_text = "".join(assistant_parts)
+        assistant_raw_text = "".join(assistant_parts_raw) + tail
         return ChatResult(
-            text=run_after_response_extensions(exts, assistant_text, ctx),
+            text=_process_script_commands(
+                run_after_response_extensions(exts, assistant_raw_text, ctx),
+                skills=skills,
+                policy=script_policy,
+            ),
             request_id=request_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -355,6 +506,8 @@ def _non_stream_chat(
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
     exts: List[Any],
+    skills: List[Skill],
+    script_policy: ScriptPolicy,
     *,
     prefix: Optional[str] = None,
     use_rich: bool = False,
@@ -377,7 +530,11 @@ def _non_stream_chat(
     text = ""
     if res.choices and res.choices[0].message:
         text = _content_to_text(res.choices[0].message.content)
-    text = run_after_response_extensions(exts, text, ctx)
+    text = _process_script_commands(
+        run_after_response_extensions(exts, text, ctx),
+        skills=skills,
+        policy=script_policy,
+    )
     if prefix:
         print(prefix, end="", flush=True)
     if use_rich and is_rich_available():
@@ -465,6 +622,7 @@ def handle_chat(args: argparse.Namespace) -> None:
     system_prompt = resolve_system_prompt(args.system_prompt)
     agent_version: Optional[AgentVersion] = None
     agent_generation: Dict[str, Optional[float]] = {}
+    loaded_skills: List[Skill] = []
     if agent_name:
         store = LocalAgentStore()
         try:
@@ -487,9 +645,8 @@ def handle_chat(args: argparse.Namespace) -> None:
         # Build system prompt with skills injected
         from r9s.cli_tools.ui.terminal import warning as warn_msg
 
-        system_prompt = build_system_prompt_with_skills(
-            base_instructions, all_skills, warn_fn=warn_msg
-        )
+        loaded_skills = load_skills(all_skills, warn_fn=warn_msg)
+        system_prompt = _append_skills_context(base_instructions, loaded_skills)
         if not model:
             model = agent_version.model
         params = agent_version.model_params or {}
@@ -507,9 +664,8 @@ def handle_chat(args: argparse.Namespace) -> None:
             from r9s.cli_tools.ui.terminal import warning as warn_msg
 
             base_prompt = system_prompt or ""
-            system_prompt = build_system_prompt_with_skills(
-                base_prompt, adhoc_skills, warn_fn=warn_msg
-            )
+            loaded_skills = load_skills(adhoc_skills, warn_fn=warn_msg)
+            system_prompt = _append_skills_context(base_prompt, loaded_skills)
     system_prompt_rendered: Optional[str] = None
     if system_prompt:
         system_prompt_rendered = (
@@ -602,6 +758,10 @@ def handle_chat(args: argparse.Namespace) -> None:
 
     command_names = set(list_commands()) if sys.stdin.isatty() else set()
 
+    script_policy = ScriptPolicy(
+        allow_scripts=bool(getattr(args, "allow_scripts", False))
+    )
+
     with R9S(api_key=api_key, server_url=base_url) as r9s:
         if piped_stdin_bytes is not None:
             user_msg = _build_user_message_from_piped_stdin(
@@ -623,6 +783,8 @@ def handle_chat(args: argparse.Namespace) -> None:
                     messages,
                     ctx,
                     exts,
+                    loaded_skills,
+                    script_policy,
                     use_rich=use_rich,
                     **{**bot_generation, **agent_generation},
                 )
@@ -633,6 +795,8 @@ def handle_chat(args: argparse.Namespace) -> None:
                     messages,
                     ctx,
                     exts,
+                    loaded_skills,
+                    script_policy,
                     **{**bot_generation, **agent_generation},
                 )
             )
@@ -790,6 +954,8 @@ def handle_chat(args: argparse.Namespace) -> None:
                         messages,
                         ctx,
                         exts,
+                        loaded_skills,
+                        script_policy,
                         prefix=_style_prompt(t("chat.prompt.assistant", lang)),
                         use_rich=use_rich,
                         **{**bot_generation, **agent_generation},
@@ -801,6 +967,8 @@ def handle_chat(args: argparse.Namespace) -> None:
                         messages,
                         ctx,
                         exts,
+                        loaded_skills,
+                        script_policy,
                         prefix=_style_prompt(t("chat.prompt.assistant", lang)),
                         **{**bot_generation, **agent_generation},
                     )

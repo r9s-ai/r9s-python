@@ -1,10 +1,11 @@
 """Load skills and format for injection into system prompt."""
 from __future__ import annotations
 
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from r9s.skills.exceptions import SkillNotFoundError
-from r9s.skills.local_store import load_skill
+from r9s.skills.local_store import load_skill, skill_path
 from r9s.skills.models import Skill
 
 
@@ -36,6 +37,14 @@ def load_skills(skill_refs: List[str], warn_fn=None) -> List[Skill]:
                 warn_fn(f"Skill not found: {ref}")
             continue
     return skills
+
+
+def resolve_skill_script(script_name: str, skills: List[Skill]) -> Optional[Path]:
+    """Resolve a skill script path if it exists in loaded skills."""
+    for skill in skills:
+        if script_name in skill.scripts:
+            return skill_path(skill.name) / script_name
+    return None
 
 
 def format_skills_context(skills: List[Skill]) -> str:

@@ -31,3 +31,9 @@ def test_chat_yes_flag() -> None:
     parser = build_parser()
     args = parser.parse_args(["chat", "-y"])
     assert args.yes is True
+
+
+def test_chat_allow_scripts_flag() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["chat", "--allow-scripts"])
+    assert args.allow_scripts is True
