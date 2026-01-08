@@ -43,6 +43,7 @@ class AgentVersion:
     provider: str = "r9s"
     tools: List[Dict[str, Any]] = field(default_factory=list)
     files: List[Dict[str, Any]] = field(default_factory=list)
+    skills: List[str] = field(default_factory=list)
     variables: List[str] = field(default_factory=list)
     model_params: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=_utc_now)
@@ -64,6 +65,7 @@ class AgentVersion:
             "provider": self.provider,
             "tools": self.tools,
             "files": self.files,
+            "skills": self.skills,
             "variables": self.variables,
             "model_params": self.model_params,
         }

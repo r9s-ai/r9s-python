@@ -18,6 +18,7 @@ from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.agents.models import AgentExecution, AgentVersion
+from r9s.skills.loader import build_system_prompt_with_skills
 from r9s.cli_tools.commands import list_commands, load_command
 from r9s.cli_tools.template_renderer import RenderContext, render_template
 from r9s.cli_tools.chat_extensions import (
@@ -301,49 +302,51 @@ def _stream_chat(
     if sys.stdout.isatty():
         spinner.start()
 
-    stream = r9s.chat.create(
-        model=model,
-        messages=messages,
-        stream=True,
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty,
-    )
-    assistant_parts: List[str] = []
-    request_id = ""
-    input_tokens = 0
-    output_tokens = 0
-    for event in stream:
-        if not request_id and getattr(event, "id", None):
-            request_id = event.id
-        if getattr(event, "usage", None):
-            usage = event.usage
-            if usage:
-                input_tokens = usage.prompt_tokens
-                output_tokens = usage.completion_tokens
-        if not event.choices:
-            continue
-        delta = event.choices[0].delta
-        if delta.content:
-            spinner.stop_and_clear()
-            piece = run_stream_delta_extensions(exts, delta.content, ctx)
-            assistant_parts.append(piece)
-            if prefix and not spinner.prefix_printed:
-                spinner.print_prefix()
-            print(piece, end="", flush=True)
-    spinner.stop_and_clear()
-    if prefix and not spinner.prefix_printed:
-        spinner.print_prefix()
-    print()
-    assistant_text = "".join(assistant_parts)
-    return ChatResult(
-        text=run_after_response_extensions(exts, assistant_text, ctx),
-        request_id=request_id,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-    )
+    try:
+        stream = r9s.chat.create(
+            model=model,
+            messages=messages,
+            stream=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+        )
+        assistant_parts: List[str] = []
+        request_id = ""
+        input_tokens = 0
+        output_tokens = 0
+        for event in stream:
+            if not request_id and getattr(event, "id", None):
+                request_id = event.id
+            if getattr(event, "usage", None):
+                usage = event.usage
+                if usage:
+                    input_tokens = usage.prompt_tokens
+                    output_tokens = usage.completion_tokens
+            if not event.choices:
+                continue
+            delta = event.choices[0].delta
+            if delta.content:
+                spinner.stop_and_clear()
+                piece = run_stream_delta_extensions(exts, delta.content, ctx)
+                assistant_parts.append(piece)
+                if prefix and not spinner.prefix_printed:
+                    spinner.print_prefix()
+                print(piece, end="", flush=True)
+        if prefix and not spinner.prefix_printed:
+            spinner.print_prefix()
+        print()
+        assistant_text = "".join(assistant_parts)
+        return ChatResult(
+            text=run_after_response_extensions(exts, assistant_text, ctx),
+            request_id=request_id,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+    finally:
+        spinner.stop_and_clear()
 
 
 def _non_stream_chat(
@@ -477,7 +480,16 @@ def handle_chat(args: argparse.Namespace) -> None:
                 raise SystemExit(f"Invalid --var format: {spec} (expected key=value)")
             key, value = spec.split("=", 1)
             variables[key] = value
-        system_prompt = render_agent_template(agent_version.instructions, variables)
+        base_instructions = render_agent_template(agent_version.instructions, variables)
+        # Collect skills: agent skills + ad-hoc --skill flags
+        all_skills = list(agent_version.skills) if agent_version.skills else []
+        all_skills.extend(getattr(args, "skill", []) or [])
+        # Build system prompt with skills injected
+        from r9s.cli_tools.ui.terminal import warning as warn_msg
+
+        system_prompt = build_system_prompt_with_skills(
+            base_instructions, all_skills, warn_fn=warn_msg
+        )
         if not model:
             model = agent_version.model
         params = agent_version.model_params or {}
@@ -488,6 +500,16 @@ def handle_chat(args: argparse.Namespace) -> None:
             "presence_penalty": params.get("presence_penalty"),
             "frequency_penalty": params.get("frequency_penalty"),
         }
+    else:
+        # No agent - check for ad-hoc --skill flags
+        adhoc_skills = getattr(args, "skill", []) or []
+        if adhoc_skills:
+            from r9s.cli_tools.ui.terminal import warning as warn_msg
+
+            base_prompt = system_prompt or ""
+            system_prompt = build_system_prompt_with_skills(
+                base_prompt, adhoc_skills, warn_fn=warn_msg
+            )
     system_prompt_rendered: Optional[str] = None
     if system_prompt:
         system_prompt_rendered = (

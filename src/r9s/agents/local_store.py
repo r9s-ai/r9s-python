@@ -248,6 +248,8 @@ def _dump_version_toml(version: AgentVersion) -> str:
                 if val is None:
                     continue
                 lines.append(f"{key} = {_toml_format_value(val)}")
+    if version.skills:
+        lines.append(f"\nskills = {_toml_format_value(version.skills)}")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -302,6 +304,11 @@ def load_version(name: str, version: str) -> AgentVersion:
     else:
         variables = extract_variables(instructions)
 
+    skills_raw = data.get("skills", [])
+    skills: List[str] = (
+        [str(s) for s in skills_raw] if isinstance(skills_raw, list) else []
+    )
+
     version_obj = AgentVersion(
         version=str(data.get("version", version)),
         instructions=instructions,
@@ -309,6 +316,7 @@ def load_version(name: str, version: str) -> AgentVersion:
         provider=str(data.get("provider", "r9s")),
         tools=data.get("tools", []) if isinstance(data.get("tools"), list) else [],
         files=data.get("files", []) if isinstance(data.get("files"), list) else [],
+        skills=skills,
         variables=variables,
         model_params=data.get("params", {})
         if isinstance(data.get("params"), dict)
@@ -377,6 +385,7 @@ class LocalAgentStore(AgentStore):
         model_params = config.get("model_params", {})
         tools = config.get("tools", [])
         files = config.get("files", [])
+        skills = config.get("skills", [])
         now = _utc_now()
 
         agent = Agent(
@@ -394,6 +403,7 @@ class LocalAgentStore(AgentStore):
             provider=provider,
             tools=list(tools) if isinstance(tools, list) else [],
             files=list(files) if isinstance(files, list) else [],
+            skills=list(skills) if isinstance(skills, list) else [],
             model_params=model_params if isinstance(model_params, dict) else {},
             created_at=now,
             created_by=created_by,
@@ -428,6 +438,11 @@ class LocalAgentStore(AgentStore):
             if isinstance(config.get("files", current_version.files), list)
             else current_version.files
         )
+        skills = (
+            config.get("skills", current_version.skills)
+            if isinstance(config.get("skills", current_version.skills), list)
+            else current_version.skills
+        )
 
         version = AgentVersion(
             version=new_version,
@@ -436,6 +451,7 @@ class LocalAgentStore(AgentStore):
             provider=provider,
             tools=list(tools) if isinstance(tools, list) else [],
             files=list(files) if isinstance(files, list) else [],
+            skills=list(skills) if isinstance(skills, list) else [],
             model_params=model_params if isinstance(model_params, dict) else {},
             created_at=_utc_now(),
             created_by=created_by,
