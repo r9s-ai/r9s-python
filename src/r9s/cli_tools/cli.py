@@ -297,6 +297,7 @@ def handle_game_invisible_wall(args: argparse.Namespace) -> None:
             error("Failed to load state module")
             raise SystemExit(1)
         state_module = importlib.util.module_from_spec(state_spec)
+        state_module.__name__ = "state"  # Ensure __name__ is set for dataclass compatibility
         sys.modules["state"] = state_module
         state_spec.loader.exec_module(state_module)
 
@@ -307,6 +308,7 @@ def handle_game_invisible_wall(args: argparse.Namespace) -> None:
             raise SystemExit(1)
 
         client_module = importlib.util.module_from_spec(spec)
+        client_module.__name__ = "client"  # Ensure __name__ is set for dataclass compatibility
         sys.modules["client"] = client_module
         spec.loader.exec_module(client_module)
 
