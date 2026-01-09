@@ -235,6 +235,109 @@ def select_tool_name(arg_name: Optional[str], lang: str) -> Tuple[ToolIntegratio
     return tool, tool.primary_name
 
 
+def handle_game_invisible_wall(args: argparse.Namespace) -> None:
+    """Handle the invisible-wall game command.
+
+    Loads and runs the game from presets/games/invisible-wall/.
+    """
+    import importlib.util
+    import sys
+    from r9s.cli_tools.config import get_api_key, resolve_base_url
+
+    api_key = get_api_key(args.api_key)
+    if not api_key:
+        error("API key required. Set R9S_API_KEY or use --api-key")
+        raise SystemExit(1)
+
+    base_url = resolve_base_url(args.base_url)
+
+    # Find presets directory - check multiple locations
+    import os
+    presets_locations = []
+
+    # 1. R9S_GAMES_DIR if set
+    if os.getenv("R9S_GAMES_DIR"):
+        presets_locations.append(Path(os.getenv("R9S_GAMES_DIR")) / "invisible-wall")
+
+    # 2. Derive from R9S_SKILLS_DIR (parent/games)
+    if os.getenv("R9S_SKILLS_DIR"):
+        presets_locations.append(Path(os.getenv("R9S_SKILLS_DIR")).parent / "games" / "invisible-wall")
+
+    # 3. Derive from R9S_AGENTS_DIR (parent/games)
+    if os.getenv("R9S_AGENTS_DIR"):
+        presets_locations.append(Path(os.getenv("R9S_AGENTS_DIR")).parent / "games" / "invisible-wall")
+
+    # 4. Default locations
+    presets_locations.extend([
+        Path.home() / ".r9s" / "presets" / "games" / "invisible-wall",
+        Path.home() / ".r9s" / "games" / "invisible-wall",
+        Path(__file__).parent.parent.parent.parent / "presets" / "games" / "invisible-wall",
+    ])
+
+    game_path = None
+    for loc in presets_locations:
+        if loc.exists() and (loc / "client.py").exists():
+            game_path = loc
+            break
+
+    if not game_path:
+        error("Game not found. Searched locations:")
+        for loc in presets_locations[:3]:
+            error(f"  - {loc}")
+        error("Set R9S_GAMES_DIR or install presets to ~/.r9s/presets/")
+        raise SystemExit(1)
+
+    # Add game path to sys.path for imports
+    sys.path.insert(0, str(game_path))
+
+    try:
+        # Load state module first (dependency)
+        state_spec = importlib.util.spec_from_file_location("state", game_path / "state.py")
+        if state_spec is None or state_spec.loader is None:
+            error("Failed to load state module")
+            raise SystemExit(1)
+        state_module = importlib.util.module_from_spec(state_spec)
+        sys.modules["state"] = state_module
+        state_spec.loader.exec_module(state_module)
+
+        # Load client module dynamically
+        spec = importlib.util.spec_from_file_location("client", game_path / "client.py")
+        if spec is None or spec.loader is None:
+            error("Failed to load game client")
+            raise SystemExit(1)
+
+        client_module = importlib.util.module_from_spec(spec)
+        sys.modules["client"] = client_module
+        spec.loader.exec_module(client_module)
+
+        # Create character and game
+        Character = client_module.Character
+        InvisibleWallGame = client_module.InvisibleWallGame
+
+        character = Character(
+            name=args.name,
+            university=args.university,
+            major=args.major,
+            year=args.year,
+            gender="女",
+        )
+
+        game = InvisibleWallGame(
+            api_key=api_key,
+            base_url=base_url,
+            model=args.model,
+            character=character,
+        )
+
+        game.run()
+    finally:
+        # Clean up sys.path and sys.modules
+        if str(game_path) in sys.path:
+            sys.path.remove(str(game_path))
+        sys.modules.pop("state", None)
+        sys.modules.pop("client", None)
+
+
 def handle_set(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     tool, tool_name = select_tool_name(args.app, lang)
@@ -1080,6 +1183,27 @@ def build_parser() -> argparse.ArgumentParser:
         "  r9s audio translate french_audio.wav -o english.txt -f text"
     )
     audio_translate.set_defaults(func=handle_audio_translate)
+
+    # Game command (Invisible Wall)
+    game_parser = subparsers.add_parser(
+        "game", help="Play interactive games (SDK demos)"
+    )
+    game_sub = game_parser.add_subparsers(dest="game_command")
+
+    # Invisible Wall game
+    iw_parser = game_sub.add_parser(
+        "invisible-wall",
+        aliases=["iw"],
+        help="The Invisible Wall - 关系模拟器",
+    )
+    iw_parser.add_argument("--name", default="林小晚", help="她的名字")
+    iw_parser.add_argument("--university", default="浙江大学", help="学校")
+    iw_parser.add_argument("--major", default="中文系", help="专业")
+    iw_parser.add_argument("--year", default="大三", help="年级")
+    iw_parser.add_argument("--model", default="gpt-4o-mini", help="Model to use")
+    iw_parser.add_argument("--api-key", help="API key (or set R9S_API_KEY)")
+    iw_parser.add_argument("--base-url", help="Base URL (or set R9S_BASE_URL)")
+    iw_parser.set_defaults(func=handle_game_invisible_wall)
 
     # Models command
     models_parser = subparsers.add_parser(
