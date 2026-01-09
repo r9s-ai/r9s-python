@@ -224,6 +224,8 @@ def _dump_version_toml(version: AgentVersion) -> str:
             f"provider = {_toml_quote(version.provider)}",
         ]
     )
+    if version.skills:
+        lines.append(f"skills = {_toml_format_value(version.skills)}")
     if version.model_params:
         lines.append("\n[params]")
         for key, val in version.model_params.items():
@@ -248,8 +250,6 @@ def _dump_version_toml(version: AgentVersion) -> str:
                 if val is None:
                     continue
                 lines.append(f"{key} = {_toml_format_value(val)}")
-    if version.skills:
-        lines.append(f"\nskills = {_toml_format_value(version.skills)}")
     return "\n".join(lines).rstrip() + "\n"
 
 

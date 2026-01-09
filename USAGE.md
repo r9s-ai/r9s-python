@@ -105,6 +105,19 @@ r9s command create summarize --prompt "Summarize: {{args}}"
 r9s run cc --model "$R9S_MODEL"
 ```
 
+## CLI: Web (Streamlit)
+
+```bash
+# Install optional dependency
+pip install "r9s[web]"
+
+# Launch Web UI (agents/chat/images)
+r9s web --open-browser
+
+# Or bind to all interfaces
+r9s web --host 0.0.0.0 --port 8501
+```
+
 ## CLI: Agents
 
 ```bash

@@ -58,6 +58,7 @@ from r9s.cli_tools.skill_cli import (
     handle_skill_show,
     handle_skill_validate,
 )
+from r9s.cli_tools.web_cli import handle_web
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
@@ -438,7 +439,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument(
         "--allow-scripts",
         action="store_true",
-        help="Allow skill scripts (%{...}) to execute",
+        help="Allow skill scripts (%%{...}) to execute",
     )
     chat_parser.add_argument(
         "--rich",
@@ -1185,6 +1186,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
     models_parser.set_defaults(func=handle_models_list)
+
+    web_parser = subparsers.add_parser(
+        "web",
+        help="Launch the Streamlit Web UI (agents/chat/images)",
+    )
+    web_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    web_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    web_parser.add_argument("--model", help="Model (overrides R9S_MODEL)")
+    web_parser.add_argument(
+        "--lang",
+        default=None,
+        help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
+    )
+    web_parser.add_argument("--host", default="127.0.0.1", help="Server host (default: 127.0.0.1)")
+    web_parser.add_argument("--port", type=int, default=8501, help="Server port (default: 8501)")
+    web_parser.add_argument(
+        "--open-browser",
+        action="store_true",
+        help="Open browser automatically (default: off)",
+    )
+    web_parser.epilog = (
+        "Examples:\n"
+        "  r9s web --open-browser\n"
+        "  r9s web --host 0.0.0.0 --port 8501\n"
+        "  r9s web --api-key ... --base-url https://api.r9s.ai/v1 --model gpt-5-nano"
+    )
+    web_parser.set_defaults(func=handle_web)
 
     set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(

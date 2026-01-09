@@ -37,3 +37,11 @@ def test_chat_allow_scripts_flag() -> None:
     parser = build_parser()
     args = parser.parse_args(["chat", "--allow-scripts"])
     assert args.allow_scripts is True
+
+
+def test_web_parses() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["web", "--host", "0.0.0.0", "--port", "9000"])
+    assert args.command == "web"
+    assert args.host == "0.0.0.0"
+    assert args.port == 9000
