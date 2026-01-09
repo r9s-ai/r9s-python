@@ -57,7 +57,7 @@ class TestResolveTtsModel:
 
     def test_default_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("R9S_TTS_MODEL", raising=False)
-        assert resolve_tts_model(None) == "tts-1"
+        assert resolve_tts_model(None) == "gpt-4o-mini-tts"
 
     def test_custom_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("R9S_TTS_MODEL", raising=False)

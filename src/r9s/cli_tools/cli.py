@@ -980,8 +980,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     audio_speech.add_argument(
         "-m", "--model",
-        default="tts-1",
-        help="TTS model (default: tts-1)",
+        help="TTS model (overrides R9S_TTS_MODEL, default: gpt-4o-mini-tts)",
     )
     audio_speech.add_argument(
         "-v", "--voice",
@@ -1023,8 +1022,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     audio_transcribe.add_argument(
         "-m", "--model",
-        default="whisper-1",
-        help="ASR model (default: whisper-1)",
+        help="ASR model (overrides R9S_STT_MODEL, default: whisper-1)",
     )
     audio_transcribe.add_argument(
         "-l", "--language",
@@ -1063,8 +1061,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     audio_translate.add_argument(
         "-m", "--model",
-        default="whisper-1",
-        help="Model (default: whisper-1)",
+        help="Model (overrides R9S_STT_MODEL, default: whisper-1)",
     )
     audio_translate.add_argument(
         "-p", "--prompt",

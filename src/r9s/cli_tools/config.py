@@ -37,7 +37,7 @@ def resolve_image_model(args_model: Optional[str], default: str = "dall-e-3") ->
     ).strip()
 
 
-def resolve_tts_model(args_model: Optional[str], default: str = "tts-1") -> str:
+def resolve_tts_model(args_model: Optional[str], default: str = "gpt-4o-mini-tts") -> str:
     """Resolve TTS model: args > R9S_TTS_MODEL > default."""
     return (args_model or os.getenv("R9S_TTS_MODEL") or default).strip()
 
