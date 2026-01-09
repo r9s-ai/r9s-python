@@ -118,6 +118,8 @@ r9s web --open-browser
 r9s web --host 0.0.0.0 --port 8501
 ```
 
+More details: `docs/web-ui.md`
+
 ## CLI: Agents
 
 ```bash

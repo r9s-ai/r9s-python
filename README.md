@@ -111,6 +111,15 @@ Enable bash completion:
 eval "$(r9s completion bash)"
 ```
 
+Web UI (Streamlit):
+
+```bash
+pip install "r9s[web]"
+r9s web --open-browser
+```
+
+More details: [docs/web-ui.md](docs/web-ui.md)
+
 List available models:
 
 ```bash
