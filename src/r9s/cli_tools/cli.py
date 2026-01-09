@@ -328,6 +328,7 @@ def handle_game_invisible_wall(args: argparse.Namespace) -> None:
             api_key=api_key,
             base_url=base_url,
             model=args.model,
+            consultant_model=args.consultant_model,
             character=character,
         )
 
@@ -1202,7 +1203,8 @@ def build_parser() -> argparse.ArgumentParser:
     iw_parser.add_argument("--university", default="浙江大学", help="学校")
     iw_parser.add_argument("--major", default="中文系", help="专业")
     iw_parser.add_argument("--year", default="大三", help="年级")
-    iw_parser.add_argument("--model", default="gpt-4o-mini", help="Model to use")
+    iw_parser.add_argument("--model", default="gpt-5-mini", help="Character model")
+    iw_parser.add_argument("--consultant-model", default="glm-4.7", help="Consultant AI model")
     iw_parser.add_argument("--api-key", help="API key (or set R9S_API_KEY)")
     iw_parser.add_argument("--base-url", help="Base URL (or set R9S_BASE_URL)")
     iw_parser.set_defaults(func=handle_game_invisible_wall)
