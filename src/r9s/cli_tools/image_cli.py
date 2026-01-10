@@ -137,10 +137,11 @@ def handle_image_generate(args: argparse.Namespace) -> None:
                 "content": ref_data,
                 "content_type": _get_image_mime_type(ref_file),
             })
+            info(f"Reference {i+1}: {ref_file.name} ({len(ref_data)} bytes)")
 
-        # Build edit kwargs
+        # Build edit kwargs - always pass as list for multiple images
         edit_kwargs: dict = {
-            "image": reference_images if len(reference_images) > 1 else reference_images[0],
+            "image": reference_images,
             "prompt": prompt,
             "model": model,
             "n": n,
@@ -152,6 +153,8 @@ def handle_image_generate(args: argparse.Namespace) -> None:
             edit_kwargs["background"] = args.background
         if getattr(args, "output_format", None):
             edit_kwargs["output_format"] = args.output_format
+
+        info(f"Sending {len(reference_images)} reference image(s) to {model}")
 
         with LoadingSpinner("Generating with reference"):
             try:
