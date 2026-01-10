@@ -43,7 +43,7 @@ from r9s.cli_tools.command_cli import (
 )
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
-from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit
+from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit, handle_image_describe
 from r9s.cli_tools.audio_cli import (
     handle_audio_speech,
     handle_audio_transcribe,
@@ -981,6 +981,49 @@ def build_parser() -> argparse.ArgumentParser:
         "  r9s images edit logo.png \"Remove text\" -o clean.png --background transparent"
     )
     images_edit.set_defaults(func=handle_image_edit)
+
+    # r9s images describe
+    images_describe = images_sub.add_parser(
+        "describe", help="Describe an image using vision AI"
+    )
+    images_describe.add_argument(
+        "image",
+        help="Path to the image file to describe",
+    )
+    images_describe.add_argument(
+        "prompt",
+        nargs="?",
+        default=None,
+        help="Custom prompt for description (default: 'Describe this image in detail.')",
+    )
+    images_describe.add_argument(
+        "-m", "--model",
+        help="Vision model to use (default: uses R9S_MODEL)",
+    )
+    images_describe.add_argument(
+        "--detailed",
+        action="store_true",
+        help="Use a detailed analysis prompt",
+    )
+    images_describe.add_argument(
+        "--max-tokens",
+        type=int,
+        default=1024,
+        help="Maximum tokens in response (default: 1024)",
+    )
+    images_describe.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_describe.epilog = (
+        "Examples:\n"
+        "  r9s images describe photo.jpg\n"
+        "  r9s images describe screenshot.png --detailed\n"
+        "  r9s images describe art.png \"What style is this painting?\"\n"
+        "  r9s images describe diagram.png -m gpt-4o --max-tokens 2048"
+    )
+    images_describe.set_defaults(func=handle_image_describe)
 
     # Audio commands (TTS, ASR, translation)
     audio_parser = subparsers.add_parser(

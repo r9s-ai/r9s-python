@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_image_model
+from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_image_model, resolve_model
 from r9s.cli_tools.ui.spinner import LoadingSpinner
 from r9s.cli_tools.ui.terminal import error, info, success, warning
 
@@ -308,3 +308,70 @@ def handle_image_edit(args: argparse.Namespace) -> None:
     # Open files if requested
     if should_open and saved_files:
         open_files(saved_files)
+
+
+def _get_image_mime_type(path: Path) -> str:
+    """Detect image MIME type from file extension."""
+    ext = path.suffix.lower()
+    mime_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+    return mime_types.get(ext, "image/png")
+
+
+def handle_image_describe(args: argparse.Namespace) -> None:
+    """Handle image describe command using vision."""
+    # Read source image
+    image_path = Path(args.image)
+    image_data = read_image_file(image_path)
+
+    # Get prompt (default to "Describe this image.")
+    prompt = args.prompt or "Describe this image in detail."
+    if getattr(args, "detailed", False):
+        prompt = (
+            "Describe this image in comprehensive detail. Include: "
+            "the main subject, colors, composition, mood, any text visible, "
+            "background elements, and any notable details."
+        )
+
+    # Build data URL
+    mime_type = _get_image_mime_type(image_path)
+    b64 = base64.b64encode(image_data).decode("ascii")
+    data_url = f"data:{mime_type};base64,{b64}"
+
+    # Build message with image
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_url, "detail": "auto"}},
+            ],
+        }
+    ]
+
+    # Make API call
+    client = get_client()
+    model = resolve_model(args.model)
+
+    with LoadingSpinner("Analyzing image"):
+        try:
+            result = client.chat.create(
+                model=model,
+                messages=messages,
+                max_tokens=getattr(args, "max_tokens", None) or 1024,
+            )
+        except Exception as e:
+            error(f"API error: {e}")
+            raise SystemExit(1)
+
+    # Output result
+    if args.json:
+        print(json.dumps(result.model_dump(), indent=2, default=str))
+    else:
+        content = result.choices[0].message.content
+        print(content)
