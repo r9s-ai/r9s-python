@@ -310,6 +310,11 @@ def handle_image_edit(args: argparse.Namespace) -> None:
         open_files(saved_files)
 
 
+def _is_gpt5_model(model: str) -> bool:
+    """Check if model is a GPT-5 variant that requires special parameters."""
+    return model.lower().startswith("gpt-5")
+
+
 def _get_image_mime_type(path: Path) -> str:
     """Detect image MIME type from file extension."""
     ext = path.suffix.lower()
@@ -357,14 +362,21 @@ def handle_image_describe(args: argparse.Namespace) -> None:
     # Make API call
     client = get_client()
     model = resolve_model(args.model)
+    max_tokens_value = getattr(args, "max_tokens", None) or 1024
+
+    # Build kwargs - GPT-5 models require max_completion_tokens instead of max_tokens
+    chat_kwargs: dict = {
+        "model": model,
+        "messages": messages,
+    }
+    if _is_gpt5_model(model):
+        chat_kwargs["max_completion_tokens"] = max_tokens_value
+    else:
+        chat_kwargs["max_tokens"] = max_tokens_value
 
     with LoadingSpinner("Analyzing image"):
         try:
-            result = client.chat.create(
-                model=model,
-                messages=messages,
-                max_tokens=getattr(args, "max_tokens", None) or 1024,
-            )
+            result = client.chat.create(**chat_kwargs)
         except Exception as e:
             error(f"API error: {e}")
             raise SystemExit(1)
