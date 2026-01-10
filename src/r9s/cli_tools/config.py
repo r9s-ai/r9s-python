@@ -27,12 +27,14 @@ def resolve_model(args_model: Optional[str]) -> str:
     return (args_model or os.getenv("R9S_MODEL") or "gpt-5-nano").strip()
 
 
-def resolve_image_model(args_model: Optional[str], default: str = "dall-e-3") -> str:
-    """Resolve image model: args > R9S_IMAGE_MODEL > R9S_MODEL > default."""
+def resolve_image_model(args_model: Optional[str], default: str = "gpt-image-1.5") -> str:
+    """Resolve image model: args > R9S_IMAGE_MODEL > default.
+
+    Note: Does NOT fall back to R9S_MODEL since chat models are not valid for images.
+    """
     return (
         args_model
         or os.getenv("R9S_IMAGE_MODEL")
-        or os.getenv("R9S_MODEL")
         or default
     ).strip()
 
