@@ -53,8 +53,17 @@ def _get_env_default(name: str, default: str = "") -> str:
 
 def _render_config() -> Optional[AppConfig]:
     with st.sidebar:
-        st.title("r9s Web")
-        st.caption("Minimal Web UI with Streamlit (Agents / Chat / Images)")
+        # Logo and title
+        st.markdown(
+            """
+            <div class="logo-container">
+                <img src="https://routetokens.com/logo/logo.svg" alt="r9s logo">
+                <span class="logo-text">r9s Web</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("AI-powered Agents, Chat & Image Generation")
         api_key = st.text_input(
             "R9S_API_KEY",
             value=_get_env_default("R9S_API_KEY"),
@@ -405,16 +414,17 @@ def _render_images_page(cfg: AppConfig) -> None:
                 st.error(_format_api_error(exc))
                 return
 
-        # Store generated images in session state for editing
+        # Store generated images in session state for persistence across reruns
         st.session_state["generated_images"] = []
+        st.session_state["generated_urls"] = []
         for i, img in enumerate(res.data):
-            st.subheader(f"Result {i + 1}")
             url = getattr(img, "url", None)
             b64_json = getattr(img, "b64_json", None)
             image_data = None
+            image_url = None
+
             if url:
-                st.image(url)
-                st.code(url)
+                image_url = url
                 # Download for potential editing
                 try:
                     import urllib.request
@@ -424,21 +434,33 @@ def _render_images_page(cfg: AppConfig) -> None:
                     pass
             elif b64_json:
                 image_data = base64.b64decode(b64_json)
-                st.image(image_data)
-
-            if image_data:
-                st.session_state["generated_images"].append({
-                    "index": i,
-                    "data": image_data,
-                    "model": model,
-                })
 
             revised = getattr(img, "revised_prompt", None)
-            if revised:
-                st.caption(f"revised_prompt: {revised}")
+            st.session_state["generated_images"].append({
+                "index": i,
+                "data": image_data,
+                "url": image_url,
+                "model": model,
+                "revised_prompt": revised,
+            })
+
+    # Display generated images from session state (persists across reruns)
+    if st.session_state.get("generated_images"):
+        st.divider()
+        st.subheader("Generated Images")
+        for img_info in st.session_state["generated_images"]:
+            st.markdown(f"**Result {img_info['index'] + 1}**")
+            if img_info.get("data"):
+                st.image(img_info["data"])
+            elif img_info.get("url"):
+                st.image(img_info["url"])
+            if img_info.get("url"):
+                st.code(img_info["url"])
+            if img_info.get("revised_prompt"):
+                st.caption(f"revised_prompt: {img_info['revised_prompt']}")
 
     # Show edit section if we have generated images
-    if st.session_state.get("generated_images"):
+    if st.session_state.get("generated_images") and any(img.get("data") for img in st.session_state["generated_images"]):
         st.divider()
         st.subheader("Edit Generated Image")
 
@@ -511,8 +533,124 @@ def _render_images_page(cfg: AppConfig) -> None:
                         }
 
 
+def _apply_custom_styles() -> None:
+    """Apply custom CSS styles for a more polished look."""
+    st.markdown(
+        """
+        <style>
+        /* Import Google Font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* Global font */
+        html, body, [class*="css"] {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Headers styling */
+        h1, h2, h3 {
+            font-weight: 600 !important;
+            letter-spacing: -0.02em;
+        }
+
+        /* Primary button styling */
+        .stButton > button[kind="primary"] {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .stButton > button[kind="primary"]:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Secondary button styling */
+        .stButton > button[kind="secondary"] {
+            border: 1px solid #6366f1;
+            color: #6366f1;
+            font-weight: 500;
+        }
+
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+        }
+
+        /* Input fields */
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea {
+            border-radius: 8px;
+            border: 1px solid #3f3f5a;
+            background-color: #1e1e2e;
+        }
+        .stTextInput > div > div > input:focus,
+        .stTextArea > div > div > textarea:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Select boxes */
+        .stSelectbox > div > div {
+            border-radius: 8px;
+        }
+
+        /* Cards/containers */
+        .stSubheader {
+            padding-top: 1rem;
+            border-bottom: 1px solid #3f3f5a;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Logo container */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0 16px 0;
+        }
+        .logo-container img {
+            height: 36px;
+            width: auto;
+        }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Divider styling */
+        hr {
+            border-color: #3f3f5a;
+            opacity: 0.5;
+        }
+
+        /* Image display */
+        .stImage {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Code blocks */
+        .stCode {
+            border-radius: 8px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main() -> None:
-    st.set_page_config(page_title="r9s Web", layout="wide")
+    st.set_page_config(
+        page_title="r9s Web",
+        page_icon="https://routetokens.com/logo/logo.svg",
+        layout="wide",
+    )
+    _apply_custom_styles()
+
     cfg = _render_config()
     if cfg is None:
         st.stop()
