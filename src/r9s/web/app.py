@@ -10,6 +10,29 @@ from r9s.sdk import R9S
 from r9s.agents.local_store import LocalAgentStore, load_agent, load_version, save_agent
 from r9s.agents.template import render as render_agent_template
 from r9s.skills.loader import format_skills_context, load_skills
+from r9s.errors import R9SError
+
+
+def _format_api_error(exc: Exception) -> str:
+    """Format API error with detailed information when available."""
+    if isinstance(exc, R9SError):
+        parts = [f"Request failed (HTTP {exc.status_code})"]
+        # Try to get detailed error info
+        if hasattr(exc, "data") and hasattr(exc.data, "error"):
+            err = exc.data.error
+            if hasattr(err, "message") and err.message:
+                parts.append(f"Message: {err.message}")
+            if hasattr(err, "type") and err.type:
+                parts.append(f"Type: {err.type}")
+            if hasattr(err, "code") and err.code:
+                parts.append(f"Code: {err.code}")
+            if hasattr(err, "param") and err.param:
+                parts.append(f"Param: {err.param}")
+        elif exc.body:
+            # Show raw body if no structured error data
+            parts.append(f"Details: {exc.body[:500]}")
+        return "\n".join(parts)
+    return f"Request failed: {exc}"
 
 
 @dataclass
@@ -277,7 +300,7 @@ def _render_chat_page(cfg: AppConfig) -> None:
                         assistant_text = _as_text(res.choices[0].message.content)
                     placeholder.markdown(assistant_text or "")
         except Exception as exc:
-            st.error(f"Request failed: {exc}")
+            st.error(_format_api_error(exc))
             return
 
     st.session_state["chat_messages"].append({"role": "assistant", "content": assistant_text})
@@ -353,21 +376,25 @@ def _render_images_page(cfg: AppConfig) -> None:
             kwargs["size"] = size
         if quality != "(default)":
             kwargs["quality"] = quality
-        if style != "(default)":
+
+        # Model-specific parameter filtering
+        # GPT image models don't support: response_format, style, seed, negative_prompt
+        is_gpt_image = model and model.lower().startswith("gpt-image")
+
+        if style != "(default)" and not is_gpt_image:
             kwargs["style"] = style
 
-        # Only include response_format if explicitly set and model is not GPT image model
-        is_gpt_image = model and model.lower().startswith("gpt-image")
         if response_format != "(auto)" and not is_gpt_image:
             kwargs["response_format"] = response_format
 
-        if seed_input.strip():
+        if seed_input.strip() and not is_gpt_image:
             try:
                 kwargs["seed"] = int(seed_input.strip())
             except ValueError:
                 st.error("seed must be an integer")
                 return
-        if negative_prompt.strip():
+
+        if negative_prompt.strip() and not is_gpt_image:
             kwargs["negative_prompt"] = negative_prompt.strip()
 
         with st.spinner("Generating..."):
@@ -375,7 +402,7 @@ def _render_images_page(cfg: AppConfig) -> None:
                 with _r9s_client(cfg) as r9s:
                     res = r9s.images.create(**kwargs)
             except Exception as exc:
-                st.error(f"Request failed: {exc}")
+                st.error(_format_api_error(exc))
                 return
 
         for i, img in enumerate(res.data):
