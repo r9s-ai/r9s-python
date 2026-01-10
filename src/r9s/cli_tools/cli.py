@@ -908,6 +908,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="IMAGE",
         help="Reference image(s) for style transfer (can be used multiple times, GPT models)",
     )
+    images_generate.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show API endpoint and request details",
+    )
     images_generate.epilog = (
         "Examples:\n"
         "  r9s images generate \"A serene mountain landscape\"\n"
@@ -979,6 +984,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-format",
         choices=["png", "jpeg", "webp"],
         help="Output image format (GPT models, default: png)",
+    )
+    images_edit.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show API endpoint and request details",
     )
     images_edit.epilog = (
         "Examples:\n"

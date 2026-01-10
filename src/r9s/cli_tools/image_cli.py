@@ -154,7 +154,11 @@ def handle_image_generate(args: argparse.Namespace) -> None:
         if getattr(args, "output_format", None):
             edit_kwargs["output_format"] = args.output_format
 
-        info(f"Sending {len(reference_images)} reference image(s) to {model}")
+        if getattr(args, "verbose", False):
+            info(f"Endpoint: POST /v1/images/edits")
+            info(f"Model: {model}")
+            info(f"Images: {len(reference_images)}")
+            info(f"Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
 
         with LoadingSpinner("Generating with reference"):
             try:
@@ -190,6 +194,11 @@ def handle_image_generate(args: argparse.Namespace) -> None:
             kwargs["background"] = args.background
         if getattr(args, "output_format", None):
             kwargs["output_format"] = args.output_format
+
+        if getattr(args, "verbose", False):
+            info(f"Endpoint: POST /v1/images/generations")
+            info(f"Model: {model}")
+            info(f"Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
 
         # Make API call
         with LoadingSpinner("Generating image"):
@@ -312,6 +321,16 @@ def handle_image_edit(args: argparse.Namespace) -> None:
 
     # Make API call
     client = get_client()
+    model = kwargs["model"]
+
+    if getattr(args, "verbose", False):
+        info(f"Endpoint: POST /v1/images/edits")
+        info(f"Model: {model}")
+        info(f"Image: {image_path.name}")
+        if mask_data:
+            info(f"Mask: {args.mask}")
+        info(f"Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
+
     with LoadingSpinner("Editing image"):
         try:
             result = client.images.edit(**kwargs)
