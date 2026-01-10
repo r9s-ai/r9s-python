@@ -100,6 +100,7 @@ def handle_image_generate(args: argparse.Namespace) -> None:
     n = args.n or 1
     output = Path(args.output) if args.output else None
     should_open = getattr(args, "open", False)
+    reference_paths = getattr(args, "reference", None) or []
 
     # --open requires -o (need files to open)
     if should_open and not output:
@@ -110,7 +111,7 @@ def handle_image_generate(args: argparse.Namespace) -> None:
         error("When generating multiple images (-n > 1), --output must be a directory.")
         raise SystemExit(1)
 
-    # Determine response format
+    # Determine response format - only for non-reference mode
     response_format = "b64_json" if output else "url"
     if args.format:
         response_format = "b64_json" if args.format == "b64" else "url"
@@ -118,42 +119,82 @@ def handle_image_generate(args: argparse.Namespace) -> None:
     # Determine output file extension from output_format
     output_ext = getattr(args, "output_format", None) or "png"
 
-    # Build request kwargs
-    kwargs = {
-        "prompt": prompt,
-        "model": resolve_image_model(args.model),
-        "n": n,
-        "response_format": response_format,
-    }
-
-    if args.size:
-        kwargs["size"] = args.size
-    if args.quality:
-        kwargs["quality"] = args.quality
-    if args.style:
-        kwargs["style"] = args.style
-    if args.negative_prompt:
-        kwargs["negative_prompt"] = args.negative_prompt
-    if args.seed is not None:
-        kwargs["seed"] = args.seed
-    if args.prompt_extend is not None:
-        kwargs["prompt_extend"] = args.prompt_extend
-    if args.watermark is not None:
-        kwargs["watermark"] = args.watermark
-    # New options
-    if getattr(args, "background", None):
-        kwargs["background"] = args.background
-    if getattr(args, "output_format", None):
-        kwargs["output_format"] = args.output_format
-
-    # Make API call
     client = get_client()
-    with LoadingSpinner("Generating image"):
-        try:
-            result = client.images.create(**kwargs)
-        except Exception as e:
-            error(f"API error: {e}")
-            raise SystemExit(1)
+    model = resolve_image_model(args.model)
+
+    # If reference images are provided, use edit endpoint for style transfer
+    if reference_paths:
+        # Read reference images
+        reference_images = []
+        for i, ref_path in enumerate(reference_paths):
+            ref_file = Path(ref_path)
+            if not ref_file.exists():
+                error(f"Reference image not found: {ref_path}")
+                raise SystemExit(1)
+            ref_data = ref_file.read_bytes()
+            reference_images.append({
+                "file_name": ref_file.name,
+                "content": ref_data,
+                "content_type": _get_image_mime_type(ref_file),
+            })
+
+        # Build edit kwargs
+        edit_kwargs: dict = {
+            "image": reference_images if len(reference_images) > 1 else reference_images[0],
+            "prompt": prompt,
+            "model": model,
+            "n": n,
+        }
+
+        if args.size:
+            edit_kwargs["size"] = args.size
+        if getattr(args, "background", None):
+            edit_kwargs["background"] = args.background
+        if getattr(args, "output_format", None):
+            edit_kwargs["output_format"] = args.output_format
+
+        with LoadingSpinner("Generating with reference"):
+            try:
+                result = client.images.edit(**edit_kwargs)
+            except Exception as e:
+                error(f"API error: {e}")
+                raise SystemExit(1)
+    else:
+        # Build standard generation kwargs
+        kwargs = {
+            "prompt": prompt,
+            "model": model,
+            "n": n,
+            "response_format": response_format,
+        }
+
+        if args.size:
+            kwargs["size"] = args.size
+        if args.quality:
+            kwargs["quality"] = args.quality
+        if args.style:
+            kwargs["style"] = args.style
+        if args.negative_prompt:
+            kwargs["negative_prompt"] = args.negative_prompt
+        if args.seed is not None:
+            kwargs["seed"] = args.seed
+        if args.prompt_extend is not None:
+            kwargs["prompt_extend"] = args.prompt_extend
+        if args.watermark is not None:
+            kwargs["watermark"] = args.watermark
+        # New options
+        if getattr(args, "background", None):
+            kwargs["background"] = args.background
+        if getattr(args, "output_format", None):
+            kwargs["output_format"] = args.output_format
+
+        # Make API call
+        with LoadingSpinner("Generating image"):
+            try:
+                result = client.images.create(**kwargs)
+            except Exception as e:
+                error(f"API error: {e}")
+                raise SystemExit(1)
 
     # Handle output
     if args.json:

@@ -902,6 +902,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["png", "jpeg", "webp"],
         help="Output image format (GPT models, default: png)",
     )
+    images_generate.add_argument(
+        "--reference",
+        action="append",
+        metavar="IMAGE",
+        help="Reference image(s) for style transfer (can be used multiple times, GPT models)",
+    )
     images_generate.epilog = (
         "Examples:\n"
         "  r9s images generate \"A serene mountain landscape\"\n"
@@ -909,6 +915,7 @@ def build_parser() -> argparse.ArgumentParser:
         "  r9s images generate \"A car\" -m gpt-image-1.5 -n 3 -o ./cars/\n"
         "  r9s images generate \"A forest\" --model wanx-v1 --negative-prompt \"people\"\n"
         "  r9s images generate \"A logo\" -o logo.png --background transparent\n"
+        "  r9s images generate \"A portrait\" --reference style.png -o styled.png\n"
         "  cat prompt.txt | r9s images generate -o result.png"
     )
     images_generate.set_defaults(func=handle_image_generate)
