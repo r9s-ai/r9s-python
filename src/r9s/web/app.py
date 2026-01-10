@@ -611,6 +611,7 @@ def _apply_custom_styles() -> None:
         .logo-container img {
             height: 36px;
             width: auto;
+            filter: invert(1) brightness(2);
         }
         .logo-text {
             font-size: 1.5rem;
