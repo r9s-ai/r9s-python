@@ -240,11 +240,6 @@ def handle_image_edit(args: argparse.Namespace) -> None:
         error("When generating multiple images (-n > 1), --output must be a directory.")
         raise SystemExit(1)
 
-    # Determine response format
-    response_format = "b64_json" if output else "url"
-    if args.format:
-        response_format = "b64_json" if args.format == "b64" else "url"
-
     # Determine output file extension from output_format
     output_ext = getattr(args, "output_format", None) or "png"
 
@@ -254,8 +249,11 @@ def handle_image_edit(args: argparse.Namespace) -> None:
         "prompt": prompt,
         "model": resolve_image_model(args.model),
         "n": n,
-        "response_format": response_format,
     }
+
+    # Only include response_format if explicitly specified (not all models support it)
+    if args.format:
+        kwargs["response_format"] = "b64_json" if args.format == "b64" else "url"
 
     if args.size:
         kwargs["size"] = args.size
