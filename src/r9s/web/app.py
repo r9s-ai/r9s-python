@@ -405,19 +405,110 @@ def _render_images_page(cfg: AppConfig) -> None:
                 st.error(_format_api_error(exc))
                 return
 
+        # Store generated images in session state for editing
+        st.session_state["generated_images"] = []
         for i, img in enumerate(res.data):
             st.subheader(f"Result {i + 1}")
             url = getattr(img, "url", None)
             b64_json = getattr(img, "b64_json", None)
+            image_data = None
             if url:
                 st.image(url)
                 st.code(url)
+                # Download for potential editing
+                try:
+                    import urllib.request
+                    with urllib.request.urlopen(url, timeout=30) as resp:
+                        image_data = resp.read()
+                except Exception:
+                    pass
             elif b64_json:
-                data = base64.b64decode(b64_json)
-                st.image(data)
+                image_data = base64.b64decode(b64_json)
+                st.image(image_data)
+
+            if image_data:
+                st.session_state["generated_images"].append({
+                    "index": i,
+                    "data": image_data,
+                    "model": model,
+                })
+
             revised = getattr(img, "revised_prompt", None)
             if revised:
                 st.caption(f"revised_prompt: {revised}")
+
+    # Show edit section if we have generated images
+    if st.session_state.get("generated_images"):
+        st.divider()
+        st.subheader("Edit Generated Image")
+
+        images = st.session_state["generated_images"]
+        if len(images) > 1:
+            edit_idx = st.selectbox(
+                "Select image to edit",
+                options=list(range(len(images))),
+                format_func=lambda x: f"Result {x + 1}",
+                key="edit_image_select",
+            )
+        else:
+            edit_idx = 0
+
+        edit_prompt = st.text_area(
+            "Edit prompt",
+            placeholder="Describe what changes you want to make...",
+            height=100,
+            key="edit_prompt",
+        )
+
+        if st.button("Edit Image", type="primary", key="edit_btn"):
+            if not edit_prompt.strip():
+                st.error("Edit prompt is required")
+            else:
+                selected_img = images[edit_idx]
+                edit_kwargs: Dict[str, Any] = {
+                    "image": {
+                        "file_name": "image.png",
+                        "content": selected_img["data"],
+                        "content_type": "image/png",
+                    },
+                    "prompt": edit_prompt.strip(),
+                }
+                if selected_img.get("model"):
+                    edit_kwargs["model"] = selected_img["model"]
+
+                with st.spinner("Editing..."):
+                    try:
+                        with _r9s_client(cfg) as r9s:
+                            edit_res = r9s.images.edit(**edit_kwargs)
+                    except Exception as exc:
+                        st.error(_format_api_error(exc))
+                        return
+
+                for j, edited_img in enumerate(edit_res.data):
+                    st.subheader(f"Edited Result {j + 1}")
+                    edited_url = getattr(edited_img, "url", None)
+                    edited_b64 = getattr(edited_img, "b64_json", None)
+                    edited_data = None
+                    if edited_url:
+                        st.image(edited_url)
+                        st.code(edited_url)
+                        try:
+                            import urllib.request
+                            with urllib.request.urlopen(edited_url, timeout=30) as resp:
+                                edited_data = resp.read()
+                        except Exception:
+                            pass
+                    elif edited_b64:
+                        edited_data = base64.b64decode(edited_b64)
+                        st.image(edited_data)
+
+                    # Replace the original with edited version for further edits
+                    if edited_data:
+                        st.session_state["generated_images"][edit_idx] = {
+                            "index": edit_idx,
+                            "data": edited_data,
+                            "model": selected_img.get("model"),
+                        }
 
 
 def main() -> None:
