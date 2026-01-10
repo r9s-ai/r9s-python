@@ -111,11 +111,6 @@ def handle_image_generate(args: argparse.Namespace) -> None:
         error("When generating multiple images (-n > 1), --output must be a directory.")
         raise SystemExit(1)
 
-    # Determine response format - only for non-reference mode
-    response_format = "b64_json" if output else "url"
-    if args.format:
-        response_format = "b64_json" if args.format == "b64" else "url"
-
     # Determine output file extension from output_format
     output_ext = getattr(args, "output_format", None) or "png"
 
@@ -172,8 +167,12 @@ def handle_image_generate(args: argparse.Namespace) -> None:
             "prompt": prompt,
             "model": model,
             "n": n,
-            "response_format": response_format,
         }
+
+        # Only include response_format if explicitly specified (not all models support it)
+        # GPT image models don't support response_format at all
+        if args.format and not _is_gpt_image_model(model):
+            kwargs["response_format"] = "b64_json" if args.format == "b64" else "url"
 
         if args.size:
             kwargs["size"] = args.size
@@ -376,6 +375,11 @@ def handle_image_edit(args: argparse.Namespace) -> None:
 def _is_gpt5_model(model: str) -> bool:
     """Check if model is a GPT-5 variant that requires special parameters."""
     return model.lower().startswith("gpt-5")
+
+
+def _is_gpt_image_model(model: str) -> bool:
+    """Check if model is a GPT image model that doesn't support response_format."""
+    return model.lower().startswith("gpt-image")
 
 
 def _get_image_mime_type(path: Path) -> str:
