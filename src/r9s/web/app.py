@@ -571,34 +571,20 @@ def _apply_custom_styles() -> None:
             font-weight: 500;
         }
 
-        /* Sidebar styling */
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
-        }
-
-        /* Input fields */
-        .stTextInput > div > div > input,
-        .stTextArea > div > div > textarea {
-            border-radius: 8px;
-            border: 1px solid #3f3f5a;
-            background-color: #1e1e2e;
-        }
-        .stTextInput > div > div > input:focus,
-        .stTextArea > div > div > textarea:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-
         /* Select boxes */
         .stSelectbox > div > div {
             border-radius: 8px;
         }
 
-        /* Cards/containers */
-        .stSubheader {
-            padding-top: 1rem;
-            border-bottom: 1px solid #3f3f5a;
-            padding-bottom: 0.5rem;
+        /* Input fields - base styling */
+        .stTextInput > div > div > input,
+        .stTextArea > div > div > textarea {
+            border-radius: 8px;
+        }
+        .stTextInput > div > div > input:focus,
+        .stTextArea > div > div > textarea:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
 
         /* Logo container */
@@ -611,7 +597,6 @@ def _apply_custom_styles() -> None:
         .logo-container img {
             height: 36px;
             width: auto;
-            filter: invert(1) brightness(2);
         }
         .logo-text {
             font-size: 1.5rem;
@@ -622,10 +607,51 @@ def _apply_custom_styles() -> None:
             background-clip: text;
         }
 
-        /* Divider styling */
-        hr {
-            border-color: #3f3f5a;
-            opacity: 0.5;
+        /* Cards/containers */
+        .stSubheader {
+            padding-top: 1rem;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Dark mode specific styles */
+        @media (prefers-color-scheme: dark) {
+            [data-testid="stSidebar"] {
+                background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
+            }
+            .stTextInput > div > div > input,
+            .stTextArea > div > div > textarea {
+                border: 1px solid #3f3f5a;
+                background-color: #1e1e2e;
+            }
+            .stSubheader {
+                border-bottom: 1px solid #3f3f5a;
+            }
+            .logo-container img {
+                filter: invert(1) brightness(2);
+            }
+            hr {
+                border-color: #3f3f5a;
+                opacity: 0.5;
+            }
+        }
+
+        /* Light mode specific styles */
+        @media (prefers-color-scheme: light) {
+            [data-testid="stSidebar"] {
+                background: linear-gradient(180deg, #f8f9fc 0%, #eef1f8 100%);
+            }
+            .stTextInput > div > div > input,
+            .stTextArea > div > div > textarea {
+                border: 1px solid #d1d5db;
+                background-color: #ffffff;
+            }
+            .stSubheader {
+                border-bottom: 1px solid #e5e7eb;
+            }
+            hr {
+                border-color: #e5e7eb;
+                opacity: 0.5;
+            }
         }
 
         /* Image display */
