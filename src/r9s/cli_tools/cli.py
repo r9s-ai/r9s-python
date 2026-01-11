@@ -431,6 +431,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable streaming output",
     )
     chat_parser.add_argument(
+        "--timing",
+        action="store_true",
+        help="Print streaming timing stats (or set R9S_TIMING=1)",
+    )
+    chat_parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
