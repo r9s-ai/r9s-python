@@ -438,7 +438,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument(
         "--allow-scripts",
         action="store_true",
-        help="Allow skill scripts (%{...}) to execute",
+        help="Allow skill scripts (%%{...}) to execute",
     )
     chat_parser.add_argument(
         "--rich",
