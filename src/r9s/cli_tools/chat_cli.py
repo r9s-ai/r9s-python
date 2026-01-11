@@ -78,8 +78,9 @@ class ChatResult:
 class ChatTiming:
     r9s_phase_ms: Optional[float]
     upstream_phase_ms: Optional[float]
-    first_data_ms: Optional[float]
+    ttft_ms: Optional[float]
     total_ms: float
+    tps: Optional[float]
     probe_seen: bool
 
 
@@ -437,12 +438,18 @@ def _format_timing_line(timing: ChatTiming) -> str:
             return "-"
         return f"{value:.1f}ms"
 
+    def fmt_tps(value: Optional[float]) -> str:
+        if value is None:
+            return "-"
+        return f"{value:.2f}token/s"
+
     return (
         "timing: "
         f"r9s={fmt_ms(timing.r9s_phase_ms)} "
         f"upstream={fmt_ms(timing.upstream_phase_ms)} "
-        f"first_data={fmt_ms(timing.first_data_ms)} "
+        f"ttft={fmt_ms(timing.ttft_ms)} "
         f"total={timing.total_ms:.1f}ms "
+        f"tps={fmt_tps(timing.tps)} "
         f"probe={'hit' if timing.probe_seen else 'miss'}"
     )
 
@@ -660,14 +667,16 @@ def _stream_chat(
                 if t_first_data is not None and t_probe is not None
                 else None
             )
-            first_data_ms = (
-                (t_first_data - t0) * 1000.0 if t_first_data is not None else None
-            )
+            ttft_ms = (t_first_data - t0) * 1000.0 if t_first_data is not None else None
+            tps: Optional[float] = None
+            if output_tokens and t_first_data is not None and t_done > t_first_data:
+                tps = output_tokens / (t_done - t_first_data)
             timing_result = ChatTiming(
                 r9s_phase_ms=r9s_phase_ms,
                 upstream_phase_ms=upstream_phase_ms,
-                first_data_ms=first_data_ms,
+                ttft_ms=ttft_ms,
                 total_ms=(t_done - t0) * 1000.0,
+                tps=tps,
                 probe_seen=probe_seen,
             )
         return ChatResult(
