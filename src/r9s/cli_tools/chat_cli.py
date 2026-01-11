@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from r9s import errors, models
+from r9s import errors, models, utils
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
@@ -41,6 +41,15 @@ from r9s.cli_tools.config import (
     resolve_system_prompt,
 )
 from r9s.cli_tools.i18n import resolve_lang, t
+from r9s.cli_tools.stream_timing import (
+    ChatTiming,
+    StreamTimingState,
+    format_timing_line,
+    iter_sse_blocks,
+    parse_sse_block,
+    probe_headers,
+    timing_enabled,
+)
 from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
 from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
@@ -70,6 +79,7 @@ class ChatResult:
     request_id: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
+    timing: Optional[ChatTiming] = None
 
 
 @dataclass
@@ -429,12 +439,17 @@ def _stream_chat(
     max_tokens: Optional[int] = None,
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
+    timing: bool = False,
 ) -> ChatResult:
     spinner = Spinner(prefix or "")
     if sys.stdout.isatty():
         spinner.start()
 
+    timing_state = StreamTimingState.start(timing)
+
+    response = None
     try:
+        http_headers = probe_headers(timing)
         stream = r9s.chat.create(
             model=model,
             messages=messages,
@@ -444,6 +459,7 @@ def _stream_chat(
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
+            http_headers=http_headers,
         )
         assistant_parts: List[str] = []
         assistant_parts_raw: List[str] = []
@@ -451,7 +467,36 @@ def _stream_chat(
         input_tokens = 0
         output_tokens = 0
         script_state = ScriptCommandState()
-        for event in stream:
+        response = getattr(stream, "response", None)
+        if response is None:
+            raise RuntimeError("Streaming response missing from SDK event stream")
+
+        decoder = lambda raw: utils.unmarshal_json(  # noqa: E731
+            raw, models.CreateChatCompletionResponseBody
+        ).data
+
+        import time as _time
+
+        for block in iter_sse_blocks(response):
+            now = _time.perf_counter()
+            server_event, is_probe = parse_sse_block(block)
+            if is_probe:
+                timing_state.mark_probe(now)
+                continue
+            if server_event is None:
+                continue
+
+            timing_state.mark_first_data(now)
+
+            data = server_event.get("data")
+            if isinstance(data, str) and data == "[DONE]":
+                timing_state.mark_done(now)
+                break
+            if isinstance(data, dict) and "error" in data:
+                spinner.stop_and_clear()
+                raise SystemExit(str(data["error"]))
+
+            event = decoder(json.dumps(server_event))
             if not request_id and getattr(event, "id", None):
                 request_id = event.id
             if getattr(event, "usage", None):
@@ -486,6 +531,7 @@ def _stream_chat(
         print()
         assistant_text = "".join(assistant_parts)
         assistant_raw_text = "".join(assistant_parts_raw) + tail
+        timing_result = timing_state.finalize(output_tokens=output_tokens)
         return ChatResult(
             text=_process_script_commands(
                 run_after_response_extensions(exts, assistant_raw_text, ctx),
@@ -495,8 +541,14 @@ def _stream_chat(
             request_id=request_id,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            timing=timing_result,
         )
     finally:
+        try:
+            if response is not None:
+                response.close()
+        except Exception:
+            pass
         spinner.stop_and_clear()
 
 
@@ -580,6 +632,7 @@ def _content_to_text(content: Any) -> str:
 def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(args.api_key, lang)
+    timing = timing_enabled(args)
 
     piped_stdin_bytes: Optional[bytes] = None
     if _is_piped_stdin():
@@ -797,6 +850,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     exts,
                     loaded_skills,
                     script_policy,
+                    timing=timing,
                     **{**bot_generation, **agent_generation},
                 )
             )
@@ -813,6 +867,9 @@ def handle_chat(args: argparse.Namespace) -> None:
                     ),
                     file=sys.stderr,
                 )
+
+            if timing and result.timing:
+                print(format_timing_line(result.timing), file=sys.stderr)
 
             if agent_name and agent_version:
                 _record_agent_execution(
@@ -970,6 +1027,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                         loaded_skills,
                         script_policy,
                         prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        timing=timing,
                         **{**bot_generation, **agent_generation},
                     )
                 )
@@ -1001,6 +1059,9 @@ def handle_chat(args: argparse.Namespace) -> None:
                         output=result.output_tokens,
                     )
                 )
+
+            if timing and result.timing:
+                info(format_timing_line(result.timing))
 
             if agent_name and agent_version:
                 _record_agent_execution(
