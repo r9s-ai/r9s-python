@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import uuid
-import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +41,15 @@ from r9s.cli_tools.config import (
     resolve_system_prompt,
 )
 from r9s.cli_tools.i18n import resolve_lang, t
+from r9s.cli_tools.stream_timing import (
+    ChatTiming,
+    StreamTimingState,
+    format_timing_line,
+    iter_sse_blocks,
+    parse_sse_block,
+    probe_headers,
+    timing_enabled,
+)
 from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
 from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
@@ -71,17 +79,7 @@ class ChatResult:
     request_id: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
-    timing: Optional["ChatTiming"] = None
-
-
-@dataclass
-class ChatTiming:
-    r9s_phase_ms: Optional[float]
-    upstream_phase_ms: Optional[float]
-    ttft_ms: Optional[float]
-    total_ms: float
-    tps: Optional[float]
-    probe_seen: bool
+    timing: Optional[ChatTiming] = None
 
 
 @dataclass
@@ -426,125 +424,6 @@ def _build_user_message_from_piped_stdin(
     )
 
 
-def _timing_enabled(args: argparse.Namespace) -> bool:
-    if getattr(args, "timing", False):
-        return True
-    return os.getenv("R9S_TIMING", "").strip() == "1"
-
-
-def _format_timing_line(timing: ChatTiming) -> str:
-    def fmt_ms(value: Optional[float]) -> str:
-        if value is None:
-            return "-"
-        return f"{value:.1f}ms"
-
-    def fmt_tps(value: Optional[float]) -> str:
-        if value is None:
-            return "-"
-        return f"{value:.2f}token/s"
-
-    return (
-        "timing: "
-        f"r9s={fmt_ms(timing.r9s_phase_ms)} "
-        f"upstream={fmt_ms(timing.upstream_phase_ms)} "
-        f"ttft={fmt_ms(timing.ttft_ms)} "
-        f"total={timing.total_ms:.1f}ms "
-        f"tps={fmt_tps(timing.tps)} "
-        f"probe={'hit' if timing.probe_seen else 'miss'}"
-    )
-
-
-def _iter_sse_blocks(response: Any):
-    boundaries = (b"\r\n\r\n", b"\n\n", b"\r\r")
-    buffer = bytearray()
-
-    def find_boundary() -> Optional[tuple[int, bytes]]:
-        best_idx: Optional[int] = None
-        best_boundary: Optional[bytes] = None
-        for boundary in boundaries:
-            idx = buffer.find(boundary)
-            if idx == -1:
-                continue
-            if best_idx is None or idx < best_idx:
-                best_idx = idx
-                best_boundary = boundary
-        if best_idx is None or best_boundary is None:
-            return None
-        return best_idx, best_boundary
-
-    for chunk in response.iter_bytes():
-        buffer += chunk
-        while True:
-            hit = find_boundary()
-            if hit is None:
-                break
-            idx, boundary = hit
-            block = bytes(buffer[:idx])
-            del buffer[: idx + len(boundary)]
-            yield block
-
-    if buffer:
-        yield bytes(buffer)
-
-
-def _parse_sse_block(block: bytes) -> tuple[Optional[dict], bool]:
-    text = block.decode("utf-8", errors="replace")
-    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-
-    server_event: dict = {"id": None, "event": None, "data": None, "retry": None}
-    data = ""
-    publish = False
-    probe = False
-
-    for line in lines:
-        if not line:
-            continue
-        if line.startswith(":"):
-            if line[1:].lstrip() == "R9S PROCESSING":
-                probe = True
-            continue
-
-        delim = line.find(":")
-        if delim <= 0:
-            continue
-        field = line[:delim]
-        value = line[delim + 1 :] if delim < len(line) - 1 else ""
-        if value.startswith(" "):
-            value = value[1:]
-
-        if field == "data":
-            data += value + "\n"
-            publish = True
-        elif field == "event":
-            server_event["event"] = value
-            publish = True
-        elif field == "id":
-            server_event["id"] = value
-            publish = True
-        elif field == "retry":
-            server_event["retry"] = int(value) if value.isdigit() else None
-            publish = True
-
-    if not publish:
-        return None, probe
-
-    if not data:
-        return None, probe
-
-    data = data[:-1]
-    parsed_data: Any = data
-    data_is_primitive = data.isnumeric() or data in ("true", "false", "null")
-    data_is_json = data.startswith(("{", "[", '"'))
-    if data_is_primitive or data_is_json:
-        try:
-            parsed_data = json.loads(data)
-        except Exception:
-            parsed_data = data
-    server_event["data"] = parsed_data
-
-    return server_event, probe
-
-
 def _stream_chat(
     r9s: R9S,
     model: str,
@@ -566,17 +445,11 @@ def _stream_chat(
     if sys.stdout.isatty():
         spinner.start()
 
-    t0 = time.perf_counter()
-    t_probe: Optional[float] = None
-    t_first_data: Optional[float] = None
-    t_done: Optional[float] = None
-    probe_seen = False
+    timing_state = StreamTimingState.start(timing)
 
     response = None
     try:
-        http_headers = (
-            {"X-NextRouter-SSE-Probe": "r9s"} if timing else None
-        )
+        http_headers = probe_headers(timing)
         stream = r9s.chat.create(
             model=model,
             messages=messages,
@@ -602,22 +475,22 @@ def _stream_chat(
             raw, models.CreateChatCompletionResponseBody
         ).data
 
-        for block in _iter_sse_blocks(response):
-            now = time.perf_counter()
-            server_event, is_probe = _parse_sse_block(block)
-            if is_probe and not probe_seen:
-                probe_seen = True
-                t_probe = now
+        import time as _time
+
+        for block in iter_sse_blocks(response):
+            now = _time.perf_counter()
+            server_event, is_probe = parse_sse_block(block)
+            if is_probe:
+                timing_state.mark_probe(now)
                 continue
             if server_event is None:
                 continue
 
-            if t_first_data is None:
-                t_first_data = now
+            timing_state.mark_first_data(now)
 
             data = server_event.get("data")
             if isinstance(data, str) and data == "[DONE]":
-                t_done = now
+                timing_state.mark_done(now)
                 break
             if isinstance(data, dict) and "error" in data:
                 spinner.stop_and_clear()
@@ -658,27 +531,7 @@ def _stream_chat(
         print()
         assistant_text = "".join(assistant_parts)
         assistant_raw_text = "".join(assistant_parts_raw) + tail
-        t_done = t_done or time.perf_counter()
-        timing_result: Optional[ChatTiming] = None
-        if timing:
-            r9s_phase_ms = (t_probe - t0) * 1000.0 if t_probe is not None else None
-            upstream_phase_ms = (
-                (t_first_data - t_probe) * 1000.0
-                if t_first_data is not None and t_probe is not None
-                else None
-            )
-            ttft_ms = (t_first_data - t0) * 1000.0 if t_first_data is not None else None
-            tps: Optional[float] = None
-            if output_tokens and t_first_data is not None and t_done > t_first_data:
-                tps = output_tokens / (t_done - t_first_data)
-            timing_result = ChatTiming(
-                r9s_phase_ms=r9s_phase_ms,
-                upstream_phase_ms=upstream_phase_ms,
-                ttft_ms=ttft_ms,
-                total_ms=(t_done - t0) * 1000.0,
-                tps=tps,
-                probe_seen=probe_seen,
-            )
+        timing_result = timing_state.finalize(output_tokens=output_tokens)
         return ChatResult(
             text=_process_script_commands(
                 run_after_response_extensions(exts, assistant_raw_text, ctx),
@@ -779,7 +632,7 @@ def _content_to_text(content: Any) -> str:
 def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(args.api_key, lang)
-    timing = _timing_enabled(args)
+    timing = timing_enabled(args)
 
     piped_stdin_bytes: Optional[bytes] = None
     if _is_piped_stdin():
@@ -1016,7 +869,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                 )
 
             if timing and result.timing:
-                print(_format_timing_line(result.timing), file=sys.stderr)
+                print(format_timing_line(result.timing), file=sys.stderr)
 
             if agent_name and agent_version:
                 _record_agent_execution(
@@ -1208,7 +1061,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                 )
 
             if timing and result.timing:
-                info(_format_timing_line(result.timing))
+                info(format_timing_line(result.timing))
 
             if agent_name and agent_version:
                 _record_agent_execution(
