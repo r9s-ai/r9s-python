@@ -6,7 +6,7 @@ from r9s.agents.local_store import LocalAgentStore, load_agent, load_version
 def test_agent_store_create_update(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("R9S_AGENTS_DIR", str(tmp_path))
     store = LocalAgentStore()
-    agent = store.create(
+    store.create(
         "support",
         instructions="Hello {{company}}",
         model="gpt-test",

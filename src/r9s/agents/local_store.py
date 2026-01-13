@@ -285,9 +285,9 @@ def load_version(name: str, version: str) -> AgentVersion:
     instructions_data = data.get("instructions")
     if isinstance(instructions_data, dict) and "value" in instructions_data:
         instructions = str(instructions_data.get("value", ""))
-        variables = instructions_data.get("variables")
-        if isinstance(variables, list):
-            variables_from_instructions = [str(v) for v in variables]
+        variables_val = instructions_data.get("variables")
+        if isinstance(variables_val, list):
+            variables_from_instructions = [str(v) for v in variables_val]
     elif isinstance(instructions_data, str):
         instructions = instructions_data
     if not instructions:
@@ -403,9 +403,12 @@ class LocalAgentStore(AgentStore):
         files = config.get("files", [])
         skills = config.get("skills", [])
         now = _utc_now()
+        
+        id_val = config.get("id", "")
+        agent_id = id_val if isinstance(id_val, str) and id_val else f"agt_{uuid()}"
 
         agent = Agent(
-            id=config.get("id", "") or f"agt_{uuid()}",
+            id=agent_id,
             name=name.strip(),
             description=description,
             current_version="1.0.0",
