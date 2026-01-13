@@ -7,10 +7,13 @@ Install with: pip install r9s[rich]
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 # Lazy-loaded rich module
-_rich_console: Optional[object] = None
+_rich_console: Optional["Console"] = None
 _rich_available: Optional[bool] = None
 
 
@@ -31,7 +34,7 @@ def is_rich_available() -> bool:
     return _rich_available
 
 
-def _get_console():
+def _get_console() -> "Console":
     """Get or create rich Console instance (lazy)."""
     global _rich_console
     if _rich_console is None:

@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import io
 from typing import Any
-
-import pytest
 
 from r9s.models.imageeditrequest import (
     ImageEditRequest,

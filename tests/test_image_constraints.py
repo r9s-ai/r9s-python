@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from r9s.utils.image_constraints import (
     MODEL_CONSTRAINTS,
     GEMINI_ASPECT_RATIOS,
