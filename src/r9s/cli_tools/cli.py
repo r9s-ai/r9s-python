@@ -50,6 +50,11 @@ from r9s.cli_tools.audio_cli import (
     handle_audio_translate,
 )
 from r9s.cli_tools.models_cli import handle_models_list
+from r9s.cli_tools.mcp_cli import (
+    handle_mcp_serve,
+    handle_mcp_list_tools,
+    handle_mcp_test,
+)
 from r9s.cli_tools.skill_cli import (
     handle_skill_create,
     handle_skill_delete,
@@ -1219,6 +1224,70 @@ def build_parser() -> argparse.ArgumentParser:
     reset_parser.epilog = f"Supported apps: {supported_apps}"
     reset_parser.add_argument("app", nargs="?", help="App name, e.g. claude-code")
     reset_parser.set_defaults(func=handle_reset)
+
+    # MCP Server commands
+    mcp_parser = subparsers.add_parser(
+        "mcp", help="MCP (Model Context Protocol) server for AI assistants"
+    )
+    mcp_sub = mcp_parser.add_subparsers(dest="mcp_command")
+    mcp_parser.set_defaults(func=lambda _: mcp_parser.print_help())
+
+    mcp_serve = mcp_sub.add_parser(
+        "serve", help="Start MCP server"
+    )
+    mcp_serve.add_argument(
+        "--module", "-m",
+        help="Modules to enable (comma-separated: models,agents,usage). Default: all"
+    )
+    mcp_serve.add_argument(
+        "--transport", "-t",
+        choices=["stdio", "sse"],
+        default="stdio",
+        help="Transport type (default: stdio)"
+    )
+    mcp_serve.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    mcp_serve.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    mcp_serve.add_argument("--port", type=int, default=3100, help="SSE server port (default: 3100)")
+    mcp_serve.epilog = (
+        "Examples:\n"
+        "  r9s mcp serve                           # All modules, stdio\n"
+        "  r9s mcp serve --module models           # Models only\n"
+        "  r9s mcp serve --module models,agents    # Multiple modules\n"
+        "\n"
+        "Claude Desktop config (~/.config/claude/claude_desktop_config.json):\n"
+        '  {"mcpServers": {"r9s": {"command": "r9s", "args": ["mcp", "serve"]}}}'
+    )
+    mcp_serve.set_defaults(func=handle_mcp_serve)
+
+    mcp_list_tools = mcp_sub.add_parser(
+        "list-tools", help="List available MCP tools"
+    )
+    mcp_list_tools.add_argument(
+        "--module", "-m",
+        help="Modules to show (comma-separated: models,agents,usage). Default: all"
+    )
+    mcp_list_tools.add_argument(
+        "--json", action="store_true", help="Output as JSON"
+    )
+    mcp_list_tools.set_defaults(func=handle_mcp_list_tools)
+
+    mcp_test = mcp_sub.add_parser(
+        "test", help="Test an MCP tool locally"
+    )
+    mcp_test.add_argument("tool", help="Tool name to test")
+    mcp_test.add_argument(
+        "args", nargs="*", help="Tool arguments (key=value pairs)"
+    )
+    mcp_test.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    mcp_test.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    mcp_test.epilog = (
+        "Examples:\n"
+        "  r9s mcp test list_models\n"
+        "  r9s mcp test list_models provider=anthropic\n"
+        "  r9s mcp test recommend_model task=code_review priority=quality\n"
+        '  r9s mcp test compare_models prompt="Hello" models=\'["gpt-4o","claude-sonnet-4"]\''
+    )
+    mcp_test.set_defaults(func=handle_mcp_test)
 
     completion_parser = subparsers.add_parser(
         "completion", help="Generate shell completion scripts"
