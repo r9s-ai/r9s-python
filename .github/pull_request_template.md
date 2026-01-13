@@ -3,6 +3,7 @@
 
 ## Changes
 - [ ] CLI
+- [ ] Web
 - [ ] Python SDK
 - [ ] Docs
 - [ ] CI / Release

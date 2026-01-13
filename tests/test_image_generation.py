@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from r9s.models.imagegenerationrequest import (
     ImageGenerationRequest,
-    ImageGenerationRequestResponseFormat,
     ImageGenerationRequestTypedDict,
-    Quality,
-    Size,
-    Style,
 )
 from r9s.models.imagegenerationresponse import (
     ImageGenerationResponse,

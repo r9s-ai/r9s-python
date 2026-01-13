@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from r9s.skills.loader import (
     build_system_prompt_with_skills,
     format_skills_context,

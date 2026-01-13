@@ -225,17 +225,7 @@ def _dump_version_toml(version: AgentVersion) -> str:
         ]
     )
     if version.skills:
-        lines.append(f"skills = {_toml_format_value(version.skills)}")
-    if version.model_params:
-        lines.append("\n[params]")
-        for key, val in version.model_params.items():
-            if val is None:
-                continue
-            lines.append(f"{key} = {_toml_format_value(val)}")
-    lines.append("\n[instructions]")
-    lines.append(f"value = {_toml_multiline(version.instructions)}")
-    if version.variables:
-        lines.append(f"variables = {_toml_format_value(version.variables)}")
+        lines.append(f"\nskills = {_toml_format_value(version.skills)}")
     if version.tools:
         for tool in version.tools:
             lines.append("\n[[tools]]")
@@ -250,6 +240,16 @@ def _dump_version_toml(version: AgentVersion) -> str:
                 if val is None:
                     continue
                 lines.append(f"{key} = {_toml_format_value(val)}")
+    if version.model_params:
+        lines.append("\n[params]")
+        for key, val in version.model_params.items():
+            if val is None:
+                continue
+            lines.append(f"{key} = {_toml_format_value(val)}")
+    lines.append("\n[instructions]")
+    lines.append(f"value = {_toml_multiline(version.instructions)}")
+    if version.variables:
+        lines.append(f"variables = {_toml_format_value(version.variables)}")
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -285,9 +285,9 @@ def load_version(name: str, version: str) -> AgentVersion:
     instructions_data = data.get("instructions")
     if isinstance(instructions_data, dict) and "value" in instructions_data:
         instructions = str(instructions_data.get("value", ""))
-        variables = instructions_data.get("variables")
-        if isinstance(variables, list):
-            variables_from_instructions = [str(v) for v in variables]
+        variables_val = instructions_data.get("variables")
+        if isinstance(variables_val, list):
+            variables_from_instructions = [str(v) for v in variables_val]
     elif isinstance(instructions_data, str):
         instructions = instructions_data
     if not instructions:
@@ -305,17 +305,33 @@ def load_version(name: str, version: str) -> AgentVersion:
         variables = extract_variables(instructions)
 
     skills_raw = data.get("skills", [])
+    if not isinstance(skills_raw, list):
+        instructions_obj = data.get("instructions")
+        if isinstance(instructions_obj, dict):
+            skills_raw = instructions_obj.get("skills", [])
     skills: List[str] = (
         [str(s) for s in skills_raw] if isinstance(skills_raw, list) else []
     )
+
+    tools_raw = data.get("tools", [])
+    if not isinstance(tools_raw, list):
+        instructions_obj = data.get("instructions")
+        if isinstance(instructions_obj, dict):
+            tools_raw = instructions_obj.get("tools", [])
+
+    files_raw = data.get("files", [])
+    if not isinstance(files_raw, list):
+        instructions_obj = data.get("instructions")
+        if isinstance(instructions_obj, dict):
+            files_raw = instructions_obj.get("files", [])
 
     version_obj = AgentVersion(
         version=str(data.get("version", version)),
         instructions=instructions,
         model=str(data.get("model", "")),
         provider=str(data.get("provider", "r9s")),
-        tools=data.get("tools", []) if isinstance(data.get("tools"), list) else [],
-        files=data.get("files", []) if isinstance(data.get("files"), list) else [],
+        tools=tools_raw if isinstance(tools_raw, list) else [],
+        files=files_raw if isinstance(files_raw, list) else [],
         skills=skills,
         variables=variables,
         model_params=data.get("params", {})
@@ -387,9 +403,12 @@ class LocalAgentStore(AgentStore):
         files = config.get("files", [])
         skills = config.get("skills", [])
         now = _utc_now()
+        
+        id_val = config.get("id", "")
+        agent_id = id_val if isinstance(id_val, str) and id_val else f"agt_{uuid()}"
 
         agent = Agent(
-            id=config.get("id", "") or f"agt_{uuid()}",
+            id=agent_id,
             name=name.strip(),
             description=description,
             current_version="1.0.0",
