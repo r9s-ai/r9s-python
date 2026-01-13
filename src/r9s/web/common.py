@@ -14,15 +14,17 @@ def format_api_error(exc: Exception) -> str:
     """Format API error with detailed information when available."""
     if isinstance(exc, R9SError):
         parts = [f"Request failed (HTTP {exc.status_code})"]
-        if hasattr(exc, "data") and hasattr(exc.data, "error"):
-            err = exc.data.error
-            if hasattr(err, "message") and err.message:
-                parts.append(f"Message: {err.message}")
-            if hasattr(err, "type") and err.type:
+        data = getattr(exc, "data", None)
+        err = getattr(data, "error", None) if data is not None else None
+        if err is not None:
+            msg = getattr(err, "message", None)
+            if msg:
+                parts.append(f"Message: {msg}")
+            if getattr(err, "type", None):
                 parts.append(f"Type: {err.type}")
-            if hasattr(err, "code") and err.code:
+            if getattr(err, "code", None):
                 parts.append(f"Code: {err.code}")
-            if hasattr(err, "param") and err.param:
+            if getattr(err, "param", None):
                 parts.append(f"Param: {err.param}")
         elif exc.body:
             parts.append(f"Details: {exc.body[:500]}")
@@ -244,4 +246,3 @@ def apply_custom_styles() -> None:
         """,
         unsafe_allow_html=True,
     )
-

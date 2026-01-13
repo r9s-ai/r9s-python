@@ -1,10 +1,29 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, cast
 
 import streamlit as st
 
+from r9s.models import AudioSpeechRequestResponseFormat, AudioSpeechRequestVoice
 from r9s.web.common import AppConfig, format_api_error, get_env_default, r9s_client
+
+
+VOICE_OPTIONS: Tuple[AudioSpeechRequestVoice, ...] = (
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
+)
+FORMAT_OPTIONS: Tuple[AudioSpeechRequestResponseFormat, ...] = (
+    "mp3",
+    "opus",
+    "aac",
+    "flac",
+    "wav",
+    "pcm",
+)
 
 
 def _audio_mime_type(response_format: str) -> str:
@@ -54,8 +73,10 @@ def run(cfg: AppConfig) -> None:
     with tts_tab:
         st.subheader("Text-to-Speech")
         tts_model = st.text_input("TTS model", value=get_env_default("R9S_TTS_MODEL", "tts-1"))
-        voice = st.selectbox("Voice", options=["alloy", "echo", "fable", "onyx", "nova", "shimmer"], index=0)
-        response_format = st.selectbox("Format", options=["mp3", "opus", "aac", "flac", "wav", "pcm"], index=0)
+        voice = cast(AudioSpeechRequestVoice, st.selectbox("Voice", options=VOICE_OPTIONS, index=0))
+        response_format = cast(
+            AudioSpeechRequestResponseFormat, st.selectbox("Format", options=FORMAT_OPTIONS, index=0)
+        )
         speed = st.slider("Speed", min_value=0.25, max_value=4.0, value=1.0, step=0.05)
         text = st.text_area("Text", height=180, placeholder="Enter text to convert to speech...")
 
@@ -81,9 +102,10 @@ def run(cfg: AppConfig) -> None:
                     except Exception as exc:
                         st.error(format_api_error(exc))
 
-        audio_bytes = st.session_state.get("tts_audio_bytes")
+        audio_bytes_obj = st.session_state.get("tts_audio_bytes")
         fmt = st.session_state.get("tts_audio_format", "mp3")
-        if isinstance(audio_bytes, (bytes, bytearray)) and audio_bytes:
+        if isinstance(audio_bytes_obj, (bytes, bytearray)) and audio_bytes_obj:
+            audio_bytes = bytes(audio_bytes_obj)
             st.divider()
             st.subheader("Result")
             st.audio(audio_bytes, format=_audio_mime_type(str(fmt)))

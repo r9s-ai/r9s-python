@@ -24,7 +24,8 @@ class TestResolveImageModel:
         monkeypatch.setenv("R9S_MODEL", "env-model")
         assert resolve_image_model(None) == "env-image-model"
 
-    def test_general_env_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_ignores_general_env_uses_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """R9S_MODEL is ignored since chat models are not valid for images."""
         monkeypatch.delenv("R9S_IMAGE_MODEL", raising=False)
         monkeypatch.setenv("R9S_MODEL", "env-model")
         assert resolve_image_model(None) == "gpt-image-1.5"
