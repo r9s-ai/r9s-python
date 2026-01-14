@@ -39,9 +39,29 @@ def test_chat_allow_scripts_flag() -> None:
     assert args.allow_scripts is True
 
 
-def test_web_parses() -> None:
+def test_models_expand_and_filter_parse() -> None:
     parser = build_parser()
-    args = parser.parse_args(["web", "--host", "0.0.0.0", "--port", "9000"])
-    assert args.command == "web"
-    assert args.host == "0.0.0.0"
-    assert args.port == 9000
+    args = parser.parse_args(
+        [
+            "models",
+            "--expand",
+            "channels,modality,endpoints,context_length",
+            "--filter",
+            "channel=*open*",
+            "--filter",
+            "endpoint=/v1/messages",
+            "-v",
+        ]
+    )
+    assert args.command == "models"
+    assert args.expand == "channels,modality,endpoints,context_length"
+    assert args.filter == ["channel=*open*", "endpoint=/v1/messages"]
+    assert args.verbose is True
+
+
+def test_models_shortcuts_details_parse() -> None:
+    parser = build_parser()
+
+    args = parser.parse_args(["models", "-d"])
+    assert args.command == "models"
+    assert args.details is True
