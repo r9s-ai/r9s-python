@@ -19,8 +19,7 @@ def image_generation_detailed():
 
     output_file = "example1_cat.png"
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),
-        timeout_ms=1000*60*60) as r9s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", ""), timeout_ms=1000 * 60 * 60) as r9s:
         res = r9s.images.create(
             model="gpt-image-1",
             prompt="A cute cat set on table",
@@ -48,7 +47,9 @@ def image_generation_streaming():
     output_dir = "streaming_generation_output"
     os.makedirs(output_dir, exist_ok=True)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),) as r9s:
+    with R9S(
+        api_key=os.getenv("R9S_API_KEY", ""),
+    ) as r9s:
         stream = r9s.images.create(
             prompt="A futuristic cityscape at sunset with flying cars",
             model="gpt-image-1",
@@ -74,7 +75,7 @@ def image_generation_streaming():
                 if img.progress:
                     print(f"    Progress: {img.progress:.2%}")
                 if img.is_final:
-                    print(f"    Status: FINAL")
+                    print("    Status: FINAL")
                     if img.b64_json:
                         final_file = os.path.join(output_dir, "final.png")
                         image_data = base64.b64decode(img.b64_json)
@@ -83,19 +84,21 @@ def image_generation_streaming():
                         print(f"    Saved: {final_file}")
                         final_image_data = img.b64_json
                 else:
-                    print(f"    Status: Partial")
+                    print("    Status: Partial")
                     if img.b64_json:
-                        partial_file = os.path.join(output_dir, f"partial_{chunk_count}.png")
+                        partial_file = os.path.join(
+                            output_dir, f"partial_{chunk_count}.png"
+                        )
                         image_data = base64.b64decode(img.b64_json)
                         with open(partial_file, "wb") as f:
                             f.write(image_data)
                         print(f"    Saved: {partial_file}")
 
-            if hasattr(event_data, 'usage') and event_data.usage:  # type: ignore[union-attr]
+            if hasattr(event_data, "usage") and event_data.usage:  # type: ignore[union-attr]
                 print(f"  Usage: {event_data.usage}")  # type: ignore[union-attr]
 
         if final_image_data:
-            print(f"\nFinal image saved successfully")
+            print("\nFinal image saved successfully")
         else:
             print("\nWarning: No final image received")
 
@@ -108,15 +111,13 @@ def image_generation_url():
     print("Example 3: URL Output")
     print("=" * 60)
 
-    with R9S(
-        api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         res = r9s.images.create(
             model="dall-e-2",
             prompt="Minimalist logo of a cloud with a lightning bolt",
             n=1,
             response_format="url",
             size="512x512",
-
         )
 
         if res.data[0].url:
@@ -139,7 +140,9 @@ def image_edit_simple():
         print("Please generate example1_cat.png first to use as input image.")
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),) as r9s:
+    with R9S(
+        api_key=os.getenv("R9S_API_KEY", ""),
+    ) as r9s:
         with open(image_path, "rb") as image_file:
             res = r9s.images.edit(
                 image={  # type: ignore
@@ -177,7 +180,9 @@ def gpt_image_edit_high_fidelity():
         print("Please generate example1_cat.png first to use as input image.")
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),) as r9s:
+    with R9S(
+        api_key=os.getenv("R9S_API_KEY", ""),
+    ) as r9s:
         with open(image_path, "rb") as image_file:
             res = r9s.images.edit(
                 image={  # type: ignore
@@ -216,7 +221,9 @@ def gpt_image_edit_streaming():
 
     os.makedirs(output_dir, exist_ok=True)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),) as r9s:
+    with R9S(
+        api_key=os.getenv("R9S_API_KEY", ""),
+    ) as r9s:
         with open(image_path, "rb") as image_file:
             stream = r9s.images.edit(
                 image={
@@ -243,31 +250,35 @@ def gpt_image_edit_streaming():
                 data = sse_event.data  # type: ignore[union-attr]
 
                 if sse_event.event == "image_edit.partial_image":  # type: ignore[union-attr]
-                    print(f"  Status: Partial image")
-                    if hasattr(data, 'partial_image_index'):
+                    print("  Status: Partial image")
+                    if hasattr(data, "partial_image_index"):
                         print(f"  Partial image index: {data.partial_image_index}")
 
-                    if hasattr(data, 'b64_json') and data.b64_json:
-                        partial_file = os.path.join(output_dir, f"partial_{event_count}.png")
+                    if hasattr(data, "b64_json") and data.b64_json:
+                        partial_file = os.path.join(
+                            output_dir, f"partial_{event_count}.png"
+                        )
                         image_data = base64.b64decode(data.b64_json)
                         with open(partial_file, "wb") as f:
                             f.write(image_data)
                         print(f"  Saved partial image: {partial_file}")
 
                 elif sse_event.event == "image_edit.completed":  # type: ignore[union-attr]
-                    print(f"  Status: COMPLETED")
-                    final_image_data = data.b64_json if hasattr(data, 'b64_json') else None
+                    print("  Status: COMPLETED")
+                    final_image_data = (
+                        data.b64_json if hasattr(data, "b64_json") else None
+                    )
 
-                    if hasattr(data, 'usage') and data.usage:
+                    if hasattr(data, "usage") and data.usage:
                         print(f"  Usage: {data.usage}")
 
-                if hasattr(data, 'created_at'):
+                if hasattr(data, "created_at"):
                     print(f"  Created at: {data.created_at}")
-                if hasattr(data, 'size'):
+                if hasattr(data, "size"):
                     print(f"  Size: {data.size}")
-                if hasattr(data, 'quality'):
+                if hasattr(data, "quality"):
                     print(f"  Quality: {data.quality}")
-                if hasattr(data, 'output_format'):
+                if hasattr(data, "output_format"):
                     print(f"  Format: {data.output_format}")
 
             if final_image_data:
@@ -293,11 +304,13 @@ def gpt_image_edit_multiple():
     output_file = "example7_combined.png"
 
     if not os.path.exists(image1_path) or not os.path.exists(image2_path):
-        print(f"Input images not found.")
+        print("Input images not found.")
         print("Please run Examples 1 and 4 first to generate the required images.")
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY",""),) as r9s:
+    with R9S(
+        api_key=os.getenv("R9S_API_KEY", ""),
+    ) as r9s:
         with open(image1_path, "rb") as img1, open(image2_path, "rb") as img2:
             res = r9s.images.edit(
                 image=[  # type: ignore

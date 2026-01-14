@@ -3,10 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from r9s.agents.local_store import LocalAgentStore
-from r9s.agents.models import AgentVersion
 
 
 def test_agent_create_with_skills(tmp_path: Path, monkeypatch) -> None:
@@ -32,7 +29,7 @@ def test_agent_create_without_skills(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("R9S_AGENTS_DIR", str(tmp_path))
 
     store = LocalAgentStore()
-    agent = store.create(
+    store.create(
         "no-skills-agent",
         instructions="You are helpful.",
         model="gpt-4",

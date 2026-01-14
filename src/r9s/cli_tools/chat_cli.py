@@ -223,7 +223,7 @@ def _flush_script_command_stream(state: ScriptCommandState) -> str:
     return leftover
 
 
-def _get_last_assistant_response(history: List[Dict[str, Any]]) -> Optional[str]:
+def _get_last_assistant_response(history: List[models.MessageTypedDict]) -> Optional[str]:
     """Get the last assistant message from history."""
     for msg in reversed(history):
         if msg.get("role") == "assistant":
