@@ -4,7 +4,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 try:
     from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
@@ -1181,8 +1181,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
     models_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
     models_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    models_output_group = models_parser.add_mutually_exclusive_group()
+    models_output_group.add_argument(
+        "--details",
+        "-d",
+        action="store_true",
+        help="Show table output (owner, created, and expanded fields if present)",
+    )
+    models_output_group.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print raw JSON response",
+    )
     models_parser.add_argument(
-        "--details", "-d", action="store_true", help="Show model details (owner, created)"
+        "--expand",
+        default=None,
+        help=(
+            "Relay /v1/models expand fields (e.g. channels,modality,endpoints,context_length)"
+        ),
+    )
+    models_parser.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        help=(
+            "Relay /v1/models filter rule; can be repeated (e.g. --filter channel=*open*)"
+        ),
     )
     models_parser.add_argument(
         "--lang",
