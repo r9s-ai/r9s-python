@@ -197,6 +197,14 @@ def handle_command_run(args: argparse.Namespace) -> None:
 
     messages: list[models.MessageTypedDict] = []
     if system_prompt:
+        system_prompt = render_template(
+            system_prompt,
+            RenderContext(
+                args_text="",
+                assume_yes=bool(getattr(args, "yes", False)),
+                interactive=sys.stdin.isatty(),
+            ),
+        ).strip() or None
         messages.append(
             cast(models.MessageTypedDict, {"role": "system", "content": system_prompt})
         )

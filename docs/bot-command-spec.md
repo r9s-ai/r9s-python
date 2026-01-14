@@ -93,6 +93,9 @@ Please generate a commit message from this diff:
 - `{{args}}`：替换为 slash command 的参数字符串
   - 例：输入 `/summarize focus on risks`，则 `{{args}} == "focus on risks"`
 - `!{ ... }`：执行本地 shell 命令（默认 `bash -lc ...`），用 stdout 替换
+- `@{ ... }`：读取本地文件内容并注入（UTF-8 文本），用文件内容替换
+  - 例：`@{docs/README.md}`、`@{/abs/path/to/spec.md}`
+  - 默认最大 1MB；可通过环境变量 `R9S_FILE_INJECT_MAX_BYTES` 调整
 
 ---
 

@@ -60,7 +60,7 @@ def _load_module_from_file(path: Path) -> ModuleType:
 
 
 def _load_module(spec: str) -> ModuleType:
-    path = Path(spec)
+    path = Path(spec).expanduser()
     if path.exists() and path.is_file() and path.suffix == ".py":
         return _load_module_from_file(path)
     return importlib.import_module(spec)

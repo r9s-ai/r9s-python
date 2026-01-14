@@ -4,7 +4,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 try:
     from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
@@ -17,6 +17,22 @@ from r9s.cli_tools.bot_cli import (
     handle_bot_list,
     handle_bot_show,
 )
+from r9s.cli_tools.agent_cli import (
+    handle_agent_approve,
+    handle_agent_audit,
+    handle_agent_create,
+    handle_agent_deprecate,
+    handle_agent_delete,
+    handle_agent_diff,
+    handle_agent_export,
+    handle_agent_history,
+    handle_agent_import_bot,
+    handle_agent_list,
+    handle_agent_pull,
+    handle_agent_rollback,
+    handle_agent_show,
+    handle_agent_update,
+)
 from r9s.cli_tools.command_cli import (
     handle_command_create,
     handle_command_delete,
@@ -27,6 +43,21 @@ from r9s.cli_tools.command_cli import (
 )
 from r9s.cli_tools.completion_cli import handle___complete, handle_completion
 from r9s.cli_tools.chat_cli import handle_chat
+from r9s.cli_tools.image_cli import handle_image_generate, handle_image_edit, handle_image_describe
+from r9s.cli_tools.audio_cli import (
+    handle_audio_speech,
+    handle_audio_transcribe,
+    handle_audio_translate,
+)
+from r9s.cli_tools.models_cli import handle_models_list
+from r9s.cli_tools.skill_cli import (
+    handle_skill_create,
+    handle_skill_delete,
+    handle_skill_install,
+    handle_skill_list,
+    handle_skill_show,
+    handle_skill_validate,
+)
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
@@ -328,7 +359,7 @@ def handle_reset(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="r9s",
-        description="r9s CLI: chat, manage bots, and configure local tools to use the r9s API.",
+        description="r9s CLI: chat, manage agents, and configure local tools to use the r9s API.",
     )
     parser.add_argument(
         "--lang",
@@ -344,7 +375,7 @@ def build_parser() -> argparse.ArgumentParser:
         "bot",
         nargs="?",
         default=None,
-        help="Bot name (loads system_prompt from ~/.r9s/bots/<bot>.toml).",
+        help="[DEPRECATED] Bot name. Use --agent instead.",
     )
     chat_parser.add_argument(
         "--resume",
@@ -361,6 +392,22 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--model", help="Model name (overrides R9S_MODEL)")
     chat_parser.add_argument(
         "--system-prompt", help="System prompt text (overrides R9S_SYSTEM_PROMPT)"
+    )
+    chat_parser.add_argument(
+        "--agent",
+        help="Agent name (loads system prompt and model from ~/.r9s/agents/<agent>/)",
+    )
+    chat_parser.add_argument(
+        "--var",
+        action="append",
+        default=[],
+        help="Agent template variable (key=value, repeatable)",
+    )
+    chat_parser.add_argument(
+        "--skill",
+        action="append",
+        default=[],
+        help="Load skill by name (repeatable, combines with agent skills)",
     )
     chat_parser.add_argument(
         "--history-file",
@@ -383,13 +430,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable streaming output",
     )
     chat_parser.add_argument(
+        "--timing",
+        action="store_true",
+        help="Print streaming timing stats (or set R9S_TIMING=1)",
+    )
+    chat_parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
         help="Skip confirmation for template shell execution (!{...})",
     )
+    chat_parser.add_argument(
+        "--allow-scripts",
+        action="store_true",
+        help="Allow skill scripts (%%{...}) to execute",
+    )
+    chat_parser.add_argument(
+        "--rich",
+        action="store_true",
+        help="Enable rich markdown rendering (requires: pip install r9s[rich])",
+    )
     chat_parser.epilog = (
-        "Bots: `r9s chat <bot>` loads system_prompt from ~/.r9s/bots/<bot>.toml. "
+        "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "
+        "Skills: `r9s chat --skill <name>` loads skill instructions from ~/.r9s/skills/<name>/. "
         "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "
         "Template syntax: {{args}} and !{...}. Shell execution requires confirmation unless -y is provided."
@@ -397,7 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.set_defaults(func=handle_chat)
 
     bot_parser = subparsers.add_parser(
-        "bot", help="Manage local bots (~/.r9s/bots/*.toml)"
+        "bot", help="[DEPRECATED] Use 'r9s agent' instead"
     )
     bot_sub = bot_parser.add_subparsers(dest="bot_command")
     bot_parser.set_defaults(func=lambda _: bot_parser.print_help())
@@ -442,9 +505,215 @@ def build_parser() -> argparse.ArgumentParser:
     bot_show.add_argument("name", help="Bot name")
     bot_show.set_defaults(func=handle_bot_show)
 
+    agent_parser = subparsers.add_parser(
+        "agent", help="Manage versioned agents (~/.r9s/agents/)"
+    )
+    agent_sub = agent_parser.add_subparsers(dest="agent_command")
+    agent_parser.set_defaults(func=lambda _: agent_parser.print_help())
+
+    agent_list = agent_sub.add_parser("list", help="List agents")
+    agent_list.set_defaults(func=handle_agent_list)
+
+    agent_show = agent_sub.add_parser("show", help="Show agent details")
+    agent_show.add_argument("name", help="Agent name")
+    agent_show.add_argument(
+        "--instructions", "-i", action="store_true", help="Show full instructions"
+    )
+    agent_show.set_defaults(func=handle_agent_show)
+
+    agent_create = agent_sub.add_parser("create", help="Create a new agent")
+    agent_create.add_argument("name", help="Agent name")
+    agent_create.add_argument("--description", help="Description (optional)")
+    agent_create.add_argument("--instructions", help="Instructions text (inline)")
+    agent_create.add_argument(
+        "--instructions-file", "-f", help="Read instructions from file"
+    )
+    agent_create.add_argument(
+        "--edit", "-e", action="store_true", help="Open $EDITOR to write instructions"
+    )
+    agent_create.add_argument("--model", help="Model name (default: R9S_MODEL)")
+    agent_create.add_argument("--provider", help="Provider name (default: r9s)")
+    agent_create.add_argument("--reason", help="Change reason (optional)")
+    agent_create.add_argument("--params", help="Model params JSON (optional)")
+    agent_create.add_argument(
+        "--skill",
+        action="append",
+        default=[],
+        help="Skill to include (repeatable)",
+    )
+    agent_create.set_defaults(func=handle_agent_create)
+
+    agent_update = agent_sub.add_parser("update", help="Update agent (new version)")
+    agent_update.add_argument("name", help="Agent name")
+    agent_update.add_argument("--instructions", help="Instructions text (inline)")
+    agent_update.add_argument(
+        "--instructions-file", "-f", help="Read instructions from file"
+    )
+    agent_update.add_argument(
+        "--edit",
+        "-e",
+        action="store_true",
+        help="Open $EDITOR to edit instructions (pre-populated with current)",
+    )
+    agent_update.add_argument("--model", help="Model name (optional)")
+    agent_update.add_argument("--provider", help="Provider name (optional)")
+    agent_update.add_argument("--reason", help="Change reason (optional)")
+    agent_update.add_argument(
+        "--bump",
+        choices=["patch", "minor", "major"],
+        default="patch",
+        help="Version bump type",
+    )
+    agent_update.add_argument("--params", help="Model params JSON (optional)")
+    agent_update.add_argument(
+        "--skill",
+        action="append",
+        default=None,
+        help="Skill to include (repeatable, replaces existing skills)",
+    )
+    agent_update.set_defaults(func=handle_agent_update)
+
+    agent_delete = agent_sub.add_parser("delete", help="Delete agent")
+    agent_delete.add_argument("name", help="Agent name")
+    agent_delete.set_defaults(func=handle_agent_delete)
+
+    agent_history = agent_sub.add_parser("history", help="Show agent history")
+    agent_history.add_argument("name", help="Agent name")
+    agent_history.set_defaults(func=handle_agent_history)
+
+    agent_diff = agent_sub.add_parser("diff", help="Diff two versions")
+    agent_diff.add_argument("name", help="Agent name")
+    agent_diff.add_argument("v1", help="Version 1")
+    agent_diff.add_argument("v2", help="Version 2")
+    agent_diff.set_defaults(func=handle_agent_diff)
+
+    agent_rollback = agent_sub.add_parser("rollback", help="Rollback to version")
+    agent_rollback.add_argument("name", help="Agent name")
+    agent_rollback.add_argument("--version", required=True, help="Version to set")
+    agent_rollback.set_defaults(func=handle_agent_rollback)
+
+    agent_approve = agent_sub.add_parser("approve", help="Approve a version")
+    agent_approve.add_argument("name", help="Agent name")
+    agent_approve.add_argument("--version", required=True, help="Version to approve")
+    agent_approve.set_defaults(func=handle_agent_approve)
+
+    agent_deprecate = agent_sub.add_parser("deprecate", help="Deprecate a version")
+    agent_deprecate.add_argument("name", help="Agent name")
+    agent_deprecate.add_argument("--version", required=True, help="Version to deprecate")
+    agent_deprecate.set_defaults(func=handle_agent_deprecate)
+
+    agent_audit = agent_sub.add_parser("audit", help="Show audit log")
+    agent_audit.add_argument("name", help="Agent name")
+    agent_audit.add_argument("--last", type=int, default=None, help="Last N entries")
+    agent_audit.add_argument("--request-id", help="Filter by request ID")
+    agent_audit.set_defaults(func=handle_agent_audit)
+
+    agent_export = agent_sub.add_parser("export", help="Export agent as JSON")
+    agent_export.add_argument("name", help="Agent name")
+    agent_export.set_defaults(func=handle_agent_export)
+
+    agent_import_bot = agent_sub.add_parser("import-bot", help="Import bot as agent")
+    agent_import_bot.add_argument("name", help="Bot name (agent name)")
+    agent_import_bot.add_argument("--model", help="Model name (default: R9S_MODEL)")
+    agent_import_bot.add_argument("--provider", help="Provider name (default: r9s)")
+    agent_import_bot.set_defaults(func=handle_agent_import_bot)
+
+    agent_pull = agent_sub.add_parser(
+        "pull", help="Fetch an agent definition from git or HTTP"
+    )
+    agent_pull.add_argument(
+        "ref",
+        help=(
+            "GitHub URL, git ref, local path, or HTTP archive URL. Examples:\n"
+            "  github:owner/repo/path/to/agent\n"
+            "  github:owner/repo/path/to/agent@branch\n"
+            "  github:owner/repo --path path/to/agent"
+        ),
+    )
+    agent_pull.add_argument(
+        "--path", help="Optional subdirectory within the repo/archive"
+    )
+    agent_pull.add_argument("--name", help="Override agent name")
+    agent_pull.add_argument("--force", action="store_true", help="Overwrite existing agent")
+    agent_pull.set_defaults(func=handle_agent_pull)
+
+    # Alias: 'install' as synonym for 'pull' (consistency with r9s skill install)
+    agent_install = agent_sub.add_parser(
+        "install", help="Install an agent from GitHub (alias for pull)"
+    )
+    agent_install.add_argument(
+        "ref",
+        help=(
+            "GitHub URL or shorthand. Examples:\n"
+            "  github:owner/repo/path/to/agent\n"
+            "  github:owner/repo/path/to/agent@branch"
+        ),
+    )
+    agent_install.add_argument("--name", "-n", help="Override agent name")
+    agent_install.add_argument("--force", "-f", action="store_true", help="Overwrite existing agent")
+    agent_install.set_defaults(func=handle_agent_pull, path=None)
+
     bot_delete = bot_sub.add_parser("delete", help="Delete bot")
     bot_delete.add_argument("name", help="Bot name")
     bot_delete.set_defaults(func=handle_bot_delete)
+
+    skill_parser = subparsers.add_parser(
+        "skill", help="Manage local skills (~/.r9s/skills/)"
+    )
+    skill_sub = skill_parser.add_subparsers(dest="skill_command")
+    skill_parser.set_defaults(func=lambda _: skill_parser.print_help())
+
+    skill_list = skill_sub.add_parser("list", help="List skills")
+    skill_list.set_defaults(func=handle_skill_list)
+
+    skill_show = skill_sub.add_parser("show", help="Show skill details")
+    skill_show.add_argument("name", help="Skill name")
+    skill_show.set_defaults(func=handle_skill_show)
+
+    skill_create = skill_sub.add_parser("create", help="Create or update a skill")
+    skill_create.add_argument("name", help="Skill name")
+    skill_create.add_argument("--description", help="Description (optional)")
+    skill_create.add_argument("--instructions", help="Instructions text (optional)")
+    skill_create.add_argument("--license", help="License (optional)")
+    skill_create.add_argument("--compatibility", help="Compatibility (optional)")
+    skill_create.add_argument("--file", "-f", help="Load SKILL.md content from file")
+    skill_create.add_argument(
+        "--edit", "-e", action="store_true", help="Open $EDITOR to edit SKILL.md"
+    )
+    skill_create.set_defaults(func=handle_skill_create)
+
+    skill_validate = skill_sub.add_parser("validate", help="Validate a skill")
+    skill_validate.add_argument("name", help="Skill name")
+    skill_validate.add_argument(
+        "--allow-scripts",
+        action="store_true",
+        help="Allow skills that include scripts/",
+    )
+    skill_validate.set_defaults(func=handle_skill_validate)
+
+    skill_delete = skill_sub.add_parser("delete", help="Delete a skill")
+    skill_delete.add_argument("name", help="Skill name")
+    skill_delete.set_defaults(func=handle_skill_delete)
+
+    skill_install = skill_sub.add_parser(
+        "install", help="Install a skill from GitHub"
+    )
+    skill_install.add_argument(
+        "url",
+        help=(
+            "GitHub URL or shorthand. Examples:\n"
+            "  github:owner/repo/path/to/skill\n"
+            "  github:owner/repo/path/to/skill@branch\n"
+            "  https://github.com/owner/repo/tree/branch/path"
+        ),
+    )
+    skill_install.add_argument(
+        "--name", "-n", help="Override skill name (default: derived from path)"
+    )
+    skill_install.add_argument(
+        "--force", "-f", action="store_true", help="Overwrite existing skill"
+    )
+    skill_install.set_defaults(func=handle_skill_install)
 
     command_parser = subparsers.add_parser(
         "command", help="Manage local commands (~/.r9s/commands/*.toml)"
@@ -535,6 +804,418 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.epilog = f"Supported apps: {', '.join(supported_app_names_for_run())}"
     run_parser.set_defaults(func=handle_run)
 
+    # Image generation and editing commands
+    images_parser = subparsers.add_parser(
+        "images", help="Generate and edit images"
+    )
+    images_sub = images_parser.add_subparsers(dest="images_command")
+    images_parser.set_defaults(func=lambda _: images_parser.print_help())
+
+    # r9s images generate
+    images_generate = images_sub.add_parser(
+        "generate", help="Generate images from text prompts"
+    )
+    images_generate.add_argument(
+        "prompt",
+        nargs="?",
+        default=None,
+        help="Image description prompt (or pipe via stdin)",
+    )
+    images_generate.add_argument(
+        "-o", "--output",
+        help="Output file or directory (prints URL if not specified)",
+    )
+    images_generate.add_argument(
+        "-m", "--model",
+        help="Model name (e.g., dall-e-3, gpt-image-1.5, wanx-v1)",
+    )
+    images_generate.add_argument(
+        "-s", "--size",
+        help="Image size (e.g., 1024x1024) or aspect ratio (e.g., 16:9)",
+    )
+    images_generate.add_argument(
+        "-q", "--quality",
+        choices=["standard", "hd", "low", "medium", "high"],
+        help="Image quality",
+    )
+    images_generate.add_argument(
+        "-n",
+        type=int,
+        default=1,
+        help="Number of images to generate (1-10, model dependent)",
+    )
+    images_generate.add_argument(
+        "--style",
+        choices=["vivid", "natural"],
+        help="Image style (DALL-E 3)",
+    )
+    images_generate.add_argument(
+        "--negative-prompt",
+        help="Elements to exclude from the image (Qwen, Stability)",
+    )
+    images_generate.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed for reproducibility",
+    )
+    images_generate.add_argument(
+        "--prompt-extend",
+        action="store_true",
+        default=None,
+        help="Enable AI prompt optimization (Qwen)",
+    )
+    images_generate.add_argument(
+        "--no-prompt-extend",
+        action="store_false",
+        dest="prompt_extend",
+        help="Disable AI prompt optimization (Qwen)",
+    )
+    images_generate.add_argument(
+        "--watermark",
+        action="store_true",
+        default=None,
+        help="Add watermark to generated images (Qwen)",
+    )
+    images_generate.add_argument(
+        "--no-watermark",
+        action="store_false",
+        dest="watermark",
+        help="Disable watermark (Qwen)",
+    )
+    images_generate.add_argument(
+        "-f", "--format",
+        choices=["url", "b64"],
+        help="Response format (default: url, or b64 if -o specified)",
+    )
+    images_generate.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_generate.add_argument(
+        "--open",
+        action="store_true",
+        help="Open generated image(s) in system viewer (requires -o)",
+    )
+    images_generate.add_argument(
+        "--background",
+        choices=["transparent", "opaque", "auto"],
+        help="Background type for transparent PNG output (GPT models)",
+    )
+    images_generate.add_argument(
+        "--output-format",
+        choices=["png", "jpeg", "webp"],
+        help="Output image format (GPT models, default: png)",
+    )
+    images_generate.add_argument(
+        "--reference",
+        action="append",
+        metavar="IMAGE",
+        help="Reference image(s) for style transfer (can be used multiple times, GPT models)",
+    )
+    images_generate.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show API endpoint and request details",
+    )
+    images_generate.epilog = (
+        "Examples:\n"
+        "  r9s images generate \"A serene mountain landscape\"\n"
+        "  r9s images generate \"A blue dragon\" -o dragon.png --open\n"
+        "  r9s images generate \"A car\" -m gpt-image-1.5 -n 3 -o ./cars/\n"
+        "  r9s images generate \"A forest\" --model wanx-v1 --negative-prompt \"people\"\n"
+        "  r9s images generate \"A logo\" -o logo.png --background transparent\n"
+        "  r9s images generate \"A portrait\" --reference style.png -o styled.png\n"
+        "  cat prompt.txt | r9s images generate -o result.png"
+    )
+    images_generate.set_defaults(func=handle_image_generate)
+
+    # r9s images edit
+    images_edit = images_sub.add_parser(
+        "edit", help="Edit an existing image using a text prompt"
+    )
+    images_edit.add_argument(
+        "image",
+        help="Path to the image file to edit (PNG, <4MB)",
+    )
+    images_edit.add_argument(
+        "prompt",
+        help="Text description of desired edit",
+    )
+    images_edit.add_argument(
+        "-o", "--output",
+        help="Output file or directory (prints URL if not specified)",
+    )
+    images_edit.add_argument(
+        "--mask",
+        help="Path to mask PNG (transparent areas indicate where to edit)",
+    )
+    images_edit.add_argument(
+        "-m", "--model",
+        help="Model name (e.g., dall-e-2)",
+    )
+    images_edit.add_argument(
+        "-s", "--size",
+        choices=["256x256", "512x512", "1024x1024"],
+        help="Output size",
+    )
+    images_edit.add_argument(
+        "-n",
+        type=int,
+        default=1,
+        help="Number of images to generate (1-10)",
+    )
+    images_edit.add_argument(
+        "-f", "--format",
+        choices=["url", "b64"],
+        help="Response format (default: url, or b64 if -o specified)",
+    )
+    images_edit.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_edit.add_argument(
+        "--open",
+        action="store_true",
+        help="Open edited image(s) in system viewer (requires -o)",
+    )
+    images_edit.add_argument(
+        "--background",
+        choices=["transparent", "opaque", "auto"],
+        help="Background type for transparent PNG output (GPT models)",
+    )
+    images_edit.add_argument(
+        "--output-format",
+        choices=["png", "jpeg", "webp"],
+        help="Output image format (GPT models, default: png)",
+    )
+    images_edit.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show API endpoint and request details",
+    )
+    images_edit.epilog = (
+        "Examples:\n"
+        "  r9s images edit photo.png \"Add a red hat\" -o edited.png --open\n"
+        "  r9s images edit photo.png \"Change background\" --mask mask.png -o result.png\n"
+        "  r9s images edit input.png \"Make vintage\" -n 3 -o ./variations/\n"
+        "  r9s images edit logo.png \"Remove text\" -o clean.png --background transparent"
+    )
+    images_edit.set_defaults(func=handle_image_edit)
+
+    # r9s images describe
+    images_describe = images_sub.add_parser(
+        "describe", help="Describe an image using vision AI"
+    )
+    images_describe.add_argument(
+        "image",
+        help="Path to the image file to describe",
+    )
+    images_describe.add_argument(
+        "prompt",
+        nargs="?",
+        default=None,
+        help="Custom prompt for description (default: 'Describe this image in detail.')",
+    )
+    images_describe.add_argument(
+        "-m", "--model",
+        help="Vision model to use (default: uses R9S_MODEL)",
+    )
+    images_describe.add_argument(
+        "--detailed",
+        action="store_true",
+        help="Use a detailed analysis prompt",
+    )
+    images_describe.add_argument(
+        "--max-tokens",
+        type=int,
+        default=1024,
+        help="Maximum tokens in response (default: 1024)",
+    )
+    images_describe.add_argument(
+        "--json",
+        action="store_true",
+        help="Output full JSON response",
+    )
+    images_describe.epilog = (
+        "Examples:\n"
+        "  r9s images describe photo.jpg\n"
+        "  r9s images describe screenshot.png --detailed\n"
+        "  r9s images describe art.png \"What style is this painting?\"\n"
+        "  r9s images describe diagram.png -m gpt-4o --max-tokens 2048"
+    )
+    images_describe.set_defaults(func=handle_image_describe)
+
+    # Audio commands (TTS, ASR, translation)
+    audio_parser = subparsers.add_parser(
+        "audio", help="Text-to-speech, transcription, and translation"
+    )
+    audio_sub = audio_parser.add_subparsers(dest="audio_command")
+    audio_parser.set_defaults(func=lambda _: audio_parser.print_help())
+
+    # r9s audio speech (TTS)
+    audio_speech = audio_sub.add_parser(
+        "speech", help="Convert text to speech (TTS)"
+    )
+    audio_speech.add_argument(
+        "text",
+        nargs="?",
+        default=None,
+        help="Text to convert to speech (or pipe via stdin)",
+    )
+    audio_speech.add_argument(
+        "-o", "--output",
+        required=True,
+        help="Output audio file path (e.g., output.mp3)",
+    )
+    audio_speech.add_argument(
+        "-m", "--model",
+        default="tts-1",
+        help="TTS model (default: tts-1)",
+    )
+    audio_speech.add_argument(
+        "-v", "--voice",
+        default="alloy",
+        choices=["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        help="Voice type (default: alloy)",
+    )
+    audio_speech.add_argument(
+        "-s", "--speed",
+        type=float,
+        help="Speech speed (0.25 to 4.0, default: 1.0)",
+    )
+    audio_speech.add_argument(
+        "-f", "--format",
+        choices=["mp3", "opus", "aac", "flac", "wav", "pcm"],
+        help="Audio format (default: mp3)",
+    )
+    audio_speech.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_speech.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_speech.epilog = (
+        "Examples:\n"
+        "  r9s audio speech \"Hello world\" -o hello.mp3\n"
+        "  r9s audio speech \"Welcome\" -o welcome.wav -v nova -f wav\n"
+        "  echo \"Hello\" | r9s audio speech -o hello.mp3"
+    )
+    audio_speech.set_defaults(func=handle_audio_speech)
+
+    # r9s audio transcribe (ASR)
+    audio_transcribe = audio_sub.add_parser(
+        "transcribe", help="Transcribe audio to text (ASR)"
+    )
+    audio_transcribe.add_argument(
+        "audio",
+        help="Audio file to transcribe",
+    )
+    audio_transcribe.add_argument(
+        "-o", "--output",
+        help="Output text file (prints to stdout if not specified)",
+    )
+    audio_transcribe.add_argument(
+        "-m", "--model",
+        default="whisper-1",
+        help="ASR model (default: whisper-1)",
+    )
+    audio_transcribe.add_argument(
+        "-l", "--language",
+        help="Audio language (ISO-639-1 code, e.g., en, zh, ja)",
+    )
+    audio_transcribe.add_argument(
+        "-p", "--prompt",
+        help="Optional prompt to guide transcription style",
+    )
+    audio_transcribe.add_argument(
+        "-f", "--format",
+        choices=["json", "text", "srt", "verbose_json", "vtt"],
+        help="Output format (default: json)",
+    )
+    audio_transcribe.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_transcribe.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_transcribe.epilog = (
+        "Examples:\n"
+        "  r9s audio transcribe recording.mp3\n"
+        "  r9s audio transcribe meeting.wav -o transcript.txt -f text\n"
+        "  r9s audio transcribe audio.mp3 -l zh -o chinese.srt -f srt"
+    )
+    audio_transcribe.set_defaults(func=handle_audio_transcribe)
+
+    # r9s audio translate
+    audio_translate = audio_sub.add_parser(
+        "translate", help="Translate audio to English text"
+    )
+    audio_translate.add_argument(
+        "audio",
+        help="Audio file to translate",
+    )
+    audio_translate.add_argument(
+        "-o", "--output",
+        help="Output text file (prints to stdout if not specified)",
+    )
+    audio_translate.add_argument(
+        "-m", "--model",
+        default="whisper-1",
+        help="Model (default: whisper-1)",
+    )
+    audio_translate.add_argument(
+        "-p", "--prompt",
+        help="Optional prompt to guide translation style",
+    )
+    audio_translate.add_argument(
+        "-f", "--format",
+        choices=["json", "text"],
+        help="Output format (default: json)",
+    )
+    audio_translate.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    audio_translate.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    audio_translate.epilog = (
+        "Examples:\n"
+        "  r9s audio translate chinese_speech.mp3\n"
+        "  r9s audio translate french_audio.wav -o english.txt -f text"
+    )
+    audio_translate.set_defaults(func=handle_audio_translate)
+
+    # Models command
+    models_parser = subparsers.add_parser(
+        "models", help="List available models from the API"
+    )
+    models_parser.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    models_parser.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    models_output_group = models_parser.add_mutually_exclusive_group()
+    models_output_group.add_argument(
+        "--details",
+        "-d",
+        action="store_true",
+        help="Show table output (owner, created, and expanded fields if present)",
+    )
+    models_output_group.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print raw JSON response",
+    )
+    models_parser.add_argument(
+        "--expand",
+        default=None,
+        help=(
+            "Relay /v1/models expand fields (e.g. channels,modality,endpoints,context_length)"
+        ),
+    )
+    models_parser.add_argument(
+        "--filter",
+        action="append",
+        default=None,
+        help=(
+            "Relay /v1/models filter rule; can be repeated (e.g. --filter channel=*open*)"
+        ),
+    )
+    models_parser.add_argument(
+        "--lang",
+        default=None,
+        help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
+    )
+    models_parser.set_defaults(func=handle_models_list)
+
     set_parser = subparsers.add_parser("set", help="Write r9s config for an app")
     set_parser.add_argument(
         "--lang",
@@ -609,7 +1290,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                     t("cli.examples.chat_pipe", lang),
                     t("cli.examples.chat_pipe_image", lang),
                     t("cli.examples.resume", lang),
-                    t("cli.examples.bots", lang),
+                    t("cli.examples.agents", lang),
                     t("cli.examples.run", lang, apps=apps_run),
                     t("cli.examples.configure", lang, apps=apps_config),
                 ],
@@ -620,6 +1301,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     except KeyboardInterrupt:
         print()
         warning("Goodbye. (Interrupted by Ctrl+C)")
+    except EOFError:
+        # Treat Ctrl+D / closed stdin as a graceful exit in interactive flows.
+        print()
+        return
 
 
 if __name__ == "__main__":

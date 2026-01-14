@@ -2,17 +2,27 @@ from __future__ import annotations
 
 import argparse
 import base64
+import fnmatch
 import json
+import os
+import shlex
+import shutil
+import subprocess
 import sys
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from r9s import models
+from r9s import errors, models, utils
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
+from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
+from r9s.agents.template import render as render_agent_template
+from r9s.agents.models import AgentExecution, AgentVersion
+from r9s.skills.loader import format_skills_context, load_skills, resolve_skill_script
+from r9s.skills.models import ScriptPolicy, Skill
 from r9s.cli_tools.commands import list_commands, load_command
 from r9s.cli_tools.template_renderer import RenderContext, render_template
 from r9s.cli_tools.chat_extensions import (
@@ -31,6 +41,17 @@ from r9s.cli_tools.config import (
     resolve_system_prompt,
 )
 from r9s.cli_tools.i18n import resolve_lang, t
+from r9s.cli_tools.stream_timing import (
+    ChatTiming,
+    StreamTimingState,
+    format_timing_line,
+    iter_sse_blocks,
+    parse_sse_block,
+    probe_headers,
+    timing_enabled,
+)
+from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
+from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
 from r9s.sdk import R9S
@@ -50,6 +71,166 @@ class SessionMeta:
 class SessionRecord:
     meta: SessionMeta
     messages: List[models.MessageTypedDict]
+
+
+@dataclass
+class ChatResult:
+    text: str
+    request_id: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    timing: Optional[ChatTiming] = None
+
+
+@dataclass
+class ScriptCommandState:
+    buffer: str = ""
+
+
+def _copy_to_clipboard(text: str) -> None:
+    """Copy text to system clipboard. Raises RuntimeError on failure."""
+    if sys.platform == "darwin":
+        cmd = ["pbcopy"]
+    elif shutil.which("xclip"):
+        cmd = ["xclip", "-selection", "clipboard"]
+    elif shutil.which("xsel"):
+        cmd = ["xsel", "--clipboard", "--input"]
+    elif sys.platform == "win32":
+        cmd = ["clip"]
+    else:
+        raise RuntimeError("No clipboard utility found (pbcopy/xclip/xsel/clip)")
+    subprocess.run(cmd, input=text.encode("utf-8"), check=True)
+
+
+def _append_skills_context(base_prompt: str, skills: List[Skill]) -> str:
+    skills_context = format_skills_context(skills)
+    if not skills_context:
+        return base_prompt
+    if base_prompt:
+        return f"{base_prompt}\n{skills_context}"
+    return skills_context
+
+
+def _is_allowed_script_command(
+    cmd_name: str, policy: ScriptPolicy, *, is_skill_script: bool
+) -> bool:
+    if not policy.allow_scripts:
+        return False
+    if policy.allowed_commands:
+        return any(
+            fnmatch.fnmatch(cmd_name, pattern) for pattern in policy.allowed_commands
+        )
+    return is_skill_script
+
+
+def _execute_script_command(
+    raw_cmd: str, skills: List[Skill], policy: ScriptPolicy
+) -> None:
+    try:
+        parts = shlex.split(raw_cmd)
+    except ValueError:
+        return
+    if not parts:
+        return
+
+    cmd_name = parts[0]
+    resolved_path = None
+    is_skill_script = False
+    if cmd_name.startswith("scripts/"):
+        resolved_path = resolve_skill_script(cmd_name, skills)
+        if resolved_path is None:
+            return
+        if not resolved_path.exists() or not resolved_path.is_file():
+            return
+        if not os.access(resolved_path, os.X_OK):
+            return
+        is_skill_script = True
+
+    if not _is_allowed_script_command(cmd_name, policy, is_skill_script=is_skill_script):
+        return
+
+    command = parts
+    if resolved_path is not None:
+        command = [str(resolved_path)] + parts[1:]
+
+    try:
+        subprocess.run(
+            command,
+            check=False,
+            timeout=policy.timeout_seconds,
+        )
+    except Exception:
+        return
+
+
+def _process_script_commands(
+    text: str, *, skills: List[Skill], policy: ScriptPolicy, execute: bool = True
+) -> str:
+    if not text:
+        return text
+    output: List[str] = []
+    idx = 0
+    while True:
+        start = text.find("%{", idx)
+        if start == -1:
+            output.append(text[idx:])
+            break
+        end = text.find("}", start + 2)
+        if end == -1:
+            output.append(text[idx:])
+            break
+        output.append(text[idx:start])
+        cmd = text[start + 2 : end].strip()
+        if cmd and execute:
+            _execute_script_command(cmd, skills, policy)
+        idx = end + 1
+    return "".join(output)
+
+
+def _process_script_command_stream_delta(
+    text: str,
+    *,
+    state: ScriptCommandState,
+    skills: List[Skill],
+    policy: ScriptPolicy,
+    execute: bool = True,
+) -> str:
+    buffer = state.buffer + text
+    output: List[str] = []
+    idx = 0
+    while True:
+        start = buffer.find("%{", idx)
+        if start == -1:
+            output.append(buffer[idx:])
+            state.buffer = ""
+            break
+        end = buffer.find("}", start + 2)
+        if end == -1:
+            output.append(buffer[idx:start])
+            state.buffer = buffer[start:]
+            break
+        output.append(buffer[idx:start])
+        cmd = buffer[start + 2 : end].strip()
+        if cmd and execute:
+            _execute_script_command(cmd, skills, policy)
+        idx = end + 1
+    return "".join(output)
+
+
+def _flush_script_command_stream(state: ScriptCommandState) -> str:
+    leftover = state.buffer
+    state.buffer = ""
+    return leftover
+
+
+def _get_last_assistant_response(history: List[models.MessageTypedDict]) -> Optional[str]:
+    """Get the last assistant message from history."""
+    for msg in reversed(history):
+        if msg.get("role") == "assistant":
+            content = msg.get("content", "")
+            if isinstance(content, str):
+                return content
+    return None
 
 
 def _require_api_key(args_api_key: Optional[str], lang: str) -> str:
@@ -103,38 +284,35 @@ def _load_history(path: str) -> SessionRecord:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ValueError(str(exc)) from exc
-    # Backward compatible:
-    # - list[...] => messages only
-    # - {"meta": {...}, "messages": [...]} => full record
-    if isinstance(data, list):
-        now = _utc_now_iso()
-        meta = SessionMeta(
-            session_id=Path(path).stem,
-            created_at=now,
-            updated_at=now,
-            base_url="",
-            model="",
-            system_prompt=None,
-        )
-        return SessionRecord(meta=meta, messages=_coerce_messages(data))
-    if isinstance(data, dict):
-        messages = _coerce_messages(data.get("messages", []))
-        meta_raw = data.get("meta", {}) if isinstance(data.get("meta"), dict) else {}
-        now = _utc_now_iso()
-        meta = SessionMeta(
-            session_id=str(meta_raw.get("session_id") or Path(path).stem),
-            created_at=str(meta_raw.get("created_at") or now),
-            updated_at=str(meta_raw.get("updated_at") or now),
-            base_url=str(meta_raw.get("base_url") or ""),
-            model=str(meta_raw.get("model") or ""),
-            system_prompt=(
-                str(meta_raw.get("system_prompt"))
-                if meta_raw.get("system_prompt")
-                else None
-            ),
-        )
-        return SessionRecord(meta=meta, messages=messages)
-    raise TypeError("history is not a JSON array")
+    if not isinstance(data, dict):
+        raise TypeError("history is not a JSON object")
+    if "meta" not in data or "messages" not in data:
+        raise TypeError("history missing required keys")
+
+    meta_raw = data.get("meta")
+    if not isinstance(meta_raw, dict):
+        raise TypeError("history.meta is not a JSON object")
+
+    messages = _coerce_messages(data.get("messages"))
+
+    required_str_fields = ("session_id", "created_at", "updated_at", "base_url", "model")
+    for field in required_str_fields:
+        if field not in meta_raw or not isinstance(meta_raw[field], str):
+            raise TypeError(f"history.meta.{field} must be a string")
+
+    system_prompt_raw = meta_raw.get("system_prompt")
+    if system_prompt_raw is not None and not isinstance(system_prompt_raw, str):
+        raise TypeError("history.meta.system_prompt must be a string or null")
+
+    meta = SessionMeta(
+        session_id=meta_raw["session_id"],
+        created_at=meta_raw["created_at"],
+        updated_at=meta_raw["updated_at"],
+        base_url=meta_raw["base_url"],
+        model=meta_raw["model"],
+        system_prompt=system_prompt_raw,
+    )
+    return SessionRecord(meta=meta, messages=messages)
 
 
 def _save_history(path: str, record: SessionRecord) -> None:
@@ -170,6 +348,9 @@ def _print_help_lang(lang: str) -> None:
     info(t("chat.commands.title", lang))
     print(t("chat.commands.exit", lang))
     print(t("chat.commands.clear", lang))
+    print(t("chat.commands.copy", lang))
+    print(t("chat.commands.save", lang))
+    print(t("chat.commands.model", lang))
     print(t("chat.commands.help", lang))
 
 
@@ -249,6 +430,8 @@ def _stream_chat(
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
     exts: List[Any],
+    skills: List[Skill],
+    script_policy: ScriptPolicy,
     *,
     prefix: Optional[str] = None,
     temperature: Optional[float] = None,
@@ -256,39 +439,117 @@ def _stream_chat(
     max_tokens: Optional[int] = None,
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
-) -> str:
+    timing: bool = False,
+) -> ChatResult:
     spinner = Spinner(prefix or "")
     if sys.stdout.isatty():
         spinner.start()
 
-    stream = r9s.chat.create(
-        model=model,
-        messages=messages,
-        stream=True,
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty,
-    )
-    assistant_parts: List[str] = []
-    for event in stream:
-        if not event.choices:
-            continue
-        delta = event.choices[0].delta
-        if delta.content:
-            spinner.stop_and_clear()
-            piece = run_stream_delta_extensions(exts, delta.content, ctx)
-            assistant_parts.append(piece)
-            if prefix and not spinner.prefix_printed:
-                spinner.print_prefix()
-            print(piece, end="", flush=True)
-    spinner.stop_and_clear()
-    if prefix and not spinner.prefix_printed:
-        spinner.print_prefix()
-    print()
-    assistant_text = "".join(assistant_parts)
-    return run_after_response_extensions(exts, assistant_text, ctx)
+    timing_state = StreamTimingState.start(timing)
+
+    response = None
+    try:
+        http_headers = probe_headers(timing)
+        stream = r9s.chat.create(
+            model=model,
+            messages=messages,
+            stream=True,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            http_headers=http_headers,
+        )
+        assistant_parts: List[str] = []
+        assistant_parts_raw: List[str] = []
+        request_id = ""
+        input_tokens = 0
+        output_tokens = 0
+        script_state = ScriptCommandState()
+        response = getattr(stream, "response", None)
+        if response is None:
+            raise RuntimeError("Streaming response missing from SDK event stream")
+
+        decoder = lambda raw: utils.unmarshal_json(  # noqa: E731
+            raw, models.CreateChatCompletionResponseBody
+        ).data
+
+        import time as _time
+
+        for block in iter_sse_blocks(response):
+            now = _time.perf_counter()
+            server_event, is_probe = parse_sse_block(block)
+            if is_probe:
+                timing_state.mark_probe(now)
+                continue
+            if server_event is None:
+                continue
+
+            timing_state.mark_first_data(now)
+
+            data = server_event.get("data")
+            if isinstance(data, str) and data == "[DONE]":
+                timing_state.mark_done(now)
+                break
+            if isinstance(data, dict) and "error" in data:
+                spinner.stop_and_clear()
+                raise SystemExit(str(data["error"]))
+
+            event = decoder(json.dumps(server_event))
+            if not request_id and getattr(event, "id", None):
+                request_id = event.id
+            if getattr(event, "usage", None):
+                usage = event.usage
+                if usage:
+                    input_tokens = usage.prompt_tokens
+                    output_tokens = usage.completion_tokens
+            if not event.choices:
+                continue
+            delta = event.choices[0].delta
+            if delta.content:
+                spinner.stop_and_clear()
+                piece = run_stream_delta_extensions(exts, delta.content, ctx)
+                assistant_parts_raw.append(piece)
+                piece = _process_script_command_stream_delta(
+                    piece,
+                    state=script_state,
+                    skills=skills,
+                    policy=script_policy,
+                    execute=False,
+                )
+                assistant_parts.append(piece)
+                if prefix and not spinner.prefix_printed:
+                    spinner.print_prefix()
+                print(piece, end="", flush=True)
+        if prefix and not spinner.prefix_printed:
+            spinner.print_prefix()
+        tail = _flush_script_command_stream(script_state)
+        if tail:
+            assistant_parts.append(tail)
+            print(tail, end="", flush=True)
+        print()
+        assistant_text = "".join(assistant_parts)
+        assistant_raw_text = "".join(assistant_parts_raw) + tail
+        timing_result = timing_state.finalize(output_tokens=output_tokens)
+        return ChatResult(
+            text=_process_script_commands(
+                run_after_response_extensions(exts, assistant_raw_text, ctx),
+                skills=skills,
+                policy=script_policy,
+            ),
+            request_id=request_id,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            timing=timing_result,
+        )
+    finally:
+        try:
+            if response is not None:
+                response.close()
+        except Exception:
+            pass
+        spinner.stop_and_clear()
 
 
 def _non_stream_chat(
@@ -297,14 +558,17 @@ def _non_stream_chat(
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
     exts: List[Any],
+    skills: List[Skill],
+    script_policy: ScriptPolicy,
     *,
     prefix: Optional[str] = None,
+    use_rich: bool = False,
     temperature: Optional[float] = None,
     top_p: Optional[float] = None,
     max_tokens: Optional[int] = None,
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
-) -> str:
+) -> ChatResult:
     res = r9s.chat.create(
         model=model,
         messages=messages,
@@ -318,11 +582,27 @@ def _non_stream_chat(
     text = ""
     if res.choices and res.choices[0].message:
         text = _content_to_text(res.choices[0].message.content)
-    text = run_after_response_extensions(exts, text, ctx)
+    text = _process_script_commands(
+        run_after_response_extensions(exts, text, ctx),
+        skills=skills,
+        policy=script_policy,
+    )
     if prefix:
         print(prefix, end="", flush=True)
-    print(text)
-    return text
+    if use_rich and is_rich_available():
+        print()  # Newline after prefix
+        print_markdown(text)
+    else:
+        print(text)
+    usage = res.usage
+    input_tokens = usage.prompt_tokens if usage else 0
+    output_tokens = usage.completion_tokens if usage else 0
+    return ChatResult(
+        text=text,
+        request_id=getattr(res, "id", ""),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
 
 
 def _content_to_text(content: Any) -> str:
@@ -352,12 +632,16 @@ def _content_to_text(content: Any) -> str:
 def handle_chat(args: argparse.Namespace) -> None:
     lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(args.api_key, lang)
+    timing = timing_enabled(args)
 
     piped_stdin_bytes: Optional[bytes] = None
     if _is_piped_stdin():
         piped_stdin_bytes = _read_piped_input_bytes()
 
     bot_or_action = getattr(args, "bot", None)
+    agent_name = getattr(args, "agent", None)
+    if bot_or_action and agent_name:
+        raise SystemExit("Cannot use both bot and agent in the same chat session.")
     if getattr(args, "resume", False):
         if not sys.stdin.isatty():
             raise SystemExit(t("chat.err.resume_requires_tty", lang))
@@ -389,6 +673,65 @@ def handle_chat(args: argparse.Namespace) -> None:
     base_url = resolve_base_url(args.base_url)
     model = resolve_model(args.model)
     system_prompt = resolve_system_prompt(args.system_prompt)
+    agent_version: Optional[AgentVersion] = None
+    agent_generation: Dict[str, Optional[float]] = {}
+    loaded_skills: List[Skill] = []
+    if agent_name:
+        store = LocalAgentStore()
+        try:
+            agent = store.get_agent(agent_name)
+            agent_version = store.get_version(agent_name, agent.current_version)
+        except Exception as exc:
+            raise SystemExit(f"Failed to load agent: {agent_name} ({exc})") from exc
+        if system_prompt is not None:
+            raise SystemExit("Cannot combine --system-prompt with --agent.")
+        variables: Dict[str, str] = {}
+        for spec in getattr(args, "var", []) or []:
+            if "=" not in spec:
+                raise SystemExit(f"Invalid --var format: {spec} (expected key=value)")
+            key, value = spec.split("=", 1)
+            variables[key] = value
+        base_instructions = render_agent_template(agent_version.instructions, variables)
+        # Collect skills: agent skills + ad-hoc --skill flags
+        all_skills = list(agent_version.skills) if agent_version.skills else []
+        all_skills.extend(getattr(args, "skill", []) or [])
+        # Build system prompt with skills injected
+        from r9s.cli_tools.ui.terminal import warning as warn_msg
+
+        loaded_skills = load_skills(all_skills, warn_fn=warn_msg)
+        system_prompt = _append_skills_context(base_instructions, loaded_skills)
+        if not model:
+            model = agent_version.model
+        params = agent_version.model_params or {}
+        agent_generation = {
+            "temperature": params.get("temperature"),
+            "top_p": params.get("top_p"),
+            "max_tokens": params.get("max_tokens"),
+            "presence_penalty": params.get("presence_penalty"),
+            "frequency_penalty": params.get("frequency_penalty"),
+        }
+    else:
+        # No agent - check for ad-hoc --skill flags
+        adhoc_skills = getattr(args, "skill", []) or []
+        if adhoc_skills:
+            from r9s.cli_tools.ui.terminal import warning as warn_msg
+
+            base_prompt = system_prompt or ""
+            loaded_skills = load_skills(adhoc_skills, warn_fn=warn_msg)
+            system_prompt = _append_skills_context(base_prompt, loaded_skills)
+    system_prompt_rendered: Optional[str] = None
+    if system_prompt:
+        system_prompt_rendered = (
+            render_template(
+                system_prompt,
+                RenderContext(
+                    args_text="",
+                    assume_yes=bool(getattr(args, "yes", False)),
+                    interactive=sys.stdin.isatty(),
+                ),
+            ).strip()
+            or None
+        )
 
     history_path: Optional[str]
     if args.no_history:
@@ -433,13 +776,6 @@ def handle_chat(args: argparse.Namespace) -> None:
         if system_prompt is None and record.meta.system_prompt is not None:
             system_prompt = record.meta.system_prompt
 
-        # Fill meta if still missing (backward compatible)
-        if not record.meta.base_url and base_url:
-            record.meta.base_url = base_url
-        if not record.meta.model and model:
-            record.meta.model = model
-        if record.meta.system_prompt is None:
-            record.meta.system_prompt = system_prompt
         record.meta.updated_at = _utc_now_iso()
 
     if not model:
@@ -475,6 +811,10 @@ def handle_chat(args: argparse.Namespace) -> None:
 
     command_names = set(list_commands()) if sys.stdin.isatty() else set()
 
+    script_policy = ScriptPolicy(
+        allow_scripts=bool(getattr(args, "allow_scripts", False))
+    )
+
     with R9S(api_key=api_key, server_url=base_url) as r9s:
         if piped_stdin_bytes is not None:
             user_msg = _build_user_message_from_piped_stdin(
@@ -484,16 +824,22 @@ def handle_chat(args: argparse.Namespace) -> None:
                 return
             ctx.history.append(user_msg)
             messages = run_before_request_extensions(
-                exts, _build_messages(system_prompt, ctx.history), ctx
+                exts, _build_messages(system_prompt_rendered, ctx.history), ctx
             )
-            assistant_text = (
+            # Check if rich rendering is enabled
+            use_rich = getattr(args, "rich", False) or is_rich_enabled()
+
+            result = (
                 _non_stream_chat(
                     r9s,
                     model,
                     messages,
                     ctx,
                     exts,
-                    **bot_generation,
+                    loaded_skills,
+                    script_policy,
+                    use_rich=use_rich,
+                    **{**bot_generation, **agent_generation},
                 )
                 if args.no_stream
                 else _stream_chat(
@@ -502,10 +848,33 @@ def handle_chat(args: argparse.Namespace) -> None:
                     messages,
                     ctx,
                     exts,
-                    **bot_generation,
+                    loaded_skills,
+                    script_policy,
+                    timing=timing,
+                    **{**bot_generation, **agent_generation},
                 )
             )
-            ctx.history.append({"role": "assistant", "content": assistant_text})
+            ctx.history.append({"role": "assistant", "content": result.text})
+
+            # Display token usage (to stderr so it doesn't interfere with piped output)
+            if result.input_tokens or result.output_tokens:
+                print(
+                    t(
+                        "chat.msg.tokens",
+                        lang,
+                        input=result.input_tokens,
+                        output=result.output_tokens,
+                    ),
+                    file=sys.stderr,
+                )
+
+            if timing and result.timing:
+                print(format_timing_line(result.timing), file=sys.stderr)
+
+            if agent_name and agent_version:
+                _record_agent_execution(
+                    agent_name, agent_version, result, record.meta.session_id
+                )
             if history_path:
                 record.meta.updated_at = _utc_now_iso()
                 record.messages = ctx.history
@@ -517,6 +886,9 @@ def handle_chat(args: argparse.Namespace) -> None:
         info(f"{t('chat.model', lang)}: {model}")
         bot_display = bot_or_action or "(none)"
         info(f"bot: {bot_display}")
+        if agent_name:
+            version_display = agent_version.version if agent_version else "(unknown)"
+            info(f"agent: {agent_name} ({version_display})")
         if command_names:
             info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
         if exts:
@@ -527,10 +899,15 @@ def handle_chat(args: argparse.Namespace) -> None:
         _print_help_lang(lang)
         print()
 
+        # Create prompt session with history support
+        prompt_session = create_chat_session()
+
         while True:
             try:
-                user_text = prompt_text(
-                    _style_prompt(t("chat.prompt.user", lang)), color=FG_CYAN
+                user_text = chat_prompt(
+                    prompt_session,
+                    _style_prompt(t("chat.prompt.user", lang)),
+                    color=FG_CYAN,
                 )
             except EOFError:
                 print()
@@ -538,6 +915,10 @@ def handle_chat(args: argparse.Namespace) -> None:
 
             if not user_text:
                 continue
+
+            # Handle common exit commands (without slash)
+            if user_text.lower() in ("exit", "quit", "bye"):
+                return
 
             if user_text.startswith("/"):
                 cmd = user_text.strip()
@@ -549,6 +930,44 @@ def handle_chat(args: argparse.Namespace) -> None:
                 if cmd == "/clear":
                     ctx.history.clear()
                     info(t("chat.msg.history_cleared", lang))
+                    continue
+                if cmd == "/copy":
+                    last_response = _get_last_assistant_response(ctx.history)
+                    if not last_response:
+                        error(t("chat.err.no_response", lang))
+                        continue
+                    try:
+                        _copy_to_clipboard(last_response)
+                        info(t("chat.msg.copied", lang))
+                    except Exception as exc:
+                        error(t("chat.err.copy_failed", lang, err=str(exc)))
+                    continue
+                if cmd.startswith("/save ") or cmd == "/save":
+                    parts_save = cmd.split(" ", 1)
+                    if len(parts_save) < 2 or not parts_save[1].strip():
+                        error(t("chat.err.save_no_path", lang))
+                        continue
+                    save_path = Path(parts_save[1].strip()).expanduser()
+                    last_response = _get_last_assistant_response(ctx.history)
+                    if not last_response:
+                        error(t("chat.err.no_response", lang))
+                        continue
+                    try:
+                        save_path.write_text(last_response, encoding="utf-8")
+                        info(t("chat.msg.saved", lang, path=str(save_path)))
+                    except Exception as exc:
+                        error(t("chat.err.save_failed", lang, err=str(exc)))
+                    continue
+                if cmd.startswith("/model ") or cmd == "/model":
+                    parts_model = cmd.split(" ", 1)
+                    if len(parts_model) < 2 or not parts_model[1].strip():
+                        info(t("chat.msg.current_model", lang, model=model))
+                        continue
+                    new_model = parts_model[1].strip()
+                    model = new_model
+                    ctx.model = new_model
+                    record.meta.model = new_model
+                    info(t("chat.msg.model_switched", lang, model=new_model))
                     continue
                 parts = cmd[1:].split(" ", 1)
                 command_name = parts[0]
@@ -578,31 +997,76 @@ def handle_chat(args: argparse.Namespace) -> None:
             user_text = run_user_input_extensions(exts, user_text, ctx)
             ctx.history.append({"role": "user", "content": user_text})
 
-            messages = _build_messages(system_prompt, ctx.history)
+            messages = _build_messages(system_prompt_rendered, ctx.history)
             messages = run_before_request_extensions(exts, messages, ctx)
 
-            assistant_text = (
-                _non_stream_chat(
-                    r9s,
-                    model,
-                    messages,
-                    ctx,
-                    exts,
-                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    **bot_generation,
+            # Check if rich rendering is enabled (--rich flag or R9S_RICH env)
+            use_rich = getattr(args, "rich", False) or is_rich_enabled()
+
+            try:
+                result = (
+                    _non_stream_chat(
+                        r9s,
+                        model,
+                        messages,
+                        ctx,
+                        exts,
+                        loaded_skills,
+                        script_policy,
+                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        use_rich=use_rich,
+                        **{**bot_generation, **agent_generation},
+                    )
+                    if args.no_stream
+                    else _stream_chat(
+                        r9s,
+                        model,
+                        messages,
+                        ctx,
+                        exts,
+                        loaded_skills,
+                        script_policy,
+                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        timing=timing,
+                        **{**bot_generation, **agent_generation},
+                    )
                 )
-                if args.no_stream
-                else _stream_chat(
-                    r9s,
-                    model,
-                    messages,
-                    ctx,
-                    exts,
-                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                    **bot_generation,
+            except errors.AuthenticationError as exc:
+                error(f"Authentication failed: {exc}")
+                ctx.history.pop()  # Remove the user message we just added
+                continue
+            except errors.RateLimitError as exc:
+                error(f"Rate limit exceeded: {exc}")
+                ctx.history.pop()
+                continue
+            except errors.PermissionDeniedError as exc:
+                error(f"Permission denied: {exc}")
+                ctx.history.pop()
+                continue
+            except errors.R9SError as exc:
+                error(f"API error: {exc}")
+                ctx.history.pop()
+                continue
+            ctx.history.append({"role": "assistant", "content": result.text})
+
+            # Display token usage
+            if result.input_tokens or result.output_tokens:
+                info(
+                    t(
+                        "chat.msg.tokens",
+                        lang,
+                        input=result.input_tokens,
+                        output=result.output_tokens,
+                    )
                 )
-            )
-            ctx.history.append({"role": "assistant", "content": assistant_text})
+
+            if timing and result.timing:
+                info(format_timing_line(result.timing))
+
+            if agent_name and agent_version:
+                _record_agent_execution(
+                    agent_name, agent_version, result, record.meta.session_id
+                )
 
             if history_path:
                 record.meta.updated_at = _utc_now_iso()
@@ -613,6 +1077,26 @@ def handle_chat(args: argparse.Namespace) -> None:
 def _style_prompt(text: str) -> str:
     # 避免在这里引入更多样式依赖：prompt_text 已支持颜色，但我们希望保持提示一致性
     return text
+
+
+def _record_agent_execution(
+    name: str,
+    version: AgentVersion,
+    result: ChatResult,
+    session_id: Optional[str],
+) -> None:
+    execution = AgentExecution(
+        agent_name=name,
+        agent_version=version.version,
+        content_hash=version.content_hash,
+        request_id=result.request_id,
+        model=version.model,
+        provider=version.provider,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+        session_id=session_id,
+    )
+    LocalAuditStore().record(execution)
 
 
 def _resume_select_session(lang: str) -> Optional[Path]:
@@ -626,7 +1110,11 @@ def _resume_select_session(lang: str) -> Optional[Path]:
     for idx, s in enumerate(sessions, start=1):
         print(f"{idx}) {s.display}")
     while True:
-        selection = prompt_text(t("chat.resume.select", lang))
+        try:
+            selection = prompt_text(t("chat.resume.select", lang))
+        except EOFError:
+            print()
+            raise SystemExit(0) from None
         if not selection.isdigit():
             error(t("chat.resume.invalid", lang))
             continue
@@ -643,28 +1131,44 @@ class SessionInfo:
     display: str
 
 
+def _format_session_time(updated_at: str, fallback_mtime: float) -> str:
+    try:
+        dt = datetime.fromisoformat(updated_at)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.astimezone()
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        dt = datetime.fromtimestamp(fallback_mtime).astimezone()
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _list_sessions(root: Path) -> List[SessionInfo]:
     out: List[SessionInfo] = []
     for path in sorted(
         root.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
     ):
+        st = path.stat()
         try:
             rec = _load_history(str(path))
         except Exception:
             continue
-        updated = rec.meta.updated_at or ""
-        base = rec.meta.base_url or "?"
-        model = rec.meta.model or "?"
+        updated_raw = rec.meta.updated_at or ""
+        updated = _format_session_time(updated_raw, st.st_mtime)
         preview = ""
         for msg in reversed(rec.messages):
             content = msg.get("content")
-            if msg.get("role") == "user" and isinstance(content, str):
-                preview = content.replace("\n", " ")
+            if msg.get("role") == "user":
+                preview = (
+                    _content_to_text(content).replace("\n", " ").replace("\\n", " ")
+                )
                 break
         if preview:
             preview = (preview[:60] + "…") if len(preview) > 60 else preview
-        display = f"{path.name}  [{updated}]  {model}  {base}"
+        display = f"{updated}"
         if preview:
             display += f"  - {preview}"
+        else:
+            display += "  - (no prompt)"
         out.append(SessionInfo(path=path, updated_at=updated, display=display))
     return out

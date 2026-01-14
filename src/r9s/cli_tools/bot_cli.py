@@ -17,6 +17,13 @@ from r9s.cli_tools.ui.terminal import (
 )
 
 
+def _deprecation_warning() -> None:
+    warning(
+        "DEPRECATED: 'r9s bot' is deprecated. Use 'r9s agent' instead.\n"
+        "  Migrate with: r9s agent import-bot <bot-name> --model <model>"
+    )
+
+
 def _require_name(name: Optional[str]) -> str:
     if name and name.strip():
         return name.strip()
@@ -45,6 +52,7 @@ def _prompt_multiline_required(message: str) -> str:
 
 
 def handle_bot_list(_: argparse.Namespace) -> None:
+    _deprecation_warning()
     bots = list_bots()
     if not bots:
         info("No bots found.")
@@ -55,6 +63,7 @@ def handle_bot_list(_: argparse.Namespace) -> None:
 
 
 def handle_bot_show(args: argparse.Namespace) -> None:
+    _deprecation_warning()
     name = _require_name(args.name)
     bot = load_bot(name)
     header(f"Bot: {bot.name}")
@@ -75,6 +84,7 @@ def handle_bot_show(args: argparse.Namespace) -> None:
 
 
 def handle_bot_delete(args: argparse.Namespace) -> None:
+    _deprecation_warning()
     name = _require_name(args.name)
     confirm = prompt_text(f"Delete bot '{name}'? [y/N]: ", color=FG_RED).lower()
     if confirm not in ("y", "yes"):
@@ -89,6 +99,7 @@ def handle_bot_delete(args: argparse.Namespace) -> None:
 
 
 def handle_bot_create(args: argparse.Namespace) -> None:
+    _deprecation_warning()
     name = _require_name(args.name)
 
     system_prompt = args.system_prompt

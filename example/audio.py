@@ -16,8 +16,8 @@ def text_to_speech_basic():
     print("Example 1: Basic Text-to-Speech")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        response = r9_s.audio.speech(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        response = r9s.audio.speech(
             model="speech-2.6-turbo",
             input="Hello, welcome to our service!",
             voice="alloy",
@@ -36,8 +36,8 @@ def text_to_speech_with_options():
     print("Example 2: Text-to-Speech with Custom Parameters")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        response = r9_s.audio.speech(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        response = r9s.audio.speech(
             model="speech-2.6-hd",
             input="The quick brown fox jumps over the lazy dog.",
             voice="nova",
@@ -57,8 +57,8 @@ def text_to_speech_fast():
     print("Example 3: Fast-Paced Speech")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        response = r9_s.audio.speech(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        response = r9s.audio.speech(
             model="speech-2.6-turbo",
             input="Daily update: traffic is clear, weather is sunny, meetings start at 10 AM.",
             voice="echo",
@@ -78,8 +78,8 @@ def text_to_speech_slow():
     print("Example 4: Slow Speech for Language Learning")
     print("=" * 60)
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
-        response = r9_s.audio.speech(
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
+        response = r9s.audio.speech(
             model="speech-2.6-turbo",
             input="Practice makes perfect. Repeat after me slowly.",
             voice="shimmer",
@@ -108,9 +108,9 @@ def transcribe_audio_basic():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.transcribe(
+            response = r9s.audio.transcribe(
                 file={
                     "file_name": "output_slow.mp3",
                     "content": audio_file.read(),
@@ -141,9 +141,9 @@ def transcribe_audio_with_options():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.transcribe(
+            response = r9s.audio.transcribe(
                 file={
                     "file_name": "output_slow.mp3",
                     "content": audio_file.read(),
@@ -175,9 +175,9 @@ def transcribe_audio_with_timestamps():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.transcribe(
+            response = r9s.audio.transcribe(
                 file={
                     "file_name": "meeting.wav",
                     "content": audio_file.read(),
@@ -215,9 +215,9 @@ def transcribe_audio_srt():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.transcribe(
+            response = r9s.audio.transcribe(
                 file={
                     "file_name": "video_audio.mp3",
                     "content": audio_file.read(),
@@ -251,9 +251,9 @@ def transcribe_with_prompt():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.transcribe(
+            response = r9s.audio.transcribe(
                 file={
                     "file_name": "tech_talk.mp3",
                     "content": audio_file.read(),
@@ -287,9 +287,9 @@ def translate_audio_basic():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.translate(
+            response = r9s.audio.translate(
                 file={
                     "file_name": "german_audio.mp3",
                     "content": audio_file.read(),
@@ -320,9 +320,9 @@ def translate_audio_with_prompt():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.translate(
+            response = r9s.audio.translate(
                 file={
                     "file_name": "french_audio.mp3",
                     "content": audio_file.read(),
@@ -353,9 +353,9 @@ def translate_meeting_notes():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.translate(
+            response = r9s.audio.translate(
                 file={
                     "file_name": "meeting_cn.mp3",
                     "content": audio_file.read(),
@@ -386,9 +386,9 @@ def translate_with_precise_mode():
         )
         return
 
-    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9_s:
+    with R9S(api_key=os.getenv("R9S_API_KEY", "")) as r9s:
         with open(audio_file_path, "rb") as audio_file:
-            response = r9_s.audio.translate(
+            response = r9s.audio.translate(
                 file={
                     "file_name": "legal_audio.mp3",
                     "content": audio_file.read(),
