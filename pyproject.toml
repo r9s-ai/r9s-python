@@ -44,6 +44,9 @@ test = [
     "pytest",
     "pytest-asyncio",
 ]
+web = [
+    "streamlit >=1.31.0",
+]
 dev = [
     "mypy ==1.15.0",
     "pre-commit >=3.7.0",
