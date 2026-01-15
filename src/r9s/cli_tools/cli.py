@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
+from urllib.parse import urlencode
 
 try:
     from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
@@ -94,8 +95,23 @@ def masked_key(key: str, visible: int = 4) -> str:
     return f"{key[:visible]}***{key[-visible:]}"
 
 
-def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
+def fetch_models(base_url: str, api_key: str, timeout: int = 5, endpoint_filter: Optional[str] = None) -> List[str]:
+    """Fetch models from API, optionally filtered by endpoint support.
+
+    Args:
+        base_url: API base URL
+        api_key: API authentication key
+        timeout: Request timeout in seconds
+        endpoint_filter: Optional endpoint path to filter by (e.g., "/v1/messages", "/v1/responses", "/v1/chat/completions")
+
+    Returns:
+        List of model IDs (sorted)
+    """
     url = base_url.rstrip("/") + "/models"
+    # If endpoint_filter is provided, request endpoints expansion
+    if endpoint_filter:
+        url += f"?{urlencode({'expand': 'endpoints'})}"
+
     headers = {"Authorization": f"Bearer {api_key}"}
     req = urllib.request.Request(url, headers=headers)
 
@@ -123,10 +139,29 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5) -> List[str]:
     if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
         models = []
         for item in data["data"]:
+            model_id = None
             if isinstance(item, dict) and "id" in item:
-                models.append(str(item["id"]))
+                model_id = str(item["id"])
             elif isinstance(item, str):
-                models.append(item)
+                model_id = item
+
+            # Apply endpoint filter if specified
+            if model_id and endpoint_filter:
+                if isinstance(item, dict) and "endpoints" in item:
+                    endpoints = item["endpoints"]
+                    if isinstance(endpoints, list):
+                        # Check if the required endpoint is in the list
+                        if endpoint_filter not in endpoints:
+                            continue
+                    else:
+                        # If endpoints field exists but is not a list, skip filtering
+                        pass
+                else:
+                    # If no endpoints field, include the model (backward compatibility)
+                    pass
+
+            if model_id:
+                models.append(model_id)
         return sorted(models)
     error("Could not parse model list from response. Please enter a model manually.")
     return []
@@ -138,11 +173,16 @@ def choose_model(
     preset: Optional[str],
     lang: str,
     tool_name: str = "claude-code",
+    endpoint_filter: Optional[str] = None,
 ) -> tuple[str, List[str]]:
-    """Choose a model and return both the choice and the fetched model list."""
+    """Choose a model and return both the choice and the fetched model list.
+
+    Args:
+        endpoint_filter: Optional endpoint path to filter models by (e.g., "/v1/messages")
+    """
     if preset:
         return preset, []
-    models = fetch_models(base_url, api_key)
+    models = fetch_models(base_url, api_key, endpoint_filter=endpoint_filter)
     if models:
         info(t("set.available_models", lang))
         # Use tool-specific prompt text
@@ -252,8 +292,20 @@ def handle_set(args: argparse.Namespace) -> None:
         )
         raise SystemExit(1)
 
+    # Display API base URL
+    info(t('set.using_api', lang, url=base_url))
+
+    # Determine endpoint filter based on tool type
+    endpoint_filter = None
+    if tool.primary_name == "cc":
+        endpoint_filter = "/v1/messages"
+    elif tool.primary_name == "codex":
+        endpoint_filter = "/v1/responses"
+    elif tool.primary_name == "qwen-code":
+        endpoint_filter = "/v1/chat/completions"
+
     model, cached_models = choose_model(
-        base_url, api_key, args.model, lang, tool.primary_name
+        base_url, api_key, args.model, lang, tool.primary_name, endpoint_filter=endpoint_filter
     )
 
     # Small model selection - skip for codex and qwen-code
@@ -793,6 +845,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the injected env and exit",
     )
     run_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print the API base URL before running",
+    )
+    run_parser.add_argument(
         "--confirm",
         action="store_true",
         help="Ask for confirmation before running",
@@ -1209,6 +1267,11 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Relay /v1/models filter rule; can be repeated (e.g. --filter channel=*open*)"
         ),
+    )
+    models_parser.add_argument(
+        "--no-trunc",
+        action="store_true",
+        help="Do not truncate long fields (e.g. endpoints) in table output",
     )
     models_parser.add_argument(
         "--lang",
