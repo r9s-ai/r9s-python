@@ -60,6 +60,7 @@ from r9s.cli_tools.skill_cli import (
     handle_skill_validate,
 )
 from r9s.cli_tools.web_cli import handle_web
+from r9s.cli_tools.code_cli import handle_code_ask
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
@@ -1279,6 +1280,52 @@ def build_parser() -> argparse.ArgumentParser:
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
     )
     models_parser.set_defaults(func=handle_models_list)
+
+    # Code Q&A command (RAG-powered codebase questions)
+    code_parser = subparsers.add_parser(
+        "code", help="Ask questions about indexed codebases using RAG"
+    )
+    code_sub = code_parser.add_subparsers(dest="code_command")
+    code_parser.set_defaults(func=lambda _: code_parser.print_help())
+
+    code_ask = code_sub.add_parser(
+        "ask", help="Ask a question about a codebase"
+    )
+    code_ask.add_argument(
+        "repo",
+        help="Repository in owner/repo format (e.g., edgefn/next-router)",
+    )
+    code_ask.add_argument(
+        "query",
+        nargs="*",
+        help="Question to ask (or pipe via stdin)",
+    )
+    code_ask.add_argument(
+        "--service-url",
+        help="Code service URL (default: R9S_CODE_SERVICE_URL or http://44.252.28.1:8123/code-review)",
+    )
+    code_ask.add_argument(
+        "--max-chunks",
+        type=int,
+        default=5,
+        help="Maximum code chunks to retrieve (default: 5)",
+    )
+    code_ask.add_argument("--api-key", help="API key (overrides R9S_API_KEY)")
+    code_ask.add_argument("--base-url", help="Base URL (overrides R9S_BASE_URL)")
+    code_ask.add_argument("--model", help="Model name (overrides R9S_MODEL)")
+    code_ask.add_argument("--lang", default=None, help="UI language")
+    code_ask.add_argument(
+        "--rich",
+        action="store_true",
+        help="Enable rich markdown rendering (requires: pip install r9s[rich])",
+    )
+    code_ask.epilog = (
+        "Examples:\n"
+        "  r9s code ask edgefn/next-router 'How does routing work?'\n"
+        "  r9s code ask edgefn/next-router 'What is the auth flow?' --max-chunks 10\n"
+        "  echo 'How does caching work?' | r9s code ask myorg/myrepo"
+    )
+    code_ask.set_defaults(func=handle_code_ask)
 
     web_parser = subparsers.add_parser(
         "web",
