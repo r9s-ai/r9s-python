@@ -792,6 +792,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the injected env and exit",
     )
     run_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print the API base URL before running",
+    )
+    run_parser.add_argument(
         "--confirm",
         action="store_true",
         help="Ask for confirmation before running",

@@ -42,6 +42,9 @@ def handle_run(args: argparse.Namespace) -> None:
     base_url = resolve_base_url(getattr(args, "base_url", None))
     model = _require_model(getattr(args, "model", None))
 
+    if getattr(args, "verbose", False):
+        info(f"Using API base URL: {base_url}")
+
     exe = tool.run_executable()
     if not exe:
         raise SystemExit(f"Unsupported app for `r9s run`: {args.app}")
