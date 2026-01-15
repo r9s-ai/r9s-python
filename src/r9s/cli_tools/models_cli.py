@@ -201,9 +201,10 @@ def handle_models_list(args: argparse.Namespace) -> None:
                 ),
             ),
         )
-        max_endpoints_len = min(
-            60,
-            max(
+        # For endpoints column, allow --no-truncate to show full content
+        no_truncate = bool(getattr(args, "no_truncate", False))
+        if no_truncate:
+            max_endpoints_len = max(
                 len("endpoints"),
                 max(
                     (
@@ -213,8 +214,22 @@ def handle_models_list(args: argparse.Namespace) -> None:
                     ),
                     default=len("endpoints"),
                 ),
-            ),
-        )
+            )
+        else:
+            max_endpoints_len = min(
+                60,
+                max(
+                    len("endpoints"),
+                    max(
+                        (
+                            len(s)
+                            for s in (_fmt_list(m.get("endpoints")) for m in model_dicts)
+                            if s
+                        ),
+                        default=len("endpoints"),
+                    ),
+                ),
+            )
 
         header_cols: list[tuple[str, int]] = [
             ("id", max_id_len),

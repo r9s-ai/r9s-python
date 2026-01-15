@@ -1268,6 +1268,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     models_parser.add_argument(
+        "--no-trunc",
+        action="store_true",
+        help="Do not truncate long fields (e.g. endpoints) in table output",
+    )
+    models_parser.add_argument(
         "--lang",
         default=None,
         help="UI language (default: en; can also set R9S_LANG). Supported: en, zh-CN",
