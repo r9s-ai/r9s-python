@@ -8,6 +8,7 @@ import sys
 from typing import List, Optional
 
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_model
+from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.tools.registry import APPS, supported_app_names_for_run
 from r9s.cli_tools.ui.terminal import ToolName
 from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text, warning
@@ -38,9 +39,13 @@ def handle_run(args: argparse.Namespace) -> None:
             f"Unsupported app for `r9s run`: {args.app} (supported: {supported})"
         )
 
+    lang = resolve_lang(getattr(args, "lang", None))
     api_key = _require_api_key(getattr(args, "api_key", None))
     base_url = resolve_base_url(getattr(args, "base_url", None))
     model = _require_model(getattr(args, "model", None))
+
+    if getattr(args, "verbose", False):
+        info(t("set.using_api", lang, url=base_url))
 
     exe = tool.run_executable()
     if not exe:

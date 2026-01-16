@@ -41,8 +41,8 @@ class QwenCodeIntegration(ToolIntegration):
         # Write .env file
         self._write_env_file(normalized_base_url, api_key, model)
 
-        # Update settings.json
-        self._update_settings_json(model)
+        # Update settings.json with actual values
+        self._update_settings_json(normalized_base_url, api_key, model)
 
         return ToolConfigSetResult(
             target_path=self._settings_path, backup_path=backup_path
@@ -57,8 +57,14 @@ OPENAI_MODEL={model}
         self._env_path.parent.mkdir(parents=True, exist_ok=True)
         self._env_path.write_text(env_content, encoding="utf-8")
 
-    def _update_settings_json(self, model: str) -> None:
-        """Update settings.json with model configuration."""
+    def _update_settings_json(self, base_url: str, api_key: str, model: str) -> None:
+        """Update settings.json with model configuration.
+
+        Args:
+            base_url: API base URL (actual value)
+            api_key: Authentication token (actual value)
+            model: Model name (actual value)
+        """
         data = self._read_settings()
 
         # Configure authentication to use OpenAI-compatible API
@@ -69,16 +75,16 @@ OPENAI_MODEL={model}
 
         data["security"]["auth"] = {
             "selectedType": "openai",
-            "apiKey": "$OPENAI_API_KEY",
-            "baseUrl": "$OPENAI_BASE_URL",
+            "apiKey": api_key,
+            "baseUrl": base_url,
         }
 
         # Ensure model section exists
         if "model" not in data:
             data["model"] = {}
 
-        # Set model name to reference environment variable
-        data["model"]["name"] = "$OPENAI_MODEL"
+        # Set model name to actual value
+        data["model"]["name"] = model
 
         # Set version if not present
         if "$version" not in data:
@@ -175,6 +181,17 @@ OPENAI_MODEL={model}
         Maps R9S configuration to OpenAI-compatible environment variables
         that qwen-code expects.
         """
+        # Check if qwen-code is in qwen-oauth mode
+        data = self._read_settings()
+        selected_type = data.get("security", {}).get("auth", {}).get("selectedType", "")
+
+        if selected_type in ("qwen-oauth", "qwen"):
+            raise SystemExit(
+                "Qwen Code is currently in 'qwen-oauth' mode. "
+                "The run command will not take effect in this mode. "
+                "Please set Qwen Code to 'openai' mode or use `r9s set qwen`."
+            )
+
         return {
             "OPENAI_API_KEY": api_key,
             "OPENAI_BASE_URL": base_url,

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r9s"
-version = "0.9.0"
+version = "0.9.1"
 description = "The official Python library for the r9s API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -43,6 +43,9 @@ r9s = "r9s.cli_tools.cli:main"
 test = [
     "pytest",
     "pytest-asyncio",
+]
+web = [
+    "streamlit >=1.31.0",
 ]
 dev = [
     "mypy ==1.15.0",

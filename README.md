@@ -1,5 +1,15 @@
 # r9s
 
+![PyPI - Version](https://img.shields.io/pypi/v/r9s)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/r9s)
+![Python Version](https://img.shields.io/pypi/pyversions/r9s)
+<!-- [![GitHub Release](https://img.shields.io/github/v/release/r9s-ai/r9s-python)](https://github.com/r9s-ai/r9s-python/releases) -->
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/r9s-ai/r9s-python)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Stars](https://img.shields.io/github/stars/r9s-ai/r9s-python?style=social)](https://github.com/r9s-ai/r9s-python)
+
+:rocket: [Quick Start](#quick-start) - :computer: [CLI Usage](#cli-usage) - :books: [SDK Usage](#python-sdk-usage) - :wrench: [Development](#development)
+
 The official Python SDK and CLI for the r9s API.
 
 ## Quick start
@@ -110,6 +120,15 @@ Enable bash completion:
 ```bash
 eval "$(r9s completion bash)"
 ```
+
+Web UI (Streamlit):
+
+```bash
+pip install "r9s[web]"
+r9s web --open-browser
+```
+
+More details: [docs/web-ui.md](docs/web-ui.md)
 
 List available models:
 
