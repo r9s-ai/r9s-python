@@ -202,7 +202,7 @@ def handle_models_list(args: argparse.Namespace) -> None:
             ),
         )
         # For endpoints column, allow --no-truncate to show full content
-        no_truncate = bool(getattr(args, "no_truncate", False))
+        no_truncate = bool(getattr(args, "no_trunc", False))
         if no_truncate:
             max_endpoints_len = max(
                 len("endpoints"),
