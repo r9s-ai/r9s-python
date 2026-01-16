@@ -1,4 +1,8 @@
+<div align="center">
+
 # r9s
+
+**The official Python SDK and CLI for the r9s API**
 
 ![PyPI - Version](https://img.shields.io/pypi/v/r9s)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/r9s)
@@ -8,9 +12,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Stars](https://img.shields.io/github/stars/r9s-ai/r9s-python?style=social)](https://github.com/r9s-ai/r9s-python)
 
+</div>
+---
+
 :rocket: [Quick Start](#quick-start) - :computer: [CLI Usage](#cli-usage) - :books: [SDK Usage](#python-sdk-usage) - :wrench: [Development](#development)
 
-The official Python SDK and CLI for the r9s API.
 
 ## Quick start
 
