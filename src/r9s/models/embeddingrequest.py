@@ -7,13 +7,15 @@ from typing_extensions import NotRequired, TypeAliasType, TypedDict
 
 
 EmbeddingRequestInputTypedDict = TypeAliasType(
-    "EmbeddingRequestInputTypedDict", Union[str, List[str]]
+    "EmbeddingRequestInputTypedDict", Union[str, List[str], List[int], List[List[int]]]
 )
-r"""Input text"""
+r"""Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays."""
 
 
-EmbeddingRequestInput = TypeAliasType("EmbeddingRequestInput", Union[str, List[str]])
-r"""Input text"""
+EmbeddingRequestInput = TypeAliasType(
+    "EmbeddingRequestInput", Union[str, List[str], List[int], List[List[int]]]
+)
+r"""Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays."""
 
 
 EncodingFormat = Literal[
@@ -24,25 +26,29 @@ EncodingFormat = Literal[
 
 class EmbeddingRequestTypedDict(TypedDict):
     model: str
-    r"""Model name"""
+    r"""ID of the model to use. You can use the List models API to see all of your available models."""
     input: EmbeddingRequestInputTypedDict
-    r"""Input text"""
+    r"""Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for text-embedding-ada-002), cannot be an empty string, and any array must be 2048 dimensions or less."""
     encoding_format: NotRequired[EncodingFormat]
+    r"""The format to return the embeddings in. Can be either "float" or "base64"."""
     dimensions: NotRequired[int]
-    r"""Output dimensions"""
+    r"""The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models."""
     user: NotRequired[str]
+    r"""A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse."""
 
 
 class EmbeddingRequest(BaseModel):
     model: str
-    r"""Model name"""
+    r"""ID of the model to use. You can use the List models API to see all of your available models."""
 
     input: EmbeddingRequestInput
-    r"""Input text"""
+    r"""Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for text-embedding-ada-002), cannot be an empty string, and any array must be 2048 dimensions or less."""
 
     encoding_format: Optional[EncodingFormat] = "float"
+    r"""The format to return the embeddings in. Can be either "float" or "base64"."""
 
     dimensions: Optional[int] = None
-    r"""Output dimensions"""
+    r"""The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models."""
 
     user: Optional[str] = None
+    r"""A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse."""

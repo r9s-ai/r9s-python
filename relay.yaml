@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: R9S API
-  version: 0.2.0
+  version: 0.2.1
   description: Next Router Relay LLM API Documentation
   license:
     name: MIT
@@ -1640,10 +1640,9 @@ paths:
                   - object: embedding
                     embedding: [0.0023064255, -0.009327292, -0.0028842222]
                     index: 0
-                model: qwen-plus
+                model: text-embedding-ada-002
                 usage:
                   prompt_tokens: 8
-                  completion_tokens: 0
                   total_tokens: 8
         '400':
           $ref: '#/components/responses/BadRequestError'
@@ -4635,23 +4634,40 @@ components:
       properties:
         model:
           type: string
-          description: Model name
+          description: ID of the model to use. You can use the List models API to see all of your available models.
+          example: text-embedding-ada-002
         input:
           oneOf:
             - type: string
+              description: The string that will be turned into an embedding.
             - type: array
               items:
                 type: string
-          description: Input text
+              description: The array of strings that will be turned into embeddings.
+            - type: array
+              items:
+                type: integer
+              description: The array of integers (tokens) that will be turned into an embedding.
+            - type: array
+              items:
+                type: array
+                items:
+                  type: integer
+              description: The array of arrays containing integers (tokens) that will be turned into embeddings.
+          description: Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for text-embedding-ada-002), cannot be an empty string, and any array must be 2048 dimensions or less.
+          example: "The quick brown fox jumped over the lazy dog"
         encoding_format:
           type: string
           enum: [float, base64]
           default: float
+          description: The format to return the embeddings in. Can be either "float" or "base64".
         dimensions:
           type: integer
-          description: Output dimensions
+          minimum: 1
+          description: The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models.
         user:
           type: string
+          description: A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
 
     EngineEmbeddingRequest:
       type: object
@@ -4661,19 +4677,34 @@ components:
         input:
           oneOf:
             - type: string
+              description: The string that will be turned into an embedding.
             - type: array
               items:
                 type: string
-          description: Input text
+              description: The array of strings that will be turned into embeddings.
+            - type: array
+              items:
+                type: integer
+              description: The array of integers (tokens) that will be turned into an embedding.
+            - type: array
+              items:
+                type: array
+                items:
+                  type: integer
+              description: The array of arrays containing integers (tokens) that will be turned into embeddings.
+          description: Input text to embed, encoded as a string or array of tokens.
         encoding_format:
           type: string
           enum: [float, base64]
           default: float
+          description: The format to return the embeddings in. Can be either "float" or "base64".
         dimensions:
           type: integer
-          description: Output dimensions
+          minimum: 1
+          description: The number of dimensions the resulting output embeddings should have.
         user:
           type: string
+          description: A unique identifier representing your end-user.
 
     EmbeddingObject:
       type: object
@@ -4685,13 +4716,19 @@ components:
         object:
           type: string
           const: embedding
+          description: The object type, which is always "embedding".
         embedding:
-          type: array
-          items:
-            type: number
-          description: Embedding vector
+          oneOf:
+            - type: array
+              items:
+                type: number
+              description: The embedding vector, which is a list of floats.
+            - type: string
+              description: The embedding vector as a base64 encoded string.
+          description: The embedding vector, which is a list of floats. The length of vector depends on the model.
         index:
           type: integer
+          description: The index of the embedding in the list of embeddings.
 
     EmbeddingResponse:
       type: object
@@ -4704,14 +4741,28 @@ components:
         object:
           type: string
           const: list
+          description: The object type, which is always "list".
         data:
           type: array
           items:
             $ref: '#/components/schemas/EmbeddingObject'
+          description: The list of embeddings generated by the model.
         model:
           type: string
+          description: The name of the model used to generate the embedding.
         usage:
-          $ref: '#/components/schemas/Usage'
+          type: object
+          required:
+            - prompt_tokens
+            - total_tokens
+          properties:
+            prompt_tokens:
+              type: integer
+              description: The number of tokens used by the prompt.
+            total_tokens:
+              type: integer
+              description: The total number of tokens used by the request.
+          description: The usage information for the request.
 
     # Moderations schemas
     ModerationRequest:
