@@ -5,7 +5,7 @@ from r9s import errors, models, utils
 from r9s._hooks import HookContext
 from r9s.types import OptionalNullable, UNSET
 from r9s.utils.unmarshal_json_response import unmarshal_json_response
-from typing import Any, Mapping, Optional, Union
+from typing import Any, List, Mapping, Optional, Union
 
 
 class Embeddings(BaseSDK):
@@ -14,6 +14,7 @@ class Embeddings(BaseSDK):
         *,
         model: str,
         input: Union[
+            str, List[str], List[int], List[List[int]],
             models.EmbeddingRequestInput, models.EmbeddingRequestInputTypedDict
         ],
         encoding_format: Optional[models.EncodingFormat] = "float",
@@ -26,13 +27,13 @@ class Embeddings(BaseSDK):
     ) -> models.EmbeddingResponse:
         r"""Create embeddings
 
-        Create embedding vector representations for input text
+        Creates an embedding vector representing the input text.
 
-        :param model: Model name
-        :param input: Input text
-        :param encoding_format:
-        :param dimensions: Output dimensions
-        :param user:
+        :param model: ID of the model to use. You can use the List models API to see all of your available models.
+        :param input: Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for text-embedding-ada-002), cannot be an empty string, and any array must be 2048 dimensions or less.
+        :param encoding_format: The format to return the embeddings in. Can be either "float" or "base64".
+        :param dimensions: The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models.
+        :param user: A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -157,6 +158,7 @@ class Embeddings(BaseSDK):
         *,
         model: str,
         input: Union[
+            str, List[str], List[int], List[List[int]],
             models.EmbeddingRequestInput, models.EmbeddingRequestInputTypedDict
         ],
         encoding_format: Optional[models.EncodingFormat] = "float",
@@ -169,13 +171,13 @@ class Embeddings(BaseSDK):
     ) -> models.EmbeddingResponse:
         r"""Create embeddings
 
-        Create embedding vector representations for input text
+        Creates an embedding vector representing the input text.
 
-        :param model: Model name
-        :param input: Input text
-        :param encoding_format:
-        :param dimensions: Output dimensions
-        :param user:
+        :param model: ID of the model to use. You can use the List models API to see all of your available models.
+        :param input: Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for text-embedding-ada-002), cannot be an empty string, and any array must be 2048 dimensions or less.
+        :param encoding_format: The format to return the embeddings in. Can be either "float" or "base64".
+        :param dimensions: The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models.
+        :param user: A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
