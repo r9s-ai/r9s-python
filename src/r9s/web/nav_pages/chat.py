@@ -87,33 +87,21 @@ def run(cfg: AppConfig) -> None:
 
             model_id = ""
             if model_ids:
-                st.caption(f"仅展示支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型")
-                options = model_ids + ["(custom)"]
-                if default_model in model_ids:
-                    idx = options.index(default_model)
-                elif default_model:
-                    idx = options.index("(custom)")
-                else:
-                    idx = 0
+                options = model_ids
+                idx = options.index(default_model) if default_model in options else 0
                 selection = st.selectbox(
                     "Model",
                     options=options,
                     index=idx,
+                    help=f"仅展示支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型",
                     key="chat_model_select",
                 )
-                if selection == "(custom)":
-                    model_id = st.text_input(
-                        "Custom model id",
-                        value=default_model,
-                        key="chat_model_custom",
-                    ).strip()
-                else:
-                    model_id = selection.strip()
+                model_id = selection.strip()
             else:
-                st.caption(
-                    f"未获取到支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型列表；可用自定义模型 id"
+                st.error(
+                    f"未获取到支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型列表，无法开始对话。"
                 )
-                model_id = st.text_input("Model", value=default_model, key="chat_model_fallback").strip()
+                st.stop()
 
             if model_id:
                 st.session_state["R9S_MODEL"] = model_id
