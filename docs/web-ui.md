@@ -42,7 +42,7 @@ Provide these either in the sidebar after launch or via environment variables:
 
 - `R9S_API_KEY`: required
 - `R9S_BASE_URL`: default `https://api.r9s.ai/v1`
-- `R9S_MODEL`: required for the Chat page (used by `chat.create`)
+- `R9S_MODEL`: optional default for the Chat page (you can also pick from the model dropdown)
 - `R9S_IMAGE_MODEL`: optional for the Images page (passed to `images.create(model=...)`)
 
 ## Pages
