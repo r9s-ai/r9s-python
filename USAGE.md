@@ -116,6 +116,10 @@ r9s web --open-browser
 
 # Or bind to all interfaces
 r9s web --host 0.0.0.0 --port 8501
+
+# By default, if the port is in use, r9s auto-picks a free one.
+# To fail fast instead:
+r9s web --host 0.0.0.0 --port 8501 --no-auto-port
 ```
 
 More details: `docs/web-ui.md`

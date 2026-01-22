@@ -1295,6 +1295,12 @@ def build_parser() -> argparse.ArgumentParser:
     web_parser.add_argument("--host", default="127.0.0.1", help="Server host (default: 127.0.0.1)")
     web_parser.add_argument("--port", type=int, default=8501, help="Server port (default: 8501)")
     web_parser.add_argument(
+        "--auto-port",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Auto-select a free port if the requested one is in use (default: true)",
+    )
+    web_parser.add_argument(
         "--open-browser",
         action="store_true",
         help="Open browser automatically (default: off)",

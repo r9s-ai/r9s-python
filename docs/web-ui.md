@@ -28,6 +28,10 @@ Common options:
 # Bind to all interfaces (e.g. containers / remote hosts)
 r9s web --host 0.0.0.0 --port 8501
 
+# By default, if the port is in use, r9s will auto-pick a free one.
+# To fail fast instead:
+r9s web --host 0.0.0.0 --port 8501 --no-auto-port
+
 # Override via flags (you can also fill in the sidebar)
 r9s web --api-key ... --base-url https://api.r9s.ai/v1 --model gpt-5-mini
 ```
