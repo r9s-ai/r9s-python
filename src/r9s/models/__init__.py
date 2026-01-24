@@ -301,7 +301,12 @@ if TYPE_CHECKING:
         EmbeddingRequestTypedDict,
         EncodingFormat,
     )
-    from .embeddingresponse import EmbeddingResponse, EmbeddingResponseTypedDict
+    from .embeddingresponse import (
+        EmbeddingResponse,
+        EmbeddingResponseTypedDict,
+        EmbeddingUsage,
+        EmbeddingUsageTypedDict,
+    )
     from .engineembeddingrequest import (
         EngineEmbeddingRequest,
         EngineEmbeddingRequestEncodingFormat,
@@ -700,6 +705,8 @@ __all__ = [
     "EmbeddingRequestTypedDict",
     "EmbeddingResponse",
     "EmbeddingResponseTypedDict",
+    "EmbeddingUsage",
+    "EmbeddingUsageTypedDict",
     "EncodingFormat",
     "Engine",
     "EngineEmbeddingRequest",
@@ -1112,6 +1119,8 @@ _dynamic_imports: dict[str, str] = {
     "EncodingFormat": ".embeddingrequest",
     "EmbeddingResponse": ".embeddingresponse",
     "EmbeddingResponseTypedDict": ".embeddingresponse",
+    "EmbeddingUsage": ".embeddingresponse",
+    "EmbeddingUsageTypedDict": ".embeddingresponse",
     "EngineEmbeddingRequest": ".engineembeddingrequest",
     "EngineEmbeddingRequestEncodingFormat": ".engineembeddingrequest",
     "EngineEmbeddingRequestInput": ".engineembeddingrequest",

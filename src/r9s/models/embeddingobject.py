@@ -5,24 +5,28 @@ import pydantic
 from pydantic.functional_validators import AfterValidator
 from r9s.types import BaseModel
 from r9s.utils import validate_const
-from typing import List, Literal
+from typing import List, Literal, Union
 from typing_extensions import Annotated, TypedDict
 
 
 class EmbeddingObjectTypedDict(TypedDict):
-    embedding: List[float]
-    r"""Embedding vector"""
+    embedding: Union[List[float], str]
+    r"""The embedding vector, which is a list of floats when encoding_format is "float", or a base64 encoded string when encoding_format is "base64". The length of vector depends on the model."""
     index: int
+    r"""The index of the embedding in the list of embeddings."""
     object: Literal["embedding"]
+    r"""The object type, which is always "embedding"."""
 
 
 class EmbeddingObject(BaseModel):
-    embedding: List[float]
-    r"""Embedding vector"""
+    embedding: Union[List[float], str]
+    r"""The embedding vector, which is a list of floats when encoding_format is "float", or a base64 encoded string when encoding_format is "base64". The length of vector depends on the model."""
 
     index: int
+    r"""The index of the embedding in the list of embeddings."""
 
     OBJECT: Annotated[
         Annotated[Literal["embedding"], AfterValidator(validate_const("embedding"))],
         pydantic.Field(alias="object"),
     ] = "embedding"
+    r"""The object type, which is always "embedding"."""
