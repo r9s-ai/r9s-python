@@ -676,11 +676,15 @@ def handle_chat(args: argparse.Namespace) -> None:
     agent_version: Optional[AgentVersion] = None
     agent_generation: Dict[str, Optional[float]] = {}
     loaded_skills: List[Skill] = []
+    requested_version: Optional[str] = getattr(args, "agent_version", None)
+    if requested_version and not agent_name:
+        raise SystemExit("--version requires --agent.")
     if agent_name:
         store = LocalAgentStore()
         try:
             agent = store.get_agent(agent_name)
-            agent_version = store.get_version(agent_name, agent.current_version)
+            version_key = requested_version or agent.current_version
+            agent_version = store.get_version(agent_name, version_key)
         except Exception as exc:
             raise SystemExit(f"Failed to load agent: {agent_name} ({exc})") from exc
         if system_prompt is not None:
