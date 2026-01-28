@@ -434,6 +434,7 @@ def _stream_chat(
     script_policy: ScriptPolicy,
     *,
     prefix: Optional[str] = None,
+    use_rich: bool = False,
     temperature: Optional[float] = None,
     top_p: Optional[float] = None,
     max_tokens: Optional[int] = None,
@@ -441,6 +442,7 @@ def _stream_chat(
     frequency_penalty: Optional[float] = None,
     timing: bool = False,
 ) -> ChatResult:
+    _rich_buffered = use_rich and is_rich_available()
     spinner = Spinner(prefix or "")
     if sys.stdout.isatty():
         spinner.start()
@@ -519,16 +521,26 @@ def _stream_chat(
                     execute=False,
                 )
                 assistant_parts.append(piece)
-                if prefix and not spinner.prefix_printed:
-                    spinner.print_prefix()
-                print(piece, end="", flush=True)
-        if prefix and not spinner.prefix_printed:
-            spinner.print_prefix()
+                if not _rich_buffered:
+                    if prefix and not spinner.prefix_printed:
+                        spinner.print_prefix()
+                    print(piece, end="", flush=True)
+        if not _rich_buffered:
+            if prefix and not spinner.prefix_printed:
+                spinner.print_prefix()
         tail = _flush_script_command_stream(script_state)
         if tail:
             assistant_parts.append(tail)
-            print(tail, end="", flush=True)
-        print()
+            if not _rich_buffered:
+                print(tail, end="", flush=True)
+        if _rich_buffered:
+            spinner.stop_and_clear()
+            if prefix and not spinner.prefix_printed:
+                spinner.print_prefix()
+            print()  # Newline after prefix
+            print_markdown("".join(assistant_parts))
+        else:
+            print()
         assistant_text = "".join(assistant_parts)
         assistant_raw_text = "".join(assistant_parts_raw) + tail
         timing_result = timing_state.finalize(output_tokens=output_tokens)
@@ -854,6 +866,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                     exts,
                     loaded_skills,
                     script_policy,
+                    use_rich=use_rich,
                     timing=timing,
                     **{**bot_generation, **agent_generation},
                 )
@@ -1031,6 +1044,7 @@ def handle_chat(args: argparse.Namespace) -> None:
                         loaded_skills,
                         script_policy,
                         prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                        use_rich=use_rich,
                         timing=timing,
                         **{**bot_generation, **agent_generation},
                     )
