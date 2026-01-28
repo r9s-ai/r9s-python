@@ -451,6 +451,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Agent name (loads system prompt and model from ~/.r9s/agents/<agent>/)",
     )
     chat_parser.add_argument(
+        "--version",
+        dest="agent_version",
+        default=None,
+        help="Agent version to use (e.g. 1.0.0); requires --agent",
+    )
+    chat_parser.add_argument(
         "--var",
         action="append",
         default=[],
@@ -505,6 +511,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     chat_parser.epilog = (
         "Agents: `r9s chat --agent <name>` loads instructions from ~/.r9s/agents/<name>/. "
+        "Use `--version X.Y.Z` to pin a specific agent version for the session. "
         "Skills: `r9s chat --skill <name>` loads skill instructions from ~/.r9s/skills/<name>/. "
         "Resume: `r9s chat --resume` selects a saved session under ~/.r9s/chat/. "
         "Commands: ~/.r9s/commands/*.toml are registered as /<name> in interactive chat. "

@@ -27,12 +27,21 @@ def _get_agent_names() -> List[str]:
     return [a.name for a in LocalAgentStore().list()]
 
 
+@st.cache_data(ttl=60)
+def _get_agent_versions(agent_name: str) -> List[str]:
+    """Return available version strings for *agent_name*, newest first."""
+    from r9s.agents.local_store import list_versions as _list_versions
+
+    return list(reversed(_list_versions(agent_name)))
+
+
 def _build_system_prompt_from_agent(
-    agent_name: str, variables: Dict[str, str]
+    agent_name: str, variables: Dict[str, str], version_key: Optional[str] = None
 ) -> Tuple[str, List[str]]:
     store = LocalAgentStore()
     agent = store.get_agent(agent_name)
-    version = store.get_version(agent_name, agent.current_version)
+    vk = version_key or agent.current_version
+    version = store.get_version(agent_name, vk)
     base = render_agent_template(version.instructions, variables)
     skills = list(version.skills) if version.skills else []
     loaded = load_skills(skills, warn_fn=lambda msg: st.warning(str(msg)))
@@ -125,6 +134,19 @@ def run(cfg: AppConfig) -> None:
                 options=["(none)"] + agent_names,
                 key="chat_agent_name"
             )
+            # Version selector (only shown when an agent is selected)
+            agent_version_key: Optional[str] = None
+            if agent_name != "(none)":
+                versions = _get_agent_versions(agent_name)
+                if versions:
+                    ver_options = ["(current)"] + versions
+                    ver_sel = st.selectbox(
+                        "Agent version",
+                        options=ver_options,
+                        key="chat_agent_version",
+                    )
+                    if ver_sel != "(current)":
+                        agent_version_key = ver_sel
             vars_raw = st.text_area(
                 "Agent variables (JSON, optional)",
                 value="{}",
@@ -146,12 +168,14 @@ def run(cfg: AppConfig) -> None:
         st.session_state["_chat_model_id"] = model_id
         st.session_state["_chat_use_stream"] = use_stream
         st.session_state["_chat_agent_name"] = agent_name
+        st.session_state["_chat_agent_version_key"] = agent_version_key if agent_name != "(none)" else None
         st.session_state["_chat_vars_raw"] = vars_raw
     else:
         # During generation, restore values from session state
         model_id = st.session_state.get("_chat_model_id", get_env_default("R9S_MODEL", "")).strip()
         use_stream = st.session_state.get("_chat_use_stream", True)
         agent_name = st.session_state.get("_chat_agent_name", "(none)")
+        agent_version_key = st.session_state.get("_chat_agent_version_key", None)
         vars_raw = st.session_state.get("_chat_vars_raw", "{}")
 
     if not model_id:
@@ -168,7 +192,9 @@ def run(cfg: AppConfig) -> None:
             if not isinstance(variables_obj, dict):
                 raise ValueError("variables must be a JSON object")
             variables = {str(k): str(v) for k, v in variables_obj.items()}
-            system_prompt, _skills = _build_system_prompt_from_agent(agent_name, variables)
+            system_prompt, _skills = _build_system_prompt_from_agent(
+                agent_name, variables, version_key=agent_version_key
+            )
         except Exception as exc:
             st.sidebar.error(f"Failed to parse Agent variables: {exc}")
             return
