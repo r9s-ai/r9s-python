@@ -1,0 +1,576 @@
+openapi: 3.1.0
+components:
+  schemas:
+    # Content and Parts
+    GeminiPart:
+      type: object
+      description: A single part of content that can be text, inline data, file data, or function call
+      oneOf:
+        - type: object
+          properties:
+            text:
+              type: string
+              description: Text content
+          required: [text]
+        - type: object
+          properties:
+            inline_data:
+              $ref: '#/components/schemas/GeminiInlineData'
+          required: [inline_data]
+        - type: object
+          properties:
+            file_data:
+              $ref: '#/components/schemas/GeminiFileData'
+          required: [file_data]
+        - type: object
+          properties:
+            functionCall:
+              type: object
+              description: Function call from the model
+              properties:
+                name:
+                  type: string
+                args:
+                  type: object
+          required: [functionCall]
+        - type: object
+          properties:
+            functionResponse:
+              type: object
+              description: Response from function execution
+              properties:
+                name:
+                  type: string
+                response:
+                  type: object
+          required: [functionResponse]
+
+    GeminiInlineData:
+      type: object
+      description: Content data inline in the request (base64 encoded)
+      properties:
+        mime_type:
+          type: string
+          description: MIME type of the data (e.g., image/jpeg, image/png, audio/mp3)
+          example: image/jpeg
+        data:
+          type: string
+          description: Base64 encoded data
+          example: /9j/4AAQSkZJRgABAQAAAQABAAD/2wBD...
+      required: [mime_type, data]
+
+    GeminiFileData:
+      type: object
+      description: URI-based data reference
+      properties:
+        mime_type:
+          type: string
+          description: MIME type of the file
+          example: image/jpeg
+        file_uri:
+          type: string
+          description: URI of the file (e.g., gs:// or https://)
+          example: gs://bucket/image.jpg
+      required: [mime_type, file_uri]
+
+    GeminiContent:
+      type: object
+      description: Content object containing role and parts
+      properties:
+        role:
+          type: string
+          enum: [user, model]
+          description: Role of the content creator
+        parts:
+          type: array
+          description: Ordered parts that make up the content
+          items:
+            $ref: '#/components/schemas/GeminiPart'
+          minItems: 1
+      required: [parts]
+
+    GeminiGenerationConfig:
+      type: object
+      description: Configuration options for model generation
+      properties:
+        temperature:
+          type: number
+          format: float
+          description: Controls randomness (0.0-2.0)
+          minimum: 0.0
+          maximum: 2.0
+          example: 0.7
+        topP:
+          type: number
+          format: float
+          description: Nucleus sampling threshold
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.95
+        topK:
+          type: integer
+          description: Top-k sampling parameter
+          minimum: 1
+          example: 40
+        candidateCount:
+          type: integer
+          description: Number of response candidates to generate
+          minimum: 1
+          example: 1
+        maxOutputTokens:
+          type: integer
+          description: Maximum number of tokens in the response
+          example: 8192
+        stopSequences:
+          type: array
+          description: Sequences that will stop generation
+          items:
+            type: string
+          example: ["\n\n"]
+        responseMimeType:
+          type: string
+          description: Output format MIME type
+          enum:
+            - text/plain
+            - application/json
+            - image/png
+            - image/jpeg
+            - image/webp
+          example: image/png
+        responseSchema:
+          type: object
+          description: Schema for structured output (when responseMimeType is application/json)
+
+    GeminiSafetySetting:
+      type: object
+      description: Safety setting for a specific harm category
+      properties:
+        category:
+          type: string
+          enum:
+            - HARM_CATEGORY_HARASSMENT
+            - HARM_CATEGORY_HATE_SPEECH
+            - HARM_CATEGORY_SEXUALLY_EXPLICIT
+            - HARM_CATEGORY_DANGEROUS_CONTENT
+          description: Harm category to configure
+        threshold:
+          type: string
+          enum:
+            - BLOCK_NONE
+            - BLOCK_ONLY_HIGH
+            - BLOCK_MEDIUM_AND_ABOVE
+            - BLOCK_LOW_AND_ABOVE
+          description: Threshold for blocking content
+      required: [category, threshold]
+
+    GeminiSystemInstruction:
+      type: object
+      description: System instruction to guide model behavior
+      properties:
+        parts:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+          minItems: 1
+      required: [parts]
+
+    GeminiFunctionDeclaration:
+      type: object
+      description: Function declaration for tool use
+      properties:
+        name:
+          type: string
+          description: Function name
+        description:
+          type: string
+          description: Function description
+        parameters:
+          type: object
+          description: OpenAPI 3.0 schema object for parameters
+      required: [name, description]
+
+    GeminiTool:
+      type: object
+      description: Tool that the model can use
+      properties:
+        functionDeclarations:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiFunctionDeclaration'
+
+    GeminiToolConfig:
+      type: object
+      description: Tool configuration
+      properties:
+        functionCallingConfig:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum: [AUTO, ANY, NONE]
+              description: Function calling mode
+
+    # Request Schemas
+    GeminiGenerateContentRequest:
+      type: object
+      description: Request to generate content
+      properties:
+        contents:
+          type: array
+          description: Content array (conversation history)
+          items:
+            $ref: '#/components/schemas/GeminiContent'
+          minItems: 1
+        generationConfig:
+          $ref: '#/components/schemas/GeminiGenerationConfig'
+        safetySettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiSafetySetting'
+        systemInstruction:
+          $ref: '#/components/schemas/GeminiSystemInstruction'
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiTool'
+        toolConfig:
+          $ref: '#/components/schemas/GeminiToolConfig'
+        cachedContent:
+          type: string
+          description: Cached content reference
+      required: [contents]
+
+    GeminiEmbedContentRequest:
+      type: object
+      description: Request to generate embeddings
+      properties:
+        content:
+          $ref: '#/components/schemas/GeminiContent'
+        taskType:
+          type: string
+          enum:
+            - RETRIEVAL_QUERY
+            - RETRIEVAL_DOCUMENT
+            - SEMANTIC_SIMILARITY
+            - CLASSIFICATION
+            - CLUSTERING
+            - QUESTION_ANSWERING
+            - FACT_VERIFICATION
+            - CODE_RETRIEVAL_QUERY
+          description: Task type for the embedding
+        title:
+          type: string
+          description: Optional title (for RETRIEVAL_DOCUMENT task type)
+        outputDimensionality:
+          type: integer
+          description: Reduced dimension for output embedding
+          minimum: 1
+          example: 256
+      required: [content]
+
+    # Response Schemas
+    GeminiSafetyRating:
+      type: object
+      description: Safety rating for a piece of content
+      properties:
+        category:
+          type: string
+          description: Harm category
+        probability:
+          type: string
+          enum: [NEGLIGIBLE, LOW, MEDIUM, HIGH]
+          description: Probability of harm
+        blocked:
+          type: boolean
+          description: Whether content was blocked
+
+    GeminiCandidate:
+      type: object
+      description: A response candidate
+      properties:
+        content:
+          $ref: '#/components/schemas/GeminiContent'
+        finishReason:
+          type: string
+          enum: [STOP, MAX_TOKENS, SAFETY, RECITATION, OTHER]
+          description: Reason for finishing generation
+        safetyRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiSafetyRating'
+        citationMetadata:
+          type: object
+          description: Citation information
+        tokenCount:
+          type: integer
+          description: Token count for this candidate
+
+    GeminiPromptFeedback:
+      type: object
+      description: Feedback about the prompt
+      properties:
+        blockReason:
+          type: string
+          enum: [BLOCK_REASON_UNSPECIFIED, SAFETY, OTHER]
+          description: Reason for blocking the prompt
+        safetyRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiSafetyRating'
+
+    GeminiUsageMetadata:
+      type: object
+      description: Token usage metadata
+      properties:
+        promptTokenCount:
+          type: integer
+          description: Number of tokens in the prompt
+        candidatesTokenCount:
+          type: integer
+          description: Total tokens across all candidates
+        totalTokenCount:
+          type: integer
+          description: Total token count
+        cachedContentTokenCount:
+          type: integer
+          description: Cached content token count
+
+    GeminiGenerateContentResponse:
+      type: object
+      description: Response from generateContent or streamGenerateContent
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeminiCandidate'
+        promptFeedback:
+          $ref: '#/components/schemas/GeminiPromptFeedback'
+        usageMetadata:
+          $ref: '#/components/schemas/GeminiUsageMetadata'
+        modelVersion:
+          type: string
+          description: Model version used
+          example: gemini-2.0-flash-001
+        responseId:
+          type: string
+          description: Unique identifier for this response
+        modelStatus:
+          type: object
+          description: Current model operational status
+
+    # Batch API Schemas (Async Job Mode)
+
+    GeminiJobState:
+      type: string
+      description: State of the batch job
+      enum:
+        - JOB_STATE_UNSPECIFIED
+        - JOB_STATE_PENDING
+        - JOB_STATE_RUNNING
+        - JOB_STATE_SUCCEEDED
+        - JOB_STATE_FAILED
+        - JOB_STATE_CANCELLED
+        - JOB_STATE_EXPIRED
+
+    GeminiBatchRequestItem:
+      type: object
+      description: Single request in a batch with optional metadata
+      properties:
+        request:
+          $ref: '#/components/schemas/GeminiGenerateContentRequest'
+        metadata:
+          type: object
+          description: Optional metadata for tracking this request
+          additionalProperties:
+            type: string
+      required: [request]
+
+    GeminiInlineRequestConfig:
+      type: object
+      description: Inline requests configuration (max 20MB)
+      properties:
+        requests:
+          type: array
+          description: Array of request items
+          items:
+            $ref: '#/components/schemas/GeminiBatchRequestItem'
+          minItems: 1
+      required: [requests]
+
+    GeminiFileRequestConfig:
+      type: object
+      description: File-based requests configuration (max 2GB)
+      properties:
+        file_name:
+          type: string
+          description: File resource name (e.g., files/{fileId})
+          example: files/abc123
+      required: [file_name]
+
+    GeminiInputConfig:
+      type: object
+      description: Input configuration - either inline requests or file reference
+      oneOf:
+        - type: object
+          properties:
+            requests:
+              $ref: '#/components/schemas/GeminiInlineRequestConfig'
+          required: [requests]
+        - type: object
+          properties:
+            file_name:
+              type: string
+              description: JSONL file reference
+              example: files/abc123
+          required: [file_name]
+
+    GeminiInlineResponseItem:
+      type: object
+      description: Single response item in batch results
+      properties:
+        response:
+          $ref: '#/components/schemas/GeminiGenerateContentResponse'
+        error:
+          type: object
+          description: Error if this request failed
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+            status:
+              type: string
+
+    GeminiOutputConfig:
+      type: object
+      description: Output configuration containing results
+      properties:
+        inlined_responses:
+          type: array
+          description: Inline response results (for inline input)
+          items:
+            $ref: '#/components/schemas/GeminiInlineResponseItem'
+        file_name:
+          type: string
+          description: Output JSONL file name (for file input)
+          example: files/output_xyz789
+
+    GeminiBatchStats:
+      type: object
+      description: Statistics about batch processing
+      properties:
+        failedRequestCount:
+          type: integer
+          description: Number of failed requests
+        successfulRequestCount:
+          type: integer
+          description: Number of successful requests
+
+    GeminiBatchError:
+      type: object
+      description: Error information for failed batch job
+      properties:
+        code:
+          type: integer
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        status:
+          type: string
+          description: Error status
+
+    GeminiBatch:
+      type: object
+      description: Batch job object representing an async batch processing task
+      properties:
+        name:
+          type: string
+          description: Batch job identifier
+          example: batches/123456789
+          readOnly: true
+        display_name:
+          type: string
+          description: User-defined label for this batch
+          example: my-batch-job
+        state:
+          $ref: '#/components/schemas/GeminiJobState'
+          readOnly: true
+        create_time:
+          type: string
+          format: date-time
+          description: Job creation timestamp
+          readOnly: true
+        update_time:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          readOnly: true
+        input_config:
+          $ref: '#/components/schemas/GeminiInputConfig'
+        output_config:
+          $ref: '#/components/schemas/GeminiOutputConfig'
+          readOnly: true
+        error:
+          $ref: '#/components/schemas/GeminiBatchError'
+          readOnly: true
+        batch_stats:
+          $ref: '#/components/schemas/GeminiBatchStats'
+          readOnly: true
+
+    GeminiBatchGenerateContentRequest:
+      type: object
+      description: Request to create an async batch generation job
+      properties:
+        batch:
+          type: object
+          properties:
+            display_name:
+              type: string
+              description: Human-readable name for this batch job
+            input_config:
+              $ref: '#/components/schemas/GeminiInputConfig'
+          required: [input_config]
+      required: [batch]
+
+    GeminiBatchGenerateContentResponse:
+      type: object
+      description: Response from batch job creation (returns job metadata)
+      allOf:
+        - $ref: '#/components/schemas/GeminiBatch'
+
+    GeminiListBatchesResponse:
+      type: object
+      description: List of batch jobs
+      properties:
+        batches:
+          type: array
+          description: Array of batch job objects
+          items:
+            $ref: '#/components/schemas/GeminiBatch'
+        next_page_token:
+          type: string
+          description: Token for next page of results
+
+    GeminiEmbedding:
+      type: object
+      description: Embedding vector
+      properties:
+        values:
+          type: array
+          description: Embedding values (floats)
+          items:
+            type: number
+            format: float
+      required: [values]
+
+    GeminiEmbedContentResponse:
+      type: object
+      description: Response from embedContent
+      properties:
+        embedding:
+          $ref: '#/components/schemas/GeminiEmbedding'
+      required: [embedding]

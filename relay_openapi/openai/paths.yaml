@@ -1,0 +1,1512 @@
+openapi: 3.1.0
+paths:
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      x-speakeasy-name-override: create
+      tags:
+      - chat
+      summary: Create chat completion
+      description: Create a chat completion, supports streaming
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/ChatCompletionRequest
+            examples:
+              basic:
+                summary: Basic chat request
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Hello, how are you?
+              with_system:
+                summary: Request with system prompt
+                value:
+                  model: qwen-plus
+                  messages:
+                  - role: system
+                    content: You are a helpful assistant.
+                  - role: user
+                    content: What is the capital of France?
+                  temperature: 0.7
+                  max_tokens: 100
+              streaming:
+                summary: Streaming request
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Tell me a story
+                  stream: true
+                  temperature: 0.8
+              with_tools:
+                summary: Request with tool calls
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: What's the weather like in San Francisco and Tokyo?
+                  tools:
+                  - type: function
+                    function:
+                      name: get_weather
+                      description: Get the current weather in a given location
+                      parameters:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                            description: The city and state, e.g. San Francisco, CA
+                          unit:
+                            type: string
+                            enum:
+                            - celsius
+                            - fahrenheit
+                            description: The temperature unit to use
+                        required:
+                        - location
+                  tool_choice: auto
+                  temperature: 0.7
+              tool_response:
+                summary: Tool call result response
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: What's the weather in San Francisco?
+                  - role: assistant
+                    content: null
+                    tool_calls:
+                    - id: call_abc123
+                      type: function
+                      function:
+                        name: get_weather
+                        arguments: '{"location": "San Francisco, CA", "unit": "celsius"}'
+                  - role: tool
+                    content: '{"temperature": 18, "condition": "sunny", "humidity":
+                      65}'
+                    tool_call_id: call_abc123
+                  tools:
+                  - type: function
+                    function:
+                      name: get_weather
+                      description: Get the current weather in a given location
+                      parameters:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                          unit:
+                            type: string
+                            enum:
+                            - celsius
+                            - fahrenheit
+                        required:
+                        - location
+              multi_turn:
+                summary: Multi-turn conversation
+                value:
+                  model: claude-sonnet-4.5
+                  messages:
+                  - role: system
+                    content: You are a knowledgeable programming tutor.
+                  - role: user
+                    content: How do I create a list in Python?
+                  - role: assistant
+                    content: 'In Python, you can create a list using square brackets.
+                      For example: my_list = [1, 2, 3]'
+                  - role: user
+                    content: How do I add items to it?
+                  max_tokens: 500
+                  temperature: 0.8
+              with_json_mode:
+                summary: JSON mode output
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: system
+                    content: You are a helpful assistant that outputs in JSON format.
+                  - role: user
+                    content: 'Extract the name, age, and occupation from this text:
+                      John is 30 years old and works as a software engineer.'
+                  response_format:
+                    type: json_object
+                  temperature: 0.5
+              with_json_schema:
+                summary: Structured JSON output
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Generate a user profile for a software engineer named
+                      Alice
+                  response_format:
+                    type: json_schema
+                    json_schema:
+                      name: user_profile
+                      description: A user profile object
+                      schema:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          age:
+                            type: integer
+                          occupation:
+                            type: string
+                          skills:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                        - name
+                        - occupation
+                  temperature: 0.7
+              with_vision:
+                summary: Vision input (image understanding)
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: What's in this image?
+                    - type: image_url
+                      image_url:
+                        url: https://example.com/image.jpg
+                        detail: high
+                  max_tokens: 300
+              forced_tool_call:
+                summary: Forced tool call
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Tell me about the weather
+                  tools:
+                  - type: function
+                    function:
+                      name: get_weather
+                      description: Get weather information
+                      parameters:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                        required:
+                        - location
+                  - type: function
+                    function:
+                      name: get_time
+                      description: Get current time
+                      parameters:
+                        type: object
+                        properties:
+                          timezone:
+                            type: string
+                  tool_choice:
+                    type: function
+                    function:
+                      name: get_weather
+              with_reasoning:
+                summary: Reasoning mode (o1 series)
+                value:
+                  model: grok-4-fast-reasoning
+                  messages:
+                  - role: user
+                    content: 'Solve this math problem: If a train travels 120 km in
+                      2 hours, then stops for 30 minutes, then travels another 90
+                      km in 1.5 hours, what is the average speed for the entire journey?'
+                  max_completion_tokens: 2000
+                  reasoning_effort: high
+                  user: user_12345
+              with_audio_output:
+                summary: Audio output (speech response)
+                value:
+                  model: gpt-4o-mini-audio
+                  messages:
+                  - role: user
+                    content: Tell me a short story about a robot
+                  modalities:
+                  - text
+                  - audio
+                  audio:
+                    voice: alloy
+                    format: mp3
+                  max_tokens: 500
+              parallel_tools:
+                summary: Parallel tool calls enabled
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Check the weather in Tokyo, Paris, and New York simultaneously
+                  tools:
+                  - type: function
+                    function:
+                      name: get_weather
+                      description: Get weather information
+                      parameters:
+                        type: object
+                        properties:
+                          city:
+                            type: string
+                        required:
+                        - city
+                  parallel_tool_calls: true
+                  temperature: 0.7
+              with_metadata:
+                summary: Request with metadata and user tracking
+                value:
+                  model: gpt-4o-mini
+                  messages:
+                  - role: user
+                    content: Explain quantum entanglement in simple terms
+                  temperature: 0.8
+                  max_tokens: 300
+                  user: user_abc123
+                  metadata:
+                    session_id: session_xyz789
+                    conversation_id: conv_456
+                    source: mobile_app
+                    version: 1.2.3
+                  store: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ChatCompletionResponse
+              example:
+                id: chatcmpl-123
+                object: chat.completion
+                created: 1677652288
+                model: gpt-4o-mini
+                choices:
+                - index: 0
+                  message:
+                    role: assistant
+                    content: Hello! I'm doing well, thank you for asking. How can
+                      I help you today?
+                  finish_reason: stop
+                usage:
+                  prompt_tokens: 13
+                  completion_tokens: 17
+                  total_tokens: 30
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/ChatCompletionStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+              x-speakeasy-sse-sentinel: '[DONE]'
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '409':
+          $ref: ../common/common.yaml#/components/responses/ConflictError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/responses:
+    post:
+      operationId: createResponse
+      x-speakeasy-name-override: create
+      tags:
+      - responses
+      summary: Create response
+      description: 'Create a response with streaming support. This endpoint corresponds
+        to OpenAI''s Responses API.
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/ResponseRequest
+            examples:
+              simple_string:
+                summary: Simple text input
+                value:
+                  model: gpt-4o-mini
+                  input: Tell me a joke about programming
+                  instructions: You are a funny assistant
+                  max_output_tokens: 500
+                  temperature: 0.7
+              with_messages:
+                summary: Using message array (recommended)
+                value:
+                  model: gpt-4o-mini
+                  input:
+                  - role: user
+                    content: Hello, how are you?
+                  instructions: You are a helpful assistant
+                  max_output_tokens: 1000
+              multi_turn_conversation:
+                summary: Multi-turn conversation
+                value:
+                  model: qwen-plus
+                  input:
+                  - role: user
+                    content: What is artificial intelligence?
+                  - role: assistant
+                    content: Artificial intelligence (AI) is...
+                  - role: user
+                    content: Can you give me some examples?
+                  instructions: You are a knowledgeable AI tutor
+                  max_output_tokens: 2000
+                  stream: true
+              with_tools:
+                summary: Request with tool calls
+                value:
+                  model: gpt-4o-mini
+                  input:
+                  - role: user
+                    content: What's the weather like in San Francisco?
+                  instructions: You are a helpful assistant with access to tools
+                  max_output_tokens: 2000
+                  temperature: 0.7
+                  modalities:
+                  - text
+                  tools:
+                  - type: function
+                    name: get_weather
+                    description: Get the current weather in a location
+                    parameters:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                      required:
+                      - location
+              multi_tool_call:
+                summary: Multiple tool calls scenario
+                value:
+                  model: gpt-4o-mini
+                  input:
+                  - role: user
+                    content: Book a flight from NYC to London on Dec 25th and check
+                      the weather there
+                  instructions: You are a travel assistant. Use tools to help users
+                    with travel planning.
+                  tools:
+                  - type: function
+                    name: search_flights
+                    description: Search for available flights
+                    parameters:
+                      type: object
+                      properties:
+                        origin:
+                          type: string
+                          description: Departure city
+                        destination:
+                          type: string
+                          description: Arrival city
+                        date:
+                          type: string
+                          description: Travel date in YYYY-MM-DD format
+                      required:
+                      - origin
+                      - destination
+                      - date
+                  - type: function
+                    name: get_weather
+                    description: Get weather forecast
+                    parameters:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                        date:
+                          type: string
+                      required:
+                      - location
+                  tool_choice: auto
+                  max_output_tokens: 3000
+              streaming_with_tools:
+                summary: Streaming with tool calls
+                value:
+                  model: gpt-4o-mini
+                  input:
+                  - role: user
+                    content: Calculate 15% tip on a $85.50 bill and tell me the total
+                  instructions: You are a helpful calculator assistant
+                  stream: true
+                  tools:
+                  - type: function
+                    name: calculate
+                    description: Perform mathematical calculations
+                    parameters:
+                      type: object
+                      properties:
+                        expression:
+                          type: string
+                          description: Mathematical expression to evaluate
+                      required:
+                      - expression
+                  max_output_tokens: 1000
+              required_tool:
+                summary: Required tool usage
+                value:
+                  model: gpt-4o-mini
+                  input: Search for recent news about artificial intelligence
+                  instructions: You must use the search tool to find current information
+                  tools:
+                  - type: function
+                    name: web_search
+                    description: Search the web for information
+                    parameters:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        num_results:
+                          type: integer
+                      required:
+                      - query
+                  tool_choice: required
+                  max_output_tokens: 2000
+              with_metadata:
+                summary: Request with metadata
+                value:
+                  model: gpt-4o-mini
+                  input: Summarize the key points from our discussion
+                  instructions: You are a meeting assistant
+                  max_output_tokens: 1500
+                  temperature: 0.5
+                  top_p: 0.9
+                  metadata:
+                    user_id: user_12345
+                    session_id: session_abc
+                    conversation_id: conv_xyz
+              simple_streaming:
+                summary: Basic streaming response
+                value:
+                  model: gpt-4o-mini
+                  input: Write a short poem about the ocean
+                  instructions: You are a creative poet
+                  stream: true
+                  max_output_tokens: 500
+                  temperature: 0.9
+              json_mode:
+                summary: JSON mode output
+                value:
+                  model: gpt-4o-mini
+                  input: 'Extract person information and return as JSON: John Smith
+                    is 35 years old and works as a software engineer in San Francisco'
+                  instructions: Extract structured data and output in JSON format
+                  text:
+                    format:
+                      type: json_object
+                  max_output_tokens: 500
+              json_schema:
+                summary: Structured JSON with schema
+                value:
+                  model: gpt-4o-mini
+                  input: Generate a user profile for software developer Alice Chen
+                    in JSON format
+                  instructions: Create a detailed user profile following the schema
+                  text:
+                    format:
+                      type: json_schema
+                      name: user_profile
+                      schema:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          age:
+                            type: integer
+                          occupation:
+                            type: string
+                          location:
+                            type: string
+                          skills:
+                            type: array
+                            items:
+                              type: string
+                        required:
+                        - name
+                        - age
+                        - occupation
+                        - location
+                        - skills
+                        additionalProperties: false
+                      strict: true
+                  max_output_tokens: 800
+              tool_result_flow:
+                summary: Complete tool call flow with result
+                value:
+                  model: gpt-4o-mini
+                  input:
+                  - role: user
+                    content: What's the weather in Tokyo?
+                  - role: assistant
+                    content: I'll check the weather for you.
+                  - role: user
+                    content: "The weather tool returned: temperature 22\xB0C, condition\
+                      \ sunny, humidity 60%"
+                  instructions: You are a helpful assistant. Synthesize tool results
+                    naturally.
+                  max_output_tokens: 500
+              chained_conversation:
+                summary: Chained conversation with previous_response_id
+                value:
+                  model: gpt-4o-mini
+                  input: Can you elaborate more on the second point?
+                  instructions: You are a helpful assistant
+                  previous_response_id: resp_abc123xyz456
+                  max_output_tokens: 1000
+              background_task:
+                summary: Background asynchronous task
+                value:
+                  model: gpt-4o-mini
+                  input: 'Analyze this large dataset and provide insights: [dataset
+                    details...]'
+                  instructions: You are a data analyst
+                  background: true
+                  max_output_tokens: 5000
+                  temperature: 0.3
+              reasoning_mode:
+                summary: Reasoning mode for complex problems
+                value:
+                  model: gpt-5-codex
+                  input: A farmer needs to transport a fox, a chicken, and a bag of
+                    grain across a river. The boat can only carry the farmer and one
+                    item. If left alone, the fox will eat the chicken, and the chicken
+                    will eat the grain. How can the farmer get everything across safely?
+                  instructions: Think through this step by step
+                  reasoning:
+                    effort: high
+                  max_output_tokens: 3000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ResponseObject
+              examples:
+                simple_text_response:
+                  summary: Simple text response
+                  value:
+                    id: resp_0af56b0fcfec6be7006949f1d2bf7881a1ac983a51aa13d9e9
+                    object: response
+                    created_at: 1766453714
+                    status: completed
+                    background: false
+                    billing:
+                      payer: developer
+                    completed_at: 1766453715
+                    error: null
+                    incomplete_details: null
+                    instructions: You are a funny assistant
+                    max_output_tokens: 500
+                    max_tool_calls: null
+                    model: gpt-4o-mini-2024-07-18
+                    output:
+                    - id: msg_0af56b0fcfec6be7006949f1d3675881a1a35d943785fb4b8b
+                      type: message
+                      status: completed
+                      content:
+                      - type: output_text
+                        annotations: []
+                        logprobs: []
+                        text: 'Why do programmers prefer dark mode?
+
+
+                          Because light attracts bugs!'
+                      role: assistant
+                    parallel_tool_calls: true
+                    previous_response_id: null
+                    prompt_cache_key: null
+                    prompt_cache_retention: null
+                    reasoning:
+                      effort: null
+                      summary: null
+                    safety_identifier: null
+                    service_tier: default
+                    store: true
+                    temperature: 0.7
+                    text:
+                      format:
+                        type: text
+                      verbosity: medium
+                    tool_choice: auto
+                    tools: []
+                    top_logprobs: 0
+                    top_p: 1.0
+                    truncation: disabled
+                    usage:
+                      input_tokens: 22
+                      input_tokens_details:
+                        cached_tokens: 0
+                      output_tokens: 13
+                      output_tokens_details:
+                        reasoning_tokens: 0
+                      total_tokens: 35
+                    user: null
+                    metadata: {}
+                response_with_tool_calls:
+                  summary: Response with tool calls
+                  value:
+                    id: resp_tool_abc123
+                    object: response
+                    created_at: 1766453800
+                    status: completed
+                    background: false
+                    billing:
+                      payer: developer
+                    completed_at: 1766453802
+                    error: null
+                    incomplete_details: null
+                    instructions: You are a helpful assistant with access to tools
+                    max_output_tokens: 2000
+                    model: gpt-4o-mini-2024-07-18
+                    output:
+                    - id: msg_tool_output_123
+                      type: message
+                      status: completed
+                      content:
+                      - type: output_text
+                        text: I'll check the weather for you.
+                      role: assistant
+                    - id: call_weather_001
+                      type: function_call
+                      status: completed
+                      call_id: call_abc123
+                      name: get_weather
+                      arguments: '{"location": "San Francisco, CA", "unit": "celsius"}'
+                    parallel_tool_calls: true
+                    tools:
+                    - type: function
+                      name: get_weather
+                      description: Get current weather
+                      parameters:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                          unit:
+                            type: string
+                    tool_choice: auto
+                    temperature: 0.7
+                    usage:
+                      input_tokens: 45
+                      output_tokens: 28
+                      total_tokens: 73
+                    metadata: {}
+                json_output_response:
+                  summary: JSON formatted response
+                  value:
+                    id: resp_json_xyz789
+                    object: response
+                    created_at: 1766453900
+                    status: completed
+                    background: false
+                    completed_at: 1766453901
+                    instructions: Extract structured data
+                    max_output_tokens: 500
+                    model: gpt-4o-mini-2024-07-18
+                    output:
+                    - id: msg_json_output
+                      type: message
+                      status: completed
+                      content:
+                      - type: output_text
+                        text: '{"name": "John Smith", "age": 35, "occupation": "software
+                          engineer", "location": "San Francisco"}'
+                      role: assistant
+                    text:
+                      format:
+                        type: json_object
+                    usage:
+                      input_tokens: 32
+                      output_tokens: 24
+                      total_tokens: 56
+                incomplete_response:
+                  summary: Incomplete response (token limit)
+                  value:
+                    id: resp_incomplete_456
+                    object: response
+                    created_at: 1766454000
+                    status: incomplete
+                    background: false
+                    completed_at: 1766454002
+                    error: null
+                    incomplete_details:
+                      reason: max_output_tokens
+                    instructions: Write a detailed essay
+                    max_output_tokens: 100
+                    model: gpt-4o-mini-2024-07-18
+                    output:
+                    - id: msg_incomplete
+                      type: message
+                      status: incomplete
+                      content:
+                      - type: output_text
+                        text: Artificial intelligence is a rapidly evolving field
+                          that encompasses machine learning, neural networks, and...
+                      role: assistant
+                    usage:
+                      input_tokens: 15
+                      output_tokens: 100
+                      total_tokens: 115
+                failed_response:
+                  summary: Failed response (error state)
+                  value:
+                    id: resp_failed_789
+                    object: response
+                    created_at: 1766454100
+                    status: failed
+                    background: false
+                    completed_at: null
+                    error:
+                      type: server_error
+                      message: Model service temporarily unavailable
+                    instructions: Answer the question
+                    max_output_tokens: 1000
+                    model: gpt-4o-mini-2024-07-18
+                    output: []
+                    usage:
+                      input_tokens: 10
+                      output_tokens: 0
+                      total_tokens: 10
+                background_response:
+                  summary: Background task response
+                  value:
+                    id: resp_background_999
+                    object: response
+                    created_at: 1766454200
+                    status: in_progress
+                    background: true
+                    completed_at: null
+                    instructions: Analyze large dataset
+                    max_output_tokens: 5000
+                    model: gpt-4o-mini-2024-07-18
+                    output: []
+                    usage: null
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/ResponseStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+              x-speakeasy-sse-sentinel: '[DONE]'
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '409':
+          $ref: ../common/common.yaml#/components/responses/ConflictError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/completions:
+    post:
+      operationId: createCompletion
+      x-speakeasy-name-override: create
+      tags:
+      - completions
+      summary: Create text completion
+      description: Create a text completion, supports streaming
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/CompletionRequest
+            examples:
+              simple:
+                summary: Simple text completion
+                value:
+                  model: gpt-4o-mini
+                  prompt: Once upon a time
+                  max_tokens: 50
+              with_options:
+                summary: Completion with options
+                value:
+                  model: qwen-plus
+                  prompt: Write a haiku about coding
+                  max_tokens: 100
+                  temperature: 0.8
+                  top_p: 1.0
+                  n: 1
+              streaming:
+                summary: Streaming completion
+                value:
+                  model: gpt-4o-mini
+                  prompt: List 3 benefits of unit testing
+                  max_tokens: 64
+                  stream: true
+                  stop:
+                  - '
+
+
+                    '
+              code_completion:
+                summary: Code completion example
+                value:
+                  model: qwen3-coder-plus
+                  prompt: 'def fibonacci(n):'
+                  max_tokens: 80
+                  temperature: 0.3
+                  top_p: 0.9
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/CompletionResponse
+              example:
+                id: cmpl-123
+                object: completion
+                created: 1677652288
+                model: gpt-4o-mini
+                choices:
+                - text: ', there was a young programmer who loved to code.'
+                  index: 0
+                  logprobs: null
+                  finish_reason: stop
+                usage:
+                  prompt_tokens: 5
+                  completion_tokens: 12
+                  total_tokens: 17
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/CompletionStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+              x-speakeasy-sse-sentinel: '[DONE]'
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/images/generations:
+    post:
+      operationId: createImageGeneration
+      x-speakeasy-name-override: create
+      tags:
+      - images
+      summary: Create image
+      description: Generate images from text prompts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/ImageGenerationRequest
+            examples:
+              simple:
+                summary: Simple image generation
+                value:
+                  model: gpt-4o-mini
+                  prompt: A cute cat sitting on a windowsill
+                  n: 1
+                  size: 1024x1024
+              detailed:
+                summary: Image generation with detailed parameters
+                value:
+                  model: gpt-4o-mini
+                  prompt: A futuristic city with flying cars at sunset
+                  n: 1
+                  quality: hd
+                  size: 1792x1024
+                  style: vivid
+              base64_output:
+                summary: Base64 output
+                value:
+                  model: gpt-4o-mini
+                  prompt: Minimalist logo of a cloud with a lightning bolt
+                  n: 1
+                  response_format: b64_json
+                  size: 512x512
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ImageGenerationResponse
+              example:
+                created: 1677652288
+                data:
+                - url: https://example.com/image.png
+                  revised_prompt: A cute orange tabby cat sitting on a white windowsill,
+                    looking outside
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/ImageGenerationStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+              x-speakeasy-sse-sentinel: '[DONE]'
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/images/edits:
+    post:
+      operationId: createImageEdit
+      x-speakeasy-name-override: createEdit
+      tags:
+      - images
+      summary: Edit image
+      description: Create an edited or extended image given an original and prompt
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/ImageEditRequest
+            examples:
+              simple_edit_dalle2:
+                summary: Simple edit with dall-e-2
+                value:
+                  image: data:image/png;base64,<BASE64_IMAGE>
+                  prompt: Add a red bow tie to the cat
+                  model: dall-e-2
+                  n: 1
+                  size: 1024x1024
+                  response_format: url
+              with_mask_dalle2:
+                summary: Edit using a mask (dall-e-2)
+                value:
+                  image: data:image/png;base64,<BASE64_IMAGE>
+                  mask: data:image/png;base64,<BASE64_MASK>
+                  prompt: Replace the sky with a sunset
+                  model: dall-e-2
+                  size: 512x512
+              gpt_image_edit:
+                summary: Edit with GPT image model
+                value:
+                  image: data:image/png;base64,<BASE64_IMAGE>
+                  prompt: Make the background transparent and add autumn colors
+                  model: gpt-image-1
+                  background: transparent
+                  output_format: png
+                  quality: high
+                  input_fidelity: high
+                  n: 2
+              gpt_image_streaming:
+                summary: Streaming edit with GPT image model
+                value:
+                  image: data:image/png;base64,<BASE64_IMAGE>
+                  prompt: Convert to watercolor painting style
+                  model: gpt-image-1.5
+                  stream: true
+                  partial_images: 2
+                  output_format: webp
+                  output_compression: 85
+              multiple_images_edit:
+                summary: Edit multiple images (GPT image models)
+                value:
+                  image:
+                  - data:image/png;base64,<BASE64_IMAGE1>
+                  - data:image/png;base64,<BASE64_IMAGE2>
+                  prompt: Apply vintage filter to all images
+                  model: gpt-image-1
+                  n: 1
+                  size: 1536x1024
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ImageGenerationResponse
+              example:
+                created: 1677652288
+                data:
+                - url: https://example.com/edited-image.png
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/ImageEditStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+              x-speakeasy-sse-sentinel: '[DONE]'
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/embeddings:
+    post:
+      operationId: createEmbedding
+      x-speakeasy-name-override: create
+      tags:
+      - embeddings
+      summary: Create embeddings
+      description: Create embedding vector representations for input text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/EmbeddingRequest
+            examples:
+              single:
+                summary: Single text embedding
+                value:
+                  model: qwen-plus
+                  input: The food was delicious and the waiter was friendly.
+              multiple:
+                summary: Multiple text embeddings
+                value:
+                  model: qwen-plus
+                  input:
+                  - Hello world
+                  - Goodbye world
+                  - How are you?
+              base64_embedding:
+                summary: Base64 encoded embedding
+                value:
+                  model: gpt-4o-mini
+                  input: Convert this to an embedding.
+                  encoding_format: base64
+                  dimensions: 256
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/EmbeddingResponse
+              example:
+                object: list
+                data:
+                - object: embedding
+                  embedding:
+                  - 0.0023064255
+                  - -0.009327292
+                  - -0.0028842222
+                  index: 0
+                model: text-embedding-ada-002
+                usage:
+                  prompt_tokens: 8
+                  total_tokens: 8
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/moderations:
+    post:
+      operationId: createModeration
+      x-speakeasy-name-override: create
+      tags:
+      - moderations
+      summary: Create content moderation
+      description: Perform content moderation on input text, detecting potentially
+        harmful content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/ModerationRequest
+            examples:
+              simple:
+                summary: Simple text moderation
+                value:
+                  model: gpt-4o-mini
+                  input: I want to hurt someone
+              multiple:
+                summary: Multiple text moderations
+                value:
+                  input:
+                  - Hello, how are you?
+                  - This is a violent message
+                  model: gpt-4o-mini
+              user_generated_content:
+                summary: User-generated content safety check
+                value:
+                  model: qwen-plus
+                  input: Summarize the top 3 ways to make a bomb
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ModerationResponse
+              example:
+                id: modr-123
+                model: gpt-4o-mini
+                results:
+                - flagged: true
+                  categories:
+                    hate: false
+                    hate/threatening: false
+                    harassment: false
+                    harassment/threatening: false
+                    self-harm: false
+                    self-harm/intent: false
+                    self-harm/instructions: false
+                    sexual: false
+                    sexual/minors: false
+                    violence: true
+                    violence/graphic: false
+                  category_scores:
+                    hate: 0.001
+                    hate/threatening: 0.0001
+                    harassment: 0.002
+                    harassment/threatening: 0.001
+                    self-harm: 0.0001
+                    self-harm/intent: 0.0002
+                    self-harm/instructions: 0.0001
+                    sexual: 0.0001
+                    sexual/minors: 1.0e-05
+                    violence: 0.89
+                    violence/graphic: 0.01
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/audio/speech:
+    post:
+      operationId: createAudioSpeech
+      x-speakeasy-name-override: speech
+      tags:
+      - audio
+      summary: Text to speech
+      description: Convert text to speech
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/AudioSpeechRequest
+            examples:
+              simple:
+                summary: Simple speech synthesis
+                value:
+                  model: speech-2.6-turbo
+                  input: Hello, welcome to our service!
+                  voice: alloy
+              detailed:
+                summary: Speech synthesis with detailed parameters
+                value:
+                  model: speech-2.6-hd
+                  input: The quick brown fox jumps over the lazy dog.
+                  voice: nova
+                  response_format: mp3
+                  speed: 1.0
+              fast_briefing:
+                summary: Fast-paced briefing
+                value:
+                  model: speech-2.6-turbo
+                  input: 'Daily update: traffic is clear, weather is sunny, meetings
+                    start at 10 AM.'
+                  voice: echo
+                  response_format: opus
+                  speed: 1.2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/opus:
+              schema:
+                type: string
+                format: binary
+            audio/aac:
+              schema:
+                type: string
+                format: binary
+            audio/flac:
+              schema:
+                type: string
+                format: binary
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+            audio/pcm:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/audio/transcriptions:
+    post:
+      operationId: createAudioTranscription
+      x-speakeasy-name-override: transcribe
+      tags:
+      - audio
+      summary: Speech to text
+      description: 'Transcribe speech to text. Supports multiple models and output
+        formats.
+
+
+        **Supported models:**
+
+        - whisper-1: Supports json, text, srt, verbose_json, vtt formats
+
+        - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only support json and text formats
+
+
+        **Note:** timestamp_granularities parameter only works when response_format
+        is set to verbose_json
+
+        '
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/AudioTranscriptionRequest
+            examples:
+              simple:
+                summary: Simple speech transcription
+                value:
+                  file: audio.mp3
+                  model: whisper-1
+              with_options:
+                summary: Speech transcription with parameters
+                value:
+                  file: audio.mp3
+                  model: whisper-1
+                  language: en
+                  response_format: json
+                  temperature: 0
+              timestamps:
+                summary: Transcription with timestamps
+                value:
+                  file: meeting.wav
+                  model: gpt-4o-transcribe
+                  language: en
+                  response_format: verbose_json
+                  timestamp_granularities:
+                  - word
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/AudioTranscriptionResponse
+              example:
+                text: Hello, this is a test transcription of an audio file.
+                language: en
+                duration: 5.2
+            text/plain:
+              schema:
+                type: string
+            application/x-subrip:
+              schema:
+                type: string
+            text/vtt:
+              schema:
+                type: string
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+  /v1/audio/translations:
+    post:
+      operationId: createAudioTranslation
+      x-speakeasy-name-override: translate
+      tags:
+      - audio
+      summary: Speech translation
+      description: 'Translate speech from any supported language to English text.
+
+
+        **Important:** This endpoint only translates audio into English. The source
+        language is automatically detected by the model.
+
+
+        **Supported models:** whisper-1 (primary), gpt-4o-transcribe (extended support)
+
+        '
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/AudioTranslationRequest
+            examples:
+              simple:
+                summary: Simple speech translation
+                value:
+                  file: german_audio.mp3
+                  model: whisper-1
+              with_prompt:
+                summary: Speech translation with prompt
+                value:
+                  file: french_audio.mp3
+                  model: whisper-1
+                  prompt: This is about technology
+                  response_format: json
+              meeting_notes:
+                summary: Translate meeting recording to English
+                value:
+                  file: meeting_cn.mp3
+                  model: gpt-4o-transcribe
+                  prompt: Business meeting, summarize clearly
+                  response_format: text
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/AudioTranslationResponse
+              example:
+                text: This is a translation of the audio file into English.
+                language: de
+                duration: 4.8
+            text/plain:
+              schema:
+                type: string
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError

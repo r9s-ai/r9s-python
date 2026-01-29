@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: R9S API
+  version: 0.3.0
+components:
+  schemas:
+    R9SError:
+      type: object
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          required:
+          - message
+          - type
+          properties:
+            message:
+              type: string
+              description: Error message
+            type:
+              type: string
+              description: Error type
+            code:
+              anyOf:
+              - type: string
+              - type: 'null'
+              description: Error code
+            param:
+              type: string
+              description: Related parameter
+        status:
+          type: integer
+          description: HTTP status code
+    BadRequestError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 400
+    AuthenticationError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 401
+    PermissionDeniedError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 403
+    NotFoundError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 404
+    ConflictError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 409
+      description: 'Resource conflict error. Reserved for future use cases:
+
+        - Duplicate resource creation
+
+        - Concurrent modification conflicts
+
+        - State conflicts in background tasks
+
+        '
+    UnprocessableEntityError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 422
+    RateLimitError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 429
+    InternalServerError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 500
+    ServiceUnavailableError:
+      allOf:
+      - $ref: '#/components/schemas/R9SError'
+      - type: object
+        properties:
+          status:
+            enum:
+            - 502
+            - 503
+  responses:
+    BadRequestError:
+      description: Invalid request parameters or unable to parse
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
+    AuthenticationError:
+      description: Invalid API Key or authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationError'
+    PermissionDeniedError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PermissionDeniedError'
+    NotFoundError:
+      description: Requested resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+    ConflictError:
+      description: Resource conflict (reserved for future use)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictError'
+    UnprocessableEntityError:
+      description: Parameter format is correct but semantically invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnprocessableEntityError'
+    RateLimitError:
+      description: Rate limit exceeded or insufficient balance
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+    ServiceUnavailableError:
+      description: Service temporarily unavailable or under maintenance
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceUnavailableError'
+  securitySchemes:
+    api_key:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
