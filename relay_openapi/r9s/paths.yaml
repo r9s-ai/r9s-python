@@ -1,0 +1,82 @@
+openapi: 3.1.0
+paths:
+  /v1/models:
+    get:
+      operationId: listModels
+      x-speakeasy-name-override: list
+      tags:
+      - models
+      summary: List available models
+      description: List all available models
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/ModelListResponse
+              example:
+                object: list
+                data:
+                - id: gpt-4o-mini
+                  object: model
+                  created: 1626777600
+                  owned_by: openai
+                - id: qwen-plus
+                  object: model
+                  created: 1626777600
+                  owned_by: ali
+                - id: claude-opus-4.5
+                  object: model
+                  created: 1626777600
+                  owned_by: custom
+                - id: whisper-1
+                  object: model
+                  created: 1626777600
+                  owned_by: openai
+                - id: speech-2.6-hd
+                  object: model
+                  created: 1626777600
+                  owned_by: minimax
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  /v1/models/{model}:
+    get:
+      operationId: retrieveModel
+      x-speakeasy-name-override: retrieve
+      tags:
+      - models
+      summary: Retrieve model details
+      description: Retrieve detailed information for a specified model
+      parameters:
+      - name: model
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Model name
+        example: gpt-4o-mini
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/Model
+              example:
+                id: gpt-4o-mini
+                object: model
+                created: 1626777600
+                owned_by: openai
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '404':
+          $ref: ../common/common.yaml#/components/responses/NotFoundError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
