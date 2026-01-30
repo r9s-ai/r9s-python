@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional
 
+from r9s.parallel import CallResult, map_parallel, parallel
 from r9s.sdk import R9S as _R9S
 
 
