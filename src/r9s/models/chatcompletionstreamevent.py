@@ -23,7 +23,7 @@ class ChatCompletionStreamEventTypedDict(TypedDict):
     model: str
     choices: List[ChatCompletionStreamChoiceTypedDict]
     r"""Array of completion choices. May be empty in the final chunk when only usage is returned."""
-    object: Literal["chat.completion.chunk"]
+    object: Literal["chat.completion.chunk",""]
     system_fingerprint: NotRequired[str]
     usage: NotRequired[UsageTypedDict]
 
@@ -43,8 +43,8 @@ class ChatCompletionStreamEvent(BaseModel):
 
     OBJECT: Annotated[
         Annotated[
-            Literal["chat.completion.chunk"],
-            AfterValidator(validate_const("chat.completion.chunk")),
+            Literal["chat.completion.chunk", ""],
+            AfterValidator(validate_const(("chat.completion.chunk", ""))),
         ],
         pydantic.Field(alias="object"),
     ] = "chat.completion.chunk"

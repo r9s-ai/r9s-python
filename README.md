@@ -13,6 +13,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/r9s-ai/r9s-python?style=social)](https://github.com/r9s-ai/r9s-python)
 
 </div>
+
 ---
 
 :rocket: [Quick Start](#quick-start) - :computer: [CLI Usage](#cli-usage) - :books: [SDK Usage](#python-sdk-usage) - :wrench: [Development](#development)

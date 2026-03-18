@@ -16,6 +16,7 @@ def main() -> None:
     cfg = render_config()
     if cfg is None:
         st.stop()
+        return
 
     def page_chat() -> None:
         chat.run(cfg)

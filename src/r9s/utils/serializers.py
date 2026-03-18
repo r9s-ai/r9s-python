@@ -128,6 +128,11 @@ def validate_const(v):
         if is_union(type(c)) and type(None) in get_args(type(c)) and c is None:
             return None
 
+        if isinstance(v, (list, tuple, set, frozenset)):
+            if c not in v:
+                raise ValueError(f"Expected one of {v}")
+            return c
+
         if v != c:
             raise ValueError(f"Expected {v}")
 
