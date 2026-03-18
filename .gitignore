@@ -1,4 +1,5 @@
 .venv/
+.vscode/
 src/*.egg-info/
 **/__pycache__/
 .python-version
