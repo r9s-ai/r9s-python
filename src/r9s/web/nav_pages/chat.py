@@ -3,13 +3,22 @@ from __future__ import annotations
 import base64
 from typing import Any, Dict, List, Optional, Tuple, cast
 
+import httpx
 import streamlit as st
 
 from r9s.agents.local_store import LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.skills.loader import format_skills_context, load_skills
 from r9s.models.message import MessageTypedDict
-from r9s.web.common import AppConfig, as_text, format_api_error, init_chat_state, r9s_client
+from r9s.web.common import (
+    AppConfig,
+    as_text,
+    format_api_error,
+    get_env_default,
+    init_chat_state,
+    r9s_client,
+)
+from r9s.web.model_filters import CHAT_COMPLETIONS_ENDPOINT, filter_model_ids_by_endpoint
 
 
 @st.cache_data(ttl=60)
@@ -33,6 +42,21 @@ def _build_system_prompt_from_agent(
     return base, skills
 
 
+@st.cache_data(ttl=60)
+def _get_model_ids(api_key: str, base_url: str) -> List[str]:
+    url = base_url.rstrip("/") + "/models"
+    params = [("expand", "endpoints")]
+    headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
+    with httpx.Client(timeout=10.0) as client:
+        resp = client.get(url, headers=headers, params=params)
+    resp.raise_for_status()
+    payload = resp.json()
+    data: Any = payload.get("data") if isinstance(payload, dict) else payload
+    if not isinstance(data, list):
+        return []
+    return filter_model_ids_by_endpoint(data, CHAT_COMPLETIONS_ENDPOINT)
+
+
 def run(cfg: AppConfig) -> None:
     st.header("Chat")
     init_chat_state()
@@ -53,6 +77,47 @@ def run(cfg: AppConfig) -> None:
     if not generation_in_progress:
         with st.sidebar:
             st.subheader("Chat Settings")
+            default_model = get_env_default("R9S_MODEL", "")
+
+            model_ids: List[str] = []
+            try:
+                model_ids = _get_model_ids(cfg.api_key, cfg.base_url)
+            except Exception as exc:
+                st.warning(f"Failed to fetch models list: {format_api_error(exc)}")
+
+            model_id = ""
+            if model_ids:
+                st.caption(f"仅展示支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型")
+                options = model_ids + ["(custom)"]
+                if default_model in model_ids:
+                    idx = options.index(default_model)
+                elif default_model:
+                    idx = options.index("(custom)")
+                else:
+                    idx = 0
+                selection = st.selectbox(
+                    "Model",
+                    options=options,
+                    index=idx,
+                    key="chat_model_select",
+                )
+                if selection == "(custom)":
+                    model_id = st.text_input(
+                        "Custom model id",
+                        value=default_model,
+                        key="chat_model_custom",
+                    ).strip()
+                else:
+                    model_id = selection.strip()
+            else:
+                st.caption(
+                    f"未获取到支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型列表；可用自定义模型 id"
+                )
+                model_id = st.text_input("Model", value=default_model, key="chat_model_fallback").strip()
+
+            if model_id:
+                st.session_state["R9S_MODEL"] = model_id
+
             use_stream = st.checkbox("Stream output", value=True, key="chat_use_stream")
             agent_names = _get_agent_names()
             agent_name = st.selectbox(
@@ -78,14 +143,20 @@ def run(cfg: AppConfig) -> None:
                 st.rerun()
 
         # Store sidebar values in session state for use during generation
+        st.session_state["_chat_model_id"] = model_id
         st.session_state["_chat_use_stream"] = use_stream
         st.session_state["_chat_agent_name"] = agent_name
         st.session_state["_chat_vars_raw"] = vars_raw
     else:
         # During generation, restore values from session state
+        model_id = st.session_state.get("_chat_model_id", get_env_default("R9S_MODEL", "")).strip()
         use_stream = st.session_state.get("_chat_use_stream", True)
         agent_name = st.session_state.get("_chat_agent_name", "(none)")
         vars_raw = st.session_state.get("_chat_vars_raw", "{}")
+
+    if not model_id:
+        st.info("请选择一个模型（Model），然后再开始对话。")
+        return
 
     # Build system prompt only when not generating (it's already saved in pending_messages)
     system_prompt: Optional[str] = None
@@ -271,7 +342,6 @@ def run(cfg: AppConfig) -> None:
                         # Handle text/code/document files
                         raw_bytes = upload.getvalue()
                         text_content: str | None = None
-                        encoding_used = "utf-8"
 
                         # Try UTF-8 first (most common)
                         try:
@@ -284,7 +354,6 @@ def run(cfg: AppConfig) -> None:
                             for enc in ("utf-16", "gbk", "gb2312", "latin-1"):
                                 try:
                                     text_content = raw_bytes.decode(enc)
-                                    encoding_used = enc
                                     break
                                 except (UnicodeDecodeError, LookupError):
                                     continue
@@ -292,7 +361,6 @@ def run(cfg: AppConfig) -> None:
                         # Fallback: decode with replacement characters
                         if text_content is None:
                             text_content = raw_bytes.decode("utf-8", errors="replace")
-                            encoding_used = "utf-8 (lossy)"
                             st.warning(
                                 f"File '{upload.name}' contains non-UTF-8 characters. "
                                 "Some characters may display incorrectly."
@@ -352,7 +420,7 @@ def run(cfg: AppConfig) -> None:
             result_text = ""
             with r9s_client(cfg) as r9s:
                 if use_stream:
-                    stream = r9s.chat.create(model=cfg.model, messages=messages, stream=True)
+                    stream = r9s.chat.create(model=model_id, messages=messages, stream=True)
                     for event in stream:
                         # Check stop flag
                         if st.session_state.get("stop_generation", False):
@@ -389,7 +457,7 @@ def run(cfg: AppConfig) -> None:
                         st.session_state["stopped_content_to_save"] = stopped_content
                         return False, result_text
                 else:
-                    res = r9s.chat.create(model=cfg.model, messages=messages, stream=False)
+                    res = r9s.chat.create(model=model_id, messages=messages, stream=False)
                     if res.choices and res.choices[0].message:
                         result_text = as_text(res.choices[0].message.content)
                     placeholder.markdown(result_text or "")

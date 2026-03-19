@@ -28,6 +28,10 @@ Common options:
 # Bind to all interfaces (e.g. containers / remote hosts)
 r9s web --host 0.0.0.0 --port 8501
 
+# By default, if the port is in use, r9s will auto-pick a free one.
+# To fail fast instead:
+r9s web --host 0.0.0.0 --port 8501 --no-auto-port
+
 # Override via flags (you can also fill in the sidebar)
 r9s web --api-key ... --base-url https://api.r9s.ai/v1 --model gpt-5-mini
 ```
@@ -38,7 +42,7 @@ Provide these either in the sidebar after launch or via environment variables:
 
 - `R9S_API_KEY`: required
 - `R9S_BASE_URL`: default `https://api.r9s.ai/v1`
-- `R9S_MODEL`: required for the Chat page (used by `chat.create`)
+- `R9S_MODEL`: optional default for the Chat page (you can also pick from the model dropdown)
 - `R9S_IMAGE_MODEL`: optional for the Images page (passed to `images.create(model=...)`)
 
 ## Pages

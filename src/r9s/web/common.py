@@ -36,7 +36,6 @@ def format_api_error(exc: Exception) -> str:
 class AppConfig:
     api_key: str
     base_url: str
-    model: str
 
 
 def get_env_default(name: str, default: str = "") -> str:
@@ -67,11 +66,9 @@ def render_config() -> Optional[AppConfig]:
             "R9S_BASE_URL",
             value=get_env_default("R9S_BASE_URL", "https://api.r9s.ai/v1"),
         )
-        model = st.text_input("R9S_MODEL", value=get_env_default("R9S_MODEL", ""))
 
         st.session_state["R9S_API_KEY"] = api_key
         st.session_state["R9S_BASE_URL"] = base_url
-        st.session_state["R9S_MODEL"] = model
 
         if not api_key.strip():
             st.warning("Please set R9S_API_KEY in the sidebar (or set environment variable).")
@@ -79,13 +76,9 @@ def render_config() -> Optional[AppConfig]:
         if not base_url.strip():
             st.warning("Please set R9S_BASE_URL (or set environment variable).")
             return None
-        if not model.strip():
-            st.warning("Please set R9S_MODEL (or set environment variable).")
-            return None
         return AppConfig(
             api_key=api_key.strip(),
             base_url=base_url.strip(),
-            model=model.strip(),
         )
 
 

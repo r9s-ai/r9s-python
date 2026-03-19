@@ -65,3 +65,17 @@ def test_models_shortcuts_details_parse() -> None:
     args = parser.parse_args(["models", "-d"])
     assert args.command == "models"
     assert args.details is True
+
+
+def test_web_auto_port_default_and_override() -> None:
+    parser = build_parser()
+
+    args = parser.parse_args(["web"])
+    assert args.command == "web"
+    assert args.host == "127.0.0.1"
+    assert args.port == 8501
+    assert args.auto_port is True
+
+    args = parser.parse_args(["web", "--no-auto-port"])
+    assert args.command == "web"
+    assert args.auto_port is False
