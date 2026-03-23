@@ -1,0 +1,1115 @@
+openapi: 3.1.0
+info:
+  title: R9S Gemini API
+  version: 0.3.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+- url: https://api.r9s.ai
+  description: Production Server
+paths:
+  /v1beta/models/{model}:generateContent:
+    post:
+      operationId: generateContent
+      x-speakeasy-name-override: generateContent
+      tags:
+      - Gemini
+      summary: Generate content (non-streaming)
+      description: 'Generates a model response given an input GenerateContentRequest.
+
+        This endpoint supports multimodal inputs (text, images, audio, video, PDFs)
+        and conversation history.
+
+
+        Authentication uses Bearer token in Authorization header (compatible with
+        your platform''s OpenAI-style auth).
+
+        '
+      security:
+      - api_key: []
+      parameters:
+      - name: model
+        in: path
+        required: true
+        description: 'The model resource name in format models/{model}.
+
+          Examples: models/gemini-3-flash, models/gemini-3-pro,
+
+          '
+        schema:
+          type: string
+          example: models/gemini-3-flash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/GeminiGenerateContentRequest
+            examples:
+              simple_text:
+                summary: Simple text generation
+                value:
+                  contents:
+                  - parts:
+                    - text: Write a story about a magic backpack.
+              chat_with_history:
+                summary: Chat with conversation history
+                value:
+                  contents:
+                  - role: user
+                    parts:
+                    - text: Hello! I need help with my code.
+                  - role: model
+                    parts:
+                    - text: Great to meet you. What would you like to know?
+                  - role: user
+                    parts:
+                    - text: How do I reverse a string in Python?
+              image_analysis:
+                summary: Image analysis with inline base64 data
+                value:
+                  contents:
+                  - parts:
+                    - text: What's in this image?
+                    - inline_data:
+                        mime_type: image/jpeg
+                        data: /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA...
+              json_mode:
+                summary: Structured JSON output
+                value:
+                  contents:
+                  - parts:
+                    - text: List 5 popular cookie recipes
+                  generationConfig:
+                    responseMimeType: application/json
+                    responseSchema:
+                      type: object
+                      properties:
+                        recipes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              recipe_name:
+                                type: string
+              with_system_instruction:
+                summary: With system instruction and generation config
+                value:
+                  systemInstruction:
+                    parts:
+                    - text: You are a helpful coding assistant. Always provide clear
+                        explanations with code examples.
+                  contents:
+                  - parts:
+                    - text: Explain async/await in JavaScript
+                  generationConfig:
+                    temperature: 0.7
+                    topP: 0.95
+                    topK: 40
+                    maxOutputTokens: 2048
+              image_generation:
+                summary: "Generate an image (IMAGE \u6A21\u6001\u8F93\u51FA)"
+                value:
+                  contents:
+                  - parts:
+                    - text: Generate a watercolor illustration of a lighthouse at
+                        sunset
+                  generationConfig:
+                    responseMimeType: image/png
+                  safetySettings:
+                  - category: HARM_CATEGORY_HATE_SPEECH
+                    threshold: BLOCK_MEDIUM_AND_ABOVE
+                  systemInstruction:
+                    parts:
+                    - text: You are an image generation assistant. Produce a single
+                        high-quality image.
+              function_calling:
+                summary: Function calling example
+                value:
+                  contents:
+                  - parts:
+                    - text: What's the weather in San Francisco?
+                  tools:
+                  - functionDeclarations:
+                    - name: get_current_weather
+                      description: Get the current weather in a given location
+                      parameters:
+                        type: object
+                        properties:
+                          location:
+                            type: string
+                            description: The city and state, e.g. San Francisco, CA
+                          unit:
+                            type: string
+                            enum:
+                            - celsius
+                            - fahrenheit
+                        required:
+                        - location
+                  toolConfig:
+                    functionCallingConfig:
+                      mode: AUTO
+              video_analysis:
+                summary: Video analysis with inline data
+                value:
+                  contents:
+                  - parts:
+                    - text: Describe what happens in this video
+                    - inline_data:
+                        mime_type: video/mp4
+                        data: AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDE...
+              audio_transcription:
+                summary: Audio transcription with inline data
+                value:
+                  contents:
+                  - parts:
+                    - text: Transcribe this audio and summarize the main points
+                    - inline_data:
+                        mime_type: audio/mp3
+                        data: SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAA...
+              file_uri_image:
+                summary: Image analysis using file URI
+                value:
+                  contents:
+                  - parts:
+                    - text: Analyze this image from Cloud Storage
+                    - file_data:
+                        mime_type: image/jpeg
+                        file_uri: gs://my-bucket/images/photo.jpg
+              pdf_analysis:
+                summary: PDF document analysis
+                value:
+                  contents:
+                  - parts:
+                    - text: Summarize the key points from this PDF document
+                    - inline_data:
+                        mime_type: application/pdf
+                        data: JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nCi9QYWdlcyAy...
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/GeminiGenerateContentResponse
+              examples:
+                text_response:
+                  summary: Simple text response
+                  value:
+                    candidates:
+                    - content:
+                        parts:
+                        - text: Once upon a time, there was a magic backpack that
+                            could hold anything...
+                        role: model
+                      finishReason: STOP
+                      safetyRatings:
+                      - category: HARM_CATEGORY_HARASSMENT
+                        probability: NEGLIGIBLE
+                      - category: HARM_CATEGORY_HATE_SPEECH
+                        probability: NEGLIGIBLE
+                      - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+                        probability: NEGLIGIBLE
+                      - category: HARM_CATEGORY_DANGEROUS_CONTENT
+                        probability: NEGLIGIBLE
+                    usageMetadata:
+                      promptTokenCount: 8
+                      candidatesTokenCount: 125
+                      totalTokenCount: 133
+                    modelVersion: gemini-3-flash
+                    responseId: 5f8c2a3b-9d4e-4f1a-8c7b-2e9f6d5a1c8e
+                json_response:
+                  summary: Structured JSON response
+                  value:
+                    candidates:
+                    - content:
+                        parts:
+                        - text: '{"recipes":[{"recipe_name":"Chocolate Chip Cookies"},{"recipe_name":"Oatmeal
+                            Raisin Cookies"},{"recipe_name":"Peanut Butter Cookies"},{"recipe_name":"Sugar
+                            Cookies"},{"recipe_name":"Snickerdoodles"}]}'
+                        role: model
+                      finishReason: STOP
+                    usageMetadata:
+                      promptTokenCount: 12
+                      candidatesTokenCount: 68
+                      totalTokenCount: 80
+                    responseId: 7a9b4c2d-3e8f-4a1b-9c6d-5f2a8e7b3c1d
+                function_call_response:
+                  summary: Function call response
+                  value:
+                    candidates:
+                    - content:
+                        parts:
+                        - functionCall:
+                            name: get_current_weather
+                            args:
+                              location: San Francisco, CA
+                              unit: fahrenheit
+                        role: model
+                      finishReason: STOP
+                    responseId: 2d4f6a8c-9b3e-4c1a-7d5f-8e9a2b6c3d4f
+                image_response:
+                  summary: "Image generation response (IMAGE \u6A21\u6001)"
+                  value:
+                    candidates:
+                    - content:
+                        parts:
+                        - inline_data:
+                            mime_type: image/png
+                            data: iVBORw0KGgoAAAANSUhEUgAA...
+                        role: model
+                      finishReason: STOP
+                      safetyRatings:
+                      - category: HARM_CATEGORY_HATE_SPEECH
+                        probability: NEGLIGIBLE
+                    usageMetadata:
+                      promptTokenCount: 24
+                      candidatesTokenCount: 0
+                      totalTokenCount: 24
+                    modelVersion: gemini-3-flash-proview-001
+                    responseId: 9e3f7b2a-4c8d-4f1e-6a9b-3d5c2f8e7a1b
+                video_response:
+                  summary: Video analysis response
+                  value:
+                    candidates:
+                    - content:
+                        parts:
+                        - text: The video shows a sunset over the ocean, with waves
+                            gently rolling onto the beach. A person is walking along
+                            the shoreline...
+                        role: model
+                      finishReason: STOP
+                    usageMetadata:
+                      promptTokenCount: 156
+                      candidatesTokenCount: 89
+                      totalTokenCount: 245
+                    modelVersion: gemini-3-flash
+                    responseId: 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  /v1beta/models/{model}:streamGenerateContent:
+    post:
+      summary: Generate content (streaming)
+      description: 'Generates a streamed response from the model given an input GenerateContentRequest.
+
+        The response is returned as Server-Sent Events (SSE) for real-time streaming.
+
+
+        Authentication uses Bearer token in Authorization header (compatible with
+        your platform''s OpenAI-style auth).
+
+        '
+      operationId: streamGenerateContent
+      x-speakeasy-name-override: streamGenerateContent
+      tags:
+      - Gemini
+      security:
+      - api_key: []
+      parameters:
+      - name: model
+        in: path
+        required: true
+        description: 'The model resource name in format models/{model}.
+
+          Examples: models/gemini-3-flash, models/gemini-3-pro
+
+          '
+        schema:
+          type: string
+          example: models/gemini-3-flash
+      - name: alt
+        in: query
+        required: false
+        description: Data format for the response (use 'sse' for server-sent events)
+        schema:
+          type: string
+          enum:
+          - sse
+          default: sse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/GeminiGenerateContentRequest
+            examples:
+              simple_stream:
+                summary: Simple streaming text generation
+                value:
+                  contents:
+                  - parts:
+                    - text: Tell me a story about a robot learning to paint.
+              streaming_chat:
+                summary: Streaming chat response
+                value:
+                  contents:
+                  - role: user
+                    parts:
+                    - text: Explain quantum computing
+                  generationConfig:
+                    temperature: 0.8
+                    maxOutputTokens: 1024
+              streaming_with_images:
+                summary: Streaming with image input
+                value:
+                  contents:
+                  - parts:
+                    - text: Describe this image in detail
+                    - inline_data:
+                        mime_type: image/jpeg
+                        data: base64_encoded_image_data...
+              streaming_with_system_instruction:
+                summary: Streaming with system instruction
+                value:
+                  systemInstruction:
+                    parts:
+                    - text: You are a professional translator. Translate all text to
+                        French and maintain formal tone.
+                  contents:
+                  - parts:
+                    - text: Write a business email about scheduling a meeting
+                  generationConfig:
+                    temperature: 0.3
+                    maxOutputTokens: 512
+              streaming_function_calling:
+                summary: Streaming with function calling
+                value:
+                  contents:
+                  - parts:
+                    - text: Search for restaurants near me and get their ratings
+                  tools:
+                  - functionDeclarations:
+                    - name: search_nearby_places
+                      description: Search for places near a location
+                      parameters:
+                        type: object
+                        properties:
+                          place_type:
+                            type: string
+                            description: Type of place (restaurant, cafe, etc)
+                          radius:
+                            type: integer
+                            description: Search radius in meters
+                        required:
+                        - place_type
+                  toolConfig:
+                    functionCallingConfig:
+                      mode: ANY
+              streaming_json_mode:
+                summary: Streaming structured JSON output
+                value:
+                  contents:
+                  - parts:
+                    - text: Generate a product catalog with 5 items
+                  generationConfig:
+                    temperature: 0.5
+                    responseMimeType: application/json
+                    responseSchema:
+                      type: object
+                      properties:
+                        products:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              price:
+                                type: number
+                              category:
+                                type: string
+      responses:
+        '200':
+          description: Successful streaming response (Server-Sent Events)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: 'Stream of Server-Sent Events, each containing a GeminiGenerateContentResponse
+                  JSON object.
+
+                  Each chunk represents partial content as it''s generated.
+
+                  '
+              examples:
+                stream_chunks:
+                  summary: Example stream chunks
+                  value: 'data: {"candidates":[{"content":{"parts":[{"text":"Once"}],"role":"model"},"finishReason":""}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":1,"totalTokenCount":11}}
+
+
+                    data: {"candidates":[{"content":{"parts":[{"text":" upon"}],"role":"model"},"finishReason":""}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":2,"totalTokenCount":12}}
+
+
+                    data: {"candidates":[{"content":{"parts":[{"text":" a"}],"role":"model"},"finishReason":""}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":3,"totalTokenCount":13}}
+
+
+                    data: {"candidates":[{"content":{"parts":[{"text":" time"}],"role":"model"},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":4,"totalTokenCount":14}}
+
+                    '
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  /v1beta/models/{model}:embedContent:
+    post:
+      summary: Generate embeddings
+      description: 'Generates a text embedding vector from the input content using
+        the specified embedding model.
+
+        Supports different task types for optimized embeddings (retrieval, similarity,
+        classification, etc.).
+
+
+        Authentication uses Bearer token in Authorization header (compatible with
+        your platform''s OpenAI-style auth).
+
+        '
+      operationId: embedContent
+      x-speakeasy-name-override: embedContent
+      tags:
+      - Gemini
+      security:
+      - api_key: []
+      parameters:
+      - name: model
+        in: path
+        required: true
+        description: 'The embedding model resource name.
+
+          Examples: models/text-embedding-005, models/embedding-001
+
+          '
+        schema:
+          type: string
+          example: models/text-embedding-005
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/GeminiEmbedContentRequest
+            examples:
+              simple_embedding:
+                summary: Simple text embedding
+                value:
+                  content:
+                    parts:
+                    - text: What is the meaning of life?
+              query_embedding:
+                summary: Query embedding for retrieval
+                value:
+                  content:
+                    parts:
+                    - text: How do I reset my password?
+                  taskType: RETRIEVAL_QUERY
+              document_embedding:
+                summary: Document embedding with title
+                value:
+                  content:
+                    parts:
+                    - text: To reset your password, go to Settings > Security > Password
+                        Reset. Click 'Reset Password' and follow the instructions
+                        sent to your email.
+                  taskType: RETRIEVAL_DOCUMENT
+                  title: Password Reset Guide
+              semantic_similarity:
+                summary: Embedding for semantic similarity
+                value:
+                  content:
+                    parts:
+                    - text: The quick brown fox jumps over the lazy dog
+                  taskType: SEMANTIC_SIMILARITY
+              reduced_dimensions:
+                summary: Embedding with reduced dimensionality
+                value:
+                  content:
+                    parts:
+                    - text: Machine learning is a subset of artificial intelligence
+                  taskType: CLASSIFICATION
+                  outputDimensionality: 256
+              code_retrieval:
+                summary: Code retrieval query embedding
+                value:
+                  content:
+                    parts:
+                    - text: function to sort an array in javascript
+                  taskType: CODE_RETRIEVAL_QUERY
+              clustering:
+                summary: Embedding for clustering analysis
+                value:
+                  content:
+                    parts:
+                    - text: Machine learning algorithms can be categorized into supervised,
+                        unsupervised, and reinforcement learning approaches
+                  taskType: CLUSTERING
+              question_answering:
+                summary: Embedding for question answering
+                value:
+                  content:
+                    parts:
+                    - text: What are the health benefits of drinking green tea?
+                  taskType: QUESTION_ANSWERING
+              fact_verification:
+                summary: Embedding for fact verification
+                value:
+                  content:
+                    parts:
+                    - text: The Great Wall of China is visible from space with the naked eye
+                  taskType: FACT_VERIFICATION
+      responses:
+        '200':
+          description: Successful response with embedding vector
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/GeminiEmbedContentResponse
+              examples:
+                embedding_response:
+                  summary: Embedding response example
+                  value:
+                    embedding:
+                      values:
+                      - 0.013168523
+                      - -0.008711934
+                      - -0.046782676
+                      - 0.000699915
+                      - -0.024826486
+                      - 0.006124973
+                      - -0.021250842
+                      - 0.009423063
+                      - -0.037530474
+                      - 0.021392729
+                full_dimension_response:
+                  summary: Full dimension embedding (768 dimensions truncated for
+                    display)
+                  value:
+                    embedding:
+                      values:
+                      - 0.013168523
+                      - -0.008711934
+                      - -0.046782676
+                      - 0.000699915
+                      - -0.024826486
+                      - 0.006124973
+                      - -0.021250842
+                      - 0.009423063
+                      - -0.037530474
+                      - 0.021392729
+                      - 0.015234
+                      - -0.012456
+                      - 0.034567
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  /v1beta/models/{model}:batchGenerateContent:
+    post:
+      summary: Create async batch generation job
+      description: 'Creates an asynchronous batch job to process multiple generateContent
+        requests.
+
+        Returns a job object immediately. Results are available within 24 hours at
+        50% lower cost.
+
+        Use GET /v1beta/batches/{name} to poll job status and retrieve results.
+
+        '
+      operationId: batchGenerateContent
+      x-speakeasy-name-override: batchGenerateContent
+      tags:
+      - Gemini
+      security:
+      - api_key: []
+      parameters:
+      - name: model
+        in: path
+        required: true
+        description: Default model for all requests in the batch
+        schema:
+          type: string
+          example: models/gemini-3-flash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/GeminiBatchGenerateContentRequest
+            examples:
+              inline_requests:
+                summary: Inline requests (max 20MB)
+                value:
+                  batch:
+                    display_name: my-batch-job
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Write a haiku about the ocean
+                          metadata:
+                            key: req-1
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Explain quantum entanglement simply
+                            generationConfig:
+                              maxOutputTokens: 256
+                          metadata:
+                            key: req-2
+              file_input:
+                summary: File-based input (max 2GB)
+                value:
+                  batch:
+                    display_name: large-batch-job
+                    input_config:
+                      file_name: files/abc123def456
+              batch_image_analysis:
+                summary: Batch image analysis requests
+                value:
+                  batch:
+                    display_name: batch-image-analysis
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            contents:
+                            - parts:
+                              - text: What objects are in this image?
+                              - inline_data:
+                                  mime_type: image/jpeg
+                                  data: /9j/4AAQSkZJRgABAQAAAQABAAD...
+                          metadata:
+                            image_id: img_001
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Describe the colors and composition
+                              - inline_data:
+                                  mime_type: image/png
+                                  data: iVBORw0KGgoAAAANSUhEUgAA...
+                          metadata:
+                            image_id: img_002
+              batch_json_output:
+                summary: Batch with structured JSON output
+                value:
+                  batch:
+                    display_name: batch-json-extraction
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Extract product information from this description
+                            generationConfig:
+                              responseMimeType: application/json
+                              responseSchema:
+                                type: object
+                                properties:
+                                  product_name:
+                                    type: string
+                                  price:
+                                    type: number
+                                  features:
+                                    type: array
+                                    items:
+                                      type: string
+                          metadata:
+                            doc_id: doc_001
+                        - request:
+                            contents:
+                            - parts:
+                              - text: List all key specifications in JSON format
+                            generationConfig:
+                              responseMimeType: application/json
+                          metadata:
+                            doc_id: doc_002
+              batch_with_system_instruction:
+                summary: Batch with system instruction
+                value:
+                  batch:
+                    display_name: batch-translation-job
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            systemInstruction:
+                              parts:
+                              - text: You are a professional translator. Translate to Spanish.
+                            contents:
+                            - parts:
+                              - text: Hello, how are you today?
+                          metadata:
+                            text_id: text_001
+                        - request:
+                            systemInstruction:
+                              parts:
+                              - text: You are a professional translator. Translate to French.
+                            contents:
+                            - parts:
+                              - text: Good morning, welcome to our service
+                          metadata:
+                            text_id: text_002
+              batch_with_tools:
+                summary: Batch with function calling
+                value:
+                  batch:
+                    display_name: batch-function-calling
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            contents:
+                            - parts:
+                              - text: What's the weather in Tokyo?
+                            tools:
+                            - functionDeclarations:
+                              - name: get_current_weather
+                                description: Get current weather
+                                parameters:
+                                  type: object
+                                  properties:
+                                    location:
+                                      type: string
+                                  required:
+                                  - location
+                            toolConfig:
+                              functionCallingConfig:
+                                mode: AUTO
+                          metadata:
+                            query_id: weather_001
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Calculate the total cost of 5 items at $29.99 each
+                            tools:
+                            - functionDeclarations:
+                              - name: calculate
+                                description: Perform calculations
+                                parameters:
+                                  type: object
+                                  properties:
+                                    expression:
+                                      type: string
+                          metadata:
+                            query_id: calc_001
+      responses:
+        '200':
+          description: Batch job created successfully
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/GeminiBatchGenerateContentResponse
+              examples:
+                job_created:
+                  summary: Job created and pending
+                  value:
+                    name: batches/123456789
+                    display_name: my-batch-job
+                    state: JOB_STATE_PENDING
+                    create_time: '2026-01-29T10:00:00Z'
+                    update_time: '2026-01-29T10:00:00Z'
+                    input_config:
+                      requests:
+                        requests:
+                        - request:
+                            contents:
+                            - parts:
+                              - text: Write a haiku about the ocean
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  # /v1beta/batches/{name}:
+  #   get:
+  #     summary: Get batch job status
+  #     description: 'Retrieve the current status and details of a batch job.
+
+  #       Poll this endpoint to check job progress and retrieve results when state is
+  #       JOB_STATE_SUCCEEDED.
+
+  #       '
+  #     operationId: getBatch
+  #     x-speakeasy-name-override: getBatch
+  #     tags:
+  #     - Gemini
+  #     security:
+  #     - api_key: []
+  #     parameters:
+  #     - name: name
+  #       in: path
+  #       required: true
+  #       description: Batch job name (e.g., batches/123456789)
+  #       schema:
+  #         type: string
+  #         example: batches/123456789
+  #     responses:
+  #       '200':
+  #         description: Batch job details
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: ./schemas.yaml#/components/schemas/GeminiBatch
+  #             examples:
+  #               job_pending:
+  #                 summary: Job is pending
+  #                 value:
+  #                   name: batches/123456789
+  #                   display_name: my-batch-job
+  #                   state: JOB_STATE_PENDING
+  #                   create_time: '2026-01-29T10:00:00Z'
+  #                   update_time: '2026-01-29T10:00:00Z'
+  #                   input_config:
+  #                     requests:
+  #                       requests:
+  #                       - request:
+  #                           contents:
+  #                           - parts:
+  #                             - text: Write a haiku
+  #               job_running:
+  #                 summary: Job is running
+  #                 value:
+  #                   name: batches/123456789
+  #                   display_name: my-batch-job
+  #                   state: JOB_STATE_RUNNING
+  #                   create_time: '2026-01-29T10:00:00Z'
+  #                   update_time: '2026-01-29T10:05:00Z'
+  #                   input_config:
+  #                     requests:
+  #                       requests:
+  #                       - request:
+  #                           contents:
+  #                           - parts:
+  #                             - text: Write a haiku
+  #               job_succeeded:
+  #                 summary: Job completed successfully
+  #                 value:
+  #                   name: batches/123456789
+  #                   display_name: my-batch-job
+  #                   state: JOB_STATE_SUCCEEDED
+  #                   create_time: '2026-01-29T10:00:00Z'
+  #                   update_time: '2026-01-29T10:15:00Z'
+  #                   input_config:
+  #                     requests:
+  #                       requests:
+  #                       - request:
+  #                           contents:
+  #                           - parts:
+  #                             - text: Write a haiku about the ocean
+  #                   output_config:
+  #                     inlined_responses:
+  #                     - response:
+  #                         candidates:
+  #                         - content:
+  #                             parts:
+  #                             - text: Gentle waves caress the shore...
+  #                             role: model
+  #                           finishReason: STOP
+  #                         usageMetadata:
+  #                           promptTokenCount: 6
+  #                           candidatesTokenCount: 25
+  #                           totalTokenCount: 31
+  #                   batch_stats:
+  #                     successfulRequestCount: 1
+  #                     failedRequestCount: 0
+  #               job_failed:
+  #                 summary: Job failed
+  #                 value:
+  #                   name: batches/123456789
+  #                   display_name: my-batch-job
+  #                   state: JOB_STATE_FAILED
+  #                   create_time: '2026-01-29T10:00:00Z'
+  #                   update_time: '2026-01-29T10:10:00Z'
+  #                   error:
+  #                     code: 500
+  #                     message: Internal processing error
+  #                     status: INTERNAL
+  #       '404':
+  #         $ref: ../common/common.yaml#/components/responses/NotFoundError
+  #       '401':
+  #         $ref: ../common/common.yaml#/components/responses/AuthenticationError
+  #       '500':
+  #         $ref: ../common/common.yaml#/components/responses/InternalServerError
+  # /v1beta/batches:
+  #   get:
+  #     summary: List batch jobs
+  #     description: 'List recent batch jobs with optional pagination.
+
+  #       Returns batch jobs sorted by creation time (most recent first).
+
+  #       '
+  #     operationId: listBatches
+  #     x-speakeasy-name-override: listBatches
+  #     tags:
+  #     - Gemini
+  #     security:
+  #     - api_key: []
+  #     parameters:
+  #     - name: page_size
+  #       in: query
+  #       required: false
+  #       description: Maximum number of jobs to return (default 20)
+  #       schema:
+  #         type: integer
+  #         default: 20
+  #         maximum: 100
+  #     - name: page_token
+  #       in: query
+  #       required: false
+  #       description: Token from previous response for pagination
+  #       schema:
+  #         type: string
+  #     responses:
+  #       '200':
+  #         description: List of batch jobs
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: ./schemas.yaml#/components/schemas/GeminiListBatchesResponse
+  #             examples:
+  #               batch_list:
+  #                 summary: List of batch jobs
+  #                 value:
+  #                   batches:
+  #                   - name: batches/123456789
+  #                     display_name: batch-job-1
+  #                     state: JOB_STATE_SUCCEEDED
+  #                     create_time: '2026-01-29T10:00:00Z'
+  #                     update_time: '2026-01-29T10:15:00Z'
+  #                   - name: batches/987654321
+  #                     display_name: batch-job-2
+  #                     state: JOB_STATE_RUNNING
+  #                     create_time: '2026-01-29T09:30:00Z'
+  #                     update_time: '2026-01-29T09:35:00Z'
+  #                   next_page_token: abc123nextpage
+  #       '401':
+  #         $ref: ../common/common.yaml#/components/responses/AuthenticationError
+  #       '500':
+  #         $ref: ../common/common.yaml#/components/responses/InternalServerError
+  # /v1beta/batches/{name}:cancel:
+  #   post:
+  #     summary: Cancel batch job
+  #     description: 'Cancel a running or pending batch job.
+
+  #       Cancellation stops further processing but preserves partial results already
+  #       generated.
+
+  #       '
+  #     operationId: cancelBatch
+  #     x-speakeasy-name-override: cancelBatch
+  #     tags:
+  #     - Gemini
+  #     security:
+  #     - api_key: []
+  #     parameters:
+  #     - name: name
+  #       in: path
+  #       required: true
+  #       description: Batch job name to cancel (e.g., batches/123456789)
+  #       schema:
+  #         type: string
+  #         example: batches/123456789
+  #     responses:
+  #       '200':
+  #         description: Batch job cancelled successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: ./schemas.yaml#/components/schemas/GeminiBatch
+  #             examples:
+  #               job_cancelled:
+  #                 summary: Job cancelled
+  #                 value:
+  #                   name: batches/123456789
+  #                   display_name: my-batch-job
+  #                   state: JOB_STATE_CANCELLED
+  #                   create_time: '2026-01-29T10:00:00Z'
+  #                   update_time: '2026-01-29T10:08:00Z'
+  #                   input_config:
+  #                     requests:
+  #                       requests:
+  #                       - request:
+  #                           contents:
+  #                           - parts:
+  #                             - text: Write a haiku
+  #                   output_config:
+  #                     inlined_responses:
+  #                     - response:
+  #                         candidates:
+  #                         - content:
+  #                             parts:
+  #                             - text: Partial response before cancellation...
+  #                             role: model
+  #                   batch_stats:
+  #                     successfulRequestCount: 5
+  #                     failedRequestCount: 0
+  #       '404':
+  #         $ref: ../common/common.yaml#/components/responses/NotFoundError
+  #       '401':
+  #         $ref: ../common/common.yaml#/components/responses/AuthenticationError
+  #       '500':
+  #         $ref: ../common/common.yaml#/components/responses/InternalServerError
+  # /v1beta/batches/{name}:delete:
+  #   post:
+  #     summary: Delete batch job
+  #     description: 'Delete a batch job from the listing.
+  #
+  #       This removes the job metadata but does not affect any output files already
+  #       generated.
+  #
+  #       '
+  #     operationId: deleteBatch
+  #     x-speakeasy-name-override: deleteBatch
+  #     tags:
+  #     - Gemini
+  #     security:
+  #     - api_key: []
+  #     parameters:
+  #     - name: name
+  #       in: path
+  #       required: true
+  #       description: Batch job name to delete (e.g., batches/123456789)
+  #       schema:
+  #         type: string
+  #         example: batches/123456789
+  #     responses:
+  #       '200':
+  #         description: Batch job deleted successfully
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: object
+  #               properties:
+  #                 success:
+  #                   type: boolean
+  #                   example: true
+  #       '404':
+  #         $ref: ../common/common.yaml#/components/responses/NotFoundError
+  #       '401':
+  #         $ref: ../common/common.yaml#/components/responses/AuthenticationError
+  #       '500':
+  #         $ref: ../common/common.yaml#/components/responses/InternalServerError
+components:
+  securitySchemes:
+    api_key:
+      $ref: ../common/common.yaml#/components/securitySchemes/api_key

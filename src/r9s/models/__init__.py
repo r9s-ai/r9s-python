@@ -270,19 +270,11 @@ if TYPE_CHECKING:
         CreateCompletionResponseBodyTypedDict,
         CreateCompletionResponseTypedDict,
     )
-    from .createengineembeddingop import (
-        CreateEngineEmbeddingRequest,
-        CreateEngineEmbeddingRequestTypedDict,
-    )
     from .createmessageop import (
         CreateMessageResponse,
         CreateMessageResponseBody,
         CreateMessageResponseBodyTypedDict,
         CreateMessageResponseTypedDict,
-    )
-    from .createproxyrequestop import (
-        CreateProxyRequestRequest,
-        CreateProxyRequestRequestTypedDict,
     )
     from .createresponseop import (
         CreateResponseResponse,
@@ -306,13 +298,6 @@ if TYPE_CHECKING:
         EmbeddingResponseTypedDict,
         EmbeddingUsage,
         EmbeddingUsageTypedDict,
-    )
-    from .engineembeddingrequest import (
-        EngineEmbeddingRequest,
-        EngineEmbeddingRequestEncodingFormat,
-        EngineEmbeddingRequestInput,
-        EngineEmbeddingRequestInputTypedDict,
-        EngineEmbeddingRequestTypedDict,
     )
     from .functioncall import FunctionCall, FunctionCallTypedDict
     from .editimageop import (
@@ -675,14 +660,10 @@ __all__ = [
     "CreateCompletionResponseBody",
     "CreateCompletionResponseBodyTypedDict",
     "CreateCompletionResponseTypedDict",
-    "CreateEngineEmbeddingRequest",
-    "CreateEngineEmbeddingRequestTypedDict",
     "CreateMessageResponse",
     "CreateMessageResponseBody",
     "CreateMessageResponseBodyTypedDict",
     "CreateMessageResponseTypedDict",
-    "CreateProxyRequestRequest",
-    "CreateProxyRequestRequestTypedDict",
     "CreateResponseResponse",
     "CreateResponseResponseBody",
     "CreateResponseResponseBodyTypedDict",
@@ -709,11 +690,6 @@ __all__ = [
     "EmbeddingUsageTypedDict",
     "EncodingFormat",
     "Engine",
-    "EngineEmbeddingRequest",
-    "EngineEmbeddingRequestEncodingFormat",
-    "EngineEmbeddingRequestInput",
-    "EngineEmbeddingRequestInputTypedDict",
-    "EngineEmbeddingRequestTypedDict",
     "Error",
     "ErrorTypedDict",
     "Extra",
@@ -1092,14 +1068,10 @@ _dynamic_imports: dict[str, str] = {
     "CreateCompletionResponseBody": ".createcompletionop",
     "CreateCompletionResponseBodyTypedDict": ".createcompletionop",
     "CreateCompletionResponseTypedDict": ".createcompletionop",
-    "CreateEngineEmbeddingRequest": ".createengineembeddingop",
-    "CreateEngineEmbeddingRequestTypedDict": ".createengineembeddingop",
     "CreateMessageResponse": ".createmessageop",
     "CreateMessageResponseBody": ".createmessageop",
     "CreateMessageResponseBodyTypedDict": ".createmessageop",
     "CreateMessageResponseTypedDict": ".createmessageop",
-    "CreateProxyRequestRequest": ".createproxyrequestop",
-    "CreateProxyRequestRequestTypedDict": ".createproxyrequestop",
     "CreateResponseResponse": ".createresponseop",
     "CreateResponseResponseBody": ".createresponseop",
     "CreateResponseResponseBodyTypedDict": ".createresponseop",
@@ -1121,11 +1093,6 @@ _dynamic_imports: dict[str, str] = {
     "EmbeddingResponseTypedDict": ".embeddingresponse",
     "EmbeddingUsage": ".embeddingresponse",
     "EmbeddingUsageTypedDict": ".embeddingresponse",
-    "EngineEmbeddingRequest": ".engineembeddingrequest",
-    "EngineEmbeddingRequestEncodingFormat": ".engineembeddingrequest",
-    "EngineEmbeddingRequestInput": ".engineembeddingrequest",
-    "EngineEmbeddingRequestInputTypedDict": ".engineembeddingrequest",
-    "EngineEmbeddingRequestTypedDict": ".engineembeddingrequest",
     "FunctionCall": ".functioncall",
     "FunctionCallTypedDict": ".functioncall",
     "EditImageResponseBody": ".editimageop",
