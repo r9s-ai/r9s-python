@@ -17,6 +17,8 @@ paths:
     $ref: ./relay_openapi/r9s/paths.yaml#/paths/~1v1~1models
   /v1/models/{model}:
     $ref: ./relay_openapi/r9s/paths.yaml#/paths/~1v1~1models~1{model}
+  /v1/portal/management/usage:
+    $ref: ./relay_openapi/r9s/paths.yaml#/paths/~1v1~1portal~1management~1usage
 
   # Anthropic-compatible API
   /v1/messages:

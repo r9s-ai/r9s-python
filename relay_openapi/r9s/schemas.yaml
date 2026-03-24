@@ -34,3 +34,33 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Model'
+    CreditsUsageRecord:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          description: Record timestamp as a Unix timestamp in seconds
+        tokens:
+          type: integer
+          description: Tokens consumed for the record
+        model:
+          type: string
+          description: Model name for the record
+      additionalProperties: true
+    CreditsUsageData:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreditsUsageRecord'
+        total_tokens:
+          type: integer
+          description: Total tokens consumed in the queried range
+      additionalProperties: true
+    CreditsUsageResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreditsUsageData'
+      additionalProperties: true

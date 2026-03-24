@@ -30,6 +30,7 @@ class SDKConfiguration:
     async_client_supplied: bool
     debug_logger: Logger
     security: Optional[Union[models.Security, Callable[[], models.Security]]] = None
+    manage_key: Optional[str] = None
     server_url: Optional[str] = ""
     server_idx: Optional[int] = 0
     language: str = "python"
