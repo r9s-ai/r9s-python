@@ -4,13 +4,19 @@ components:
     # Content and Parts
     GeminiPart:
       type: object
-      description: A single part of content that can be text, inline data, file data, or function call
+      description: A single part of content that can be text, media, tool calls, or code execution data
       oneOf:
         - type: object
           properties:
             text:
               type: string
               description: Text content
+            thought:
+              type: boolean
+              description: Whether this text part is a thought summary
+            thoughtSignature:
+              type: string
+              description: Signature used to reference a thought part
           required: [text]
         - type: object
           properties:
@@ -44,6 +50,28 @@ components:
                 response:
                   type: object
           required: [functionResponse]
+        - type: object
+          properties:
+            executableCode:
+              type: object
+              description: Code emitted by the model for built-in code execution
+              properties:
+                language:
+                  type: string
+                code:
+                  type: string
+          required: [executableCode]
+        - type: object
+          properties:
+            codeExecutionResult:
+              type: object
+              description: Result returned from built-in code execution
+              properties:
+                outcome:
+                  type: string
+                output:
+                  type: string
+          required: [codeExecutionResult]
 
     GeminiInlineData:
       type: object
@@ -140,6 +168,80 @@ components:
         responseSchema:
           type: object
           description: Schema for structured output (when responseMimeType is application/json)
+          additionalProperties: true
+        responseJsonSchema:
+          type: object
+          description: Alternate JSON Schema representation for structured outputs
+          additionalProperties: true
+        _responseJsonSchema:
+          type: object
+          description: Internal/alternate JSON Schema field exposed by the official API reference
+          additionalProperties: true
+        seed:
+          type: integer
+          description: Optional deterministic seed for generation
+        presencePenalty:
+          type: number
+          format: float
+          description: Penalty for repeated topic presence
+        frequencyPenalty:
+          type: number
+          format: float
+          description: Penalty for repeated token frequency
+        responseLogprobs:
+          type: boolean
+          description: Whether to return log probabilities for output tokens
+        logprobs:
+          type: integer
+          description: Number of top candidate logprobs to return
+          minimum: 0
+        enableEnhancedCivicAnswers:
+          type: boolean
+          description: Whether to enable enhanced civic answers behavior
+        responseModalities:
+          type: array
+          description: Output modalities requested from the model
+          items:
+            type: string
+        speechConfig:
+          type: object
+          description: Speech generation configuration
+          additionalProperties: true
+        thinkingConfig:
+          type: object
+          description: Thinking configuration for Gemini thinking-capable models
+          properties:
+            includeThoughts:
+              type: boolean
+              description: Whether to include thought summaries in output parts
+            thinkingBudget:
+              type: integer
+              description: Budget controlling raw thinking token usage
+            thinkingLevel:
+              type: string
+              enum:
+                - THINKING_LEVEL_UNSPECIFIED
+                - MINIMAL
+                - LOW
+                - MEDIUM
+                - HIGH
+              description: Preset thinking level
+        imageConfig:
+          type: object
+          description: Image generation configuration
+          properties:
+            aspectRatio:
+              type: string
+            imageSize:
+              type: string
+        mediaResolution:
+          type: string
+          description: Input media resolution hint
+          enum:
+            - MEDIA_RESOLUTION_UNSPECIFIED
+            - MEDIA_RESOLUTION_LOW
+            - MEDIA_RESOLUTION_MEDIUM
+            - MEDIA_RESOLUTION_HIGH
 
     GeminiSafetySetting:
       type: object
@@ -152,14 +254,17 @@ components:
             - HARM_CATEGORY_HATE_SPEECH
             - HARM_CATEGORY_SEXUALLY_EXPLICIT
             - HARM_CATEGORY_DANGEROUS_CONTENT
+            - HARM_CATEGORY_CIVIC_INTEGRITY
           description: Harm category to configure
         threshold:
           type: string
           enum:
+            - HARM_BLOCK_THRESHOLD_UNSPECIFIED
             - BLOCK_NONE
             - BLOCK_ONLY_HIGH
             - BLOCK_MEDIUM_AND_ABOVE
             - BLOCK_LOW_AND_ABOVE
+            - OFF
           description: Threshold for blocking content
       required: [category, threshold]
 
@@ -200,6 +305,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GeminiFunctionDeclaration'
+        codeExecution:
+          type: object
+          description: Built-in code execution tool configuration
+          additionalProperties: true
 
     GeminiToolConfig:
       type: object
@@ -212,6 +321,11 @@ components:
               type: string
               enum: [AUTO, ANY, NONE]
               description: Function calling mode
+            allowedFunctionNames:
+              type: array
+              description: Restrict function calling to a subset of declarations
+              items:
+                type: string
 
     # Request Schemas
     GeminiGenerateContentRequest:
@@ -241,6 +355,9 @@ components:
         cachedContent:
           type: string
           description: Cached content reference
+        store:
+          type: boolean
+          description: Overrides project-level logging behavior for the request
       required: [contents]
 
     GeminiEmbedContentRequest:
@@ -295,7 +412,19 @@ components:
           $ref: '#/components/schemas/GeminiContent'
         finishReason:
           type: string
-          enum: [STOP, MAX_TOKENS, SAFETY, RECITATION, OTHER]
+          enum:
+            - FINISH_REASON_UNSPECIFIED
+            - STOP
+            - MAX_TOKENS
+            - SAFETY
+            - RECITATION
+            - LANGUAGE
+            - OTHER
+            - BLOCKLIST
+            - PROHIBITED_CONTENT
+            - SPII
+            - MALFORMED_FUNCTION_CALL
+            - IMAGE_SAFETY
           description: Reason for finishing generation
         safetyRatings:
           type: array
@@ -304,9 +433,38 @@ components:
         citationMetadata:
           type: object
           description: Citation information
+          additionalProperties: true
         tokenCount:
           type: integer
           description: Token count for this candidate
+        groundingAttributions:
+          type: array
+          description: Attribution information for grounded answers
+          items:
+            type: object
+            additionalProperties: true
+        groundingMetadata:
+          type: object
+          description: Grounding metadata for the candidate
+          additionalProperties: true
+        avgLogprobs:
+          type: number
+          format: float
+          description: Average log probability score of the candidate
+        logprobsResult:
+          type: object
+          description: Log probability details for output tokens
+          additionalProperties: true
+        urlContextMetadata:
+          type: object
+          description: Metadata related to URL context retrieval
+          additionalProperties: true
+        index:
+          type: integer
+          description: Index of this candidate in the response list
+        finishMessage:
+          type: string
+          description: Additional detail describing the finish reason
 
     GeminiPromptFeedback:
       type: object
@@ -314,7 +472,13 @@ components:
       properties:
         blockReason:
           type: string
-          enum: [BLOCK_REASON_UNSPECIFIED, SAFETY, OTHER]
+          enum:
+            - BLOCK_REASON_UNSPECIFIED
+            - SAFETY
+            - OTHER
+            - BLOCKLIST
+            - PROHIBITED_CONTENT
+            - IMAGE_SAFETY
           description: Reason for blocking the prompt
         safetyRatings:
           type: array
