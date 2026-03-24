@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from r9s.completions import Completions
     from r9s.edits import Edits
     from r9s.embeddings import Embeddings
+    from r9s.gemini import Gemini
     from r9s.images import Images
     from r9s.messages import Messages
     from r9s.models_ import Models
@@ -42,6 +43,7 @@ class R9S(BaseSDK):
     moderations: "Moderations"
     audio: "AudioSDK"
     search: "Search"
+    gemini: "Gemini"
     _sub_sdk_map = {
         "models": ("r9s.models_", "Models"),
         "chat": ("r9s.chat", "Chat"),
@@ -54,6 +56,7 @@ class R9S(BaseSDK):
         "moderations": ("r9s.moderations", "Moderations"),
         "audio": ("r9s.audio_sdk", "AudioSDK"),
         "search": ("r9s.search", "Search"),
+        "gemini": ("r9s.gemini", "Gemini"),
     }
 
     def __init__(

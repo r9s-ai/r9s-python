@@ -12,12 +12,17 @@ servers:
 security:
 - api_key: []
 paths:
+  # R9S native API
   /v1/models:
     $ref: ./relay_openapi/r9s/paths.yaml#/paths/~1v1~1models
   /v1/models/{model}:
     $ref: ./relay_openapi/r9s/paths.yaml#/paths/~1v1~1models~1{model}
+
+  # Anthropic-compatible API
   /v1/messages:
     $ref: ./relay_openapi/anthropic/paths.yaml#/paths/~1v1~1messages
+
+  # OpenAI-compatible API
   /v1/chat/completions:
     $ref: ./relay_openapi/openai/paths.yaml#/paths/~1v1~1chat~1completions
   /v1/responses:
@@ -38,22 +43,13 @@ paths:
     $ref: ./relay_openapi/openai/paths.yaml#/paths/~1v1~1audio~1transcriptions
   /v1/audio/translations:
     $ref: ./relay_openapi/openai/paths.yaml#/paths/~1v1~1audio~1translations
+
+  # Gemini native API
   /v1beta/models/{model}:generateContent:
     $ref: ./relay_openapi/gemini/paths.yaml#/paths/~1v1beta~1models~1{model}:generateContent
   /v1beta/models/{model}:streamGenerateContent:
     $ref: ./relay_openapi/gemini/paths.yaml#/paths/~1v1beta~1models~1{model}:streamGenerateContent
-  /v1beta/models/{model}:embedContent:
-    $ref: ./relay_openapi/gemini/paths.yaml#/paths/~1v1beta~1models~1{model}:embedContent
-  /v1beta/models/{model}:batchGenerateContent:
-    $ref: ./relay_openapi/gemini/paths.yaml#/paths/~1v1beta~1models~1{model}:batchGenerateContent
 components:
   securitySchemes:
     api_key:
       $ref: ./relay_openapi/common/common.yaml#/components/securitySchemes/api_key
-  schemas:
-    GeminiBatchGenerateContentRequest:
-      $ref: ./relay_openapi/gemini/schemas.yaml#/components/schemas/GeminiBatchGenerateContentRequest
-    GeminiBatchGenerateContentResponse:
-      $ref: ./relay_openapi/gemini/schemas.yaml#/components/schemas/GeminiBatchGenerateContentResponse
-    GeminiBatch:
-      $ref: ./relay_openapi/gemini/schemas.yaml#/components/schemas/GeminiBatch
