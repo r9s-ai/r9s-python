@@ -355,6 +355,7 @@ if TYPE_CHECKING:
     from .jsonschema import JSONSchema, JSONSchemaTypedDict
     from .message import Content, ContentTypedDict, Message, MessageTypedDict, Role
     from .messagecontent import MessageContent, MessageContentTypedDict, Type
+    from .listmodelsop import ListModelsRequest, ListModelsRequestTypedDict
     from .model import Model, ModelTypedDict
     from .modellistresponse import ModelListResponse, ModelListResponseTypedDict
     from .moderationcategories import (
@@ -755,6 +756,8 @@ __all__ = [
     "MessageContentTypedDict",
     "MessageTypedDict",
     "Modalities",
+    "ListModelsRequest",
+    "ListModelsRequestTypedDict",
     "Model",
     "ModelListResponse",
     "ModelListResponseTypedDict",
@@ -1146,6 +1149,8 @@ _dynamic_imports: dict[str, str] = {
     "MessageContent": ".messagecontent",
     "MessageContentTypedDict": ".messagecontent",
     "Type": ".messagecontent",
+    "ListModelsRequest": ".listmodelsop",
+    "ListModelsRequestTypedDict": ".listmodelsop",
     "Model": ".model",
     "ModelTypedDict": ".model",
     "ModelListResponse": ".modellistresponse",

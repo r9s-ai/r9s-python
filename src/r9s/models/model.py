@@ -5,7 +5,7 @@ import pydantic
 from pydantic.functional_validators import AfterValidator
 from r9s.types import BaseModel
 from r9s.utils import validate_const
-from typing import Literal
+from typing import List, Literal, Optional
 from typing_extensions import Annotated, TypedDict
 
 
@@ -17,6 +17,14 @@ class ModelTypedDict(TypedDict):
     owned_by: str
     r"""Model owner"""
     object: Literal["model"]
+    modality: str
+    r"""Expanded modality description, for example text+image->text"""
+    context_length: int
+    r"""Expanded context length in tokens"""
+    channels: List[str]
+    r"""Expanded channel names"""
+    endpoints: List[str]
+    r"""Expanded endpoint paths"""
 
 
 class Model(BaseModel):
@@ -28,6 +36,18 @@ class Model(BaseModel):
 
     owned_by: str
     r"""Model owner"""
+
+    modality: Optional[str] = None
+    r"""Expanded modality description, for example text+image->text"""
+
+    context_length: Optional[int] = None
+    r"""Expanded context length in tokens"""
+
+    channels: Optional[List[str]] = None
+    r"""Expanded channel names"""
+
+    endpoints: Optional[List[str]] = None
+    r"""Expanded endpoint paths"""
 
     OBJECT: Annotated[
         Annotated[Literal["model"], AfterValidator(validate_const("model"))],

@@ -8,6 +8,27 @@ paths:
       - models
       summary: List available models
       description: List all available models
+      parameters:
+      - name: expand
+        in: query
+        required: false
+        description: Comma-separated expand fields. Supported values include all, channels, modality, context_length, and endpoints.
+        schema:
+          type: string
+        example: all
+      - name: filter
+        in: query
+        required: false
+        description: Filter rule; can be repeated. Supported keys include channel(s), input_modality/input_modalities, output_modality/output_modalities, endpoint(s)/path(s), and context_length_min/context_length_max.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - channel=*open*
+        - endpoint=/v1/responses
       responses:
         '200':
           description: Successful response

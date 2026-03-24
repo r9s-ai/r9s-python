@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import base64
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple, cast
 
-import httpx
 import streamlit as st
 
 from r9s.agents.local_store import LocalAgentStore
 from r9s.agents.template import render as render_agent_template
+from r9s.client import R9S
 from r9s.skills.loader import format_skills_context, load_skills
 from r9s.models.message import MessageTypedDict
 from r9s.web.common import (
@@ -44,16 +44,9 @@ def _build_system_prompt_from_agent(
 
 @st.cache_data(ttl=60)
 def _get_model_ids(api_key: str, base_url: str) -> List[str]:
-    url = base_url.rstrip("/") + "/models"
-    params = [("expand", "endpoints")]
-    headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
-    with httpx.Client(timeout=10.0) as client:
-        resp = client.get(url, headers=headers, params=params)
-    resp.raise_for_status()
-    payload = resp.json()
-    data: Any = payload.get("data") if isinstance(payload, dict) else payload
-    if not isinstance(data, list):
-        return []
+    with R9S(api_key=api_key, server_url=base_url) as r9s:
+        response = r9s.models.list(expand="endpoints")
+    data = [item.model_dump(by_alias=True, exclude_none=True) for item in response.data]
     return filter_model_ids_by_endpoint(data, CHAT_COMPLETIONS_ENDPOINT)
 
 

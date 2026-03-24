@@ -1,11 +1,8 @@
 import argparse
 import json
 import os
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
-from urllib.parse import urlencode
 
 try:
     from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
@@ -63,6 +60,7 @@ from r9s.cli_tools.web_cli import handle_web
 from r9s.cli_tools.config import get_api_key, resolve_base_url, is_valid_url
 from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.run_cli import handle_run
+from r9s.client import R9S
 from r9s.cli_tools.tools.registry import (
     APPS,
     supported_app_names_for_config,
@@ -107,64 +105,31 @@ def fetch_models(base_url: str, api_key: str, timeout: int = 5, endpoint_filter:
     Returns:
         List of model IDs (sorted)
     """
-    url = base_url.rstrip("/") + "/models"
-    # If endpoint_filter is provided, request endpoints expansion
-    if endpoint_filter:
-        url += f"?{urlencode({'expand': 'endpoints'})}"
-
-    headers = {"Authorization": f"Bearer {api_key}"}
-    req = urllib.request.Request(url, headers=headers)
-
     with LoadingSpinner("Fetching models"):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                payload = resp.read()
-        except (urllib.error.URLError, TimeoutError) as exc:
+            with R9S(api_key=api_key, server_url=base_url, timeout_ms=timeout * 1000) as r9s:
+                response = r9s.models.list(
+                    expand="endpoints" if endpoint_filter else None
+                )
+        except Exception as exc:
             error(
-                f"Failed to fetch model list from {url} ({exc}). "
+                f"Failed to fetch model list from {base_url.rstrip('/')}/models ({exc}). "
                 "You can enter a model manually."
             )
             return []
 
-        try:
-            data = json.loads(payload.decode("utf-8"))
-        except json.JSONDecodeError:
-            error(
-                "Model list response is not valid JSON. Skipping automatic selection."
-            )
-            return []
-
-    if isinstance(data, list) and all(isinstance(item, str) for item in data):
-        return sorted(data)
-    if isinstance(data, dict) and "data" in data and isinstance(data["data"], list):
-        models = []
-        for item in data["data"]:
-            model_id = None
-            if isinstance(item, dict) and "id" in item:
-                model_id = str(item["id"])
-            elif isinstance(item, str):
-                model_id = item
-
-            # Apply endpoint filter if specified
-            if model_id and endpoint_filter:
-                if isinstance(item, dict) and "endpoints" in item:
-                    endpoints = item["endpoints"]
-                    if isinstance(endpoints, list):
-                        # Check if the required endpoint is in the list
-                        if endpoint_filter not in endpoints:
-                            continue
-                    else:
-                        # If endpoints field exists but is not a list, skip filtering
-                        pass
-                else:
-                    # If no endpoints field, include the model (backward compatibility)
-                    pass
-
-            if model_id:
-                models.append(model_id)
-        return sorted(models)
-    error("Could not parse model list from response. Please enter a model manually.")
-    return []
+    models = []
+    for item in response.data:
+        model_id = str(item.id).strip()
+        if not model_id:
+            continue
+        if endpoint_filter:
+            endpoints = item.endpoints
+            if isinstance(endpoints, list):
+                if endpoint_filter not in endpoints:
+                    continue
+        models.append(model_id)
+    return sorted(models)
 
 
 def choose_model(
