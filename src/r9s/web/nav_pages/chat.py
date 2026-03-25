@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import base64
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import streamlit as st
 
 from r9s.agents.local_store import LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.client import R9S
+from r9s.conversation.models import ConversationRequest
+from r9s.conversation.runtime import content_to_text, run_conversation, stream_conversation
 from r9s.skills.loader import format_skills_context, load_skills
 from r9s.models.message import MessageTypedDict
 from r9s.web.common import (
@@ -16,7 +18,6 @@ from r9s.web.common import (
     format_api_error,
     get_env_default,
     init_chat_state,
-    r9s_client,
 )
 from r9s.web.model_filters import CHAT_COMPLETIONS_ENDPOINT, filter_model_ids_by_endpoint
 
@@ -411,35 +412,14 @@ def run(cfg: AppConfig) -> None:
         def send_request() -> Tuple[bool, str]:
             """Send request and return (completed, assistant_text)."""
             result_text = ""
-            with r9s_client(cfg) as r9s:
-                if use_stream:
-                    stream = r9s.chat.create(model=model_id, messages=messages, stream=True)
-                    for event in stream:
-                        # Check stop flag
-                        if st.session_state.get("stop_generation", False):
-                            stop_suffix = "Response stopped by user."
-                            partial = result_text or st.session_state.get("current_assistant_partial", "")
-                            stopped_content = (
-                                f"{partial}\n\n{stop_suffix}" if partial else stop_suffix
-                            )
-                            placeholder.markdown(stopped_content)
-                            # Mark stopped content to avoid duplicate append
-                            st.session_state["stopped_content_to_save"] = stopped_content
-                            return False, result_text
-
-                        if not getattr(event, "choices", None):
-                            continue
-                        delta = event.choices[0].delta
-                        piece = getattr(delta, "content", None) or ""
-                        if not piece:
-                            continue
-                        # Ensure piece is text (may come as list/other types)
-                        if not isinstance(piece, str):
-                            piece = as_text(piece)
-                        result_text += piece
-                        st.session_state["current_assistant_partial"] = result_text
-                        placeholder.markdown(result_text)
-                    # If stream ended but user requested stop, still record partial content
+            request = ConversationRequest(
+                api_key=cfg.api_key,
+                base_url=cfg.base_url,
+                model=model_id,
+                messages=messages,
+            )
+            if use_stream:
+                for event in stream_conversation(request):
                     if st.session_state.get("stop_generation", False):
                         stop_suffix = "Response stopped by user."
                         partial = result_text or st.session_state.get("current_assistant_partial", "")
@@ -449,11 +429,28 @@ def run(cfg: AppConfig) -> None:
                         placeholder.markdown(stopped_content)
                         st.session_state["stopped_content_to_save"] = stopped_content
                         return False, result_text
-                else:
-                    res = r9s.chat.create(model=model_id, messages=messages, stream=False)
-                    if res.choices and res.choices[0].message:
-                        result_text = as_text(res.choices[0].message.content)
-                    placeholder.markdown(result_text or "")
+
+                    if event.type != "text_delta":
+                        continue
+                    piece = event.text
+                    if not isinstance(piece, str):
+                        piece = content_to_text(piece)
+                    result_text += piece
+                    st.session_state["current_assistant_partial"] = result_text
+                    placeholder.markdown(result_text)
+                if st.session_state.get("stop_generation", False):
+                    stop_suffix = "Response stopped by user."
+                    partial = result_text or st.session_state.get("current_assistant_partial", "")
+                    stopped_content = (
+                        f"{partial}\n\n{stop_suffix}" if partial else stop_suffix
+                    )
+                    placeholder.markdown(stopped_content)
+                    st.session_state["stopped_content_to_save"] = stopped_content
+                    return False, result_text
+            else:
+                res = run_conversation(request)
+                result_text = res.text
+                placeholder.markdown(result_text or "")
             return True, result_text
 
         try:

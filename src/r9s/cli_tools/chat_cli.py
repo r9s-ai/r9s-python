@@ -15,12 +15,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from r9s import errors, models, utils
+from r9s import errors, models
 from r9s.models.message import Role
 from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.agents.models import AgentExecution, AgentVersion
+from r9s.conversation.models import ConversationRequest
+from r9s.conversation.runtime import content_to_text, run_conversation, stream_conversation
 from r9s.skills.loader import format_skills_context, load_skills, resolve_skill_script
 from r9s.skills.models import ScriptPolicy, Skill
 from r9s.cli_tools.commands import list_commands, load_command
@@ -45,8 +47,6 @@ from r9s.cli_tools.stream_timing import (
     ChatTiming,
     StreamTimingState,
     format_timing_line,
-    iter_sse_blocks,
-    parse_sse_block,
     probe_headers,
     timing_enabled,
 )
@@ -54,7 +54,6 @@ from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
 from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
 from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
 from r9s.cli_tools.ui.spinner import Spinner
-from r9s.sdk import R9S
 
 
 @dataclass
@@ -425,7 +424,8 @@ def _build_user_message_from_piped_stdin(
 
 
 def _stream_chat(
-    r9s: R9S,
+    api_key: str,
+    base_url: str,
     model: str,
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
@@ -447,19 +447,18 @@ def _stream_chat(
 
     timing_state = StreamTimingState.start(timing)
 
-    response = None
     try:
-        http_headers = probe_headers(timing)
-        stream = r9s.chat.create(
+        request = ConversationRequest(
+            api_key=api_key,
+            base_url=base_url,
             model=model,
             messages=messages,
-            stream=True,
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
-            http_headers=http_headers,
+            http_headers=probe_headers(timing),
         )
         assistant_parts: List[str] = []
         assistant_parts_raw: List[str] = []
@@ -467,61 +466,43 @@ def _stream_chat(
         input_tokens = 0
         output_tokens = 0
         script_state = ScriptCommandState()
-        response = getattr(stream, "response", None)
-        if response is None:
-            raise RuntimeError("Streaming response missing from SDK event stream")
-
-        decoder = lambda raw: utils.unmarshal_json(  # noqa: E731
-            raw, models.CreateChatCompletionResponseBody
-        ).data
 
         import time as _time
 
-        for block in iter_sse_blocks(response):
+        for event in stream_conversation(request):
             now = _time.perf_counter()
-            server_event, is_probe = parse_sse_block(block)
-            if is_probe:
+            if event.type == "probe":
                 timing_state.mark_probe(now)
                 continue
-            if server_event is None:
+            if event.type == "done":
+                if event.request_id:
+                    request_id = event.request_id
+                input_tokens = event.input_tokens
+                output_tokens = event.output_tokens
+                timing_state.mark_done(now)
+                break
+            if event.type != "text_delta":
                 continue
 
             timing_state.mark_first_data(now)
-
-            data = server_event.get("data")
-            if isinstance(data, str) and data == "[DONE]":
-                timing_state.mark_done(now)
-                break
-            if isinstance(data, dict) and "error" in data:
-                spinner.stop_and_clear()
-                raise SystemExit(str(data["error"]))
-
-            event = decoder(json.dumps(server_event))
-            if not request_id and getattr(event, "id", None):
-                request_id = event.id
-            if getattr(event, "usage", None):
-                usage = event.usage
-                if usage:
-                    input_tokens = usage.prompt_tokens
-                    output_tokens = usage.completion_tokens
-            if not event.choices:
-                continue
-            delta = event.choices[0].delta
-            if delta.content:
-                spinner.stop_and_clear()
-                piece = run_stream_delta_extensions(exts, delta.content, ctx)
-                assistant_parts_raw.append(piece)
-                piece = _process_script_command_stream_delta(
-                    piece,
-                    state=script_state,
-                    skills=skills,
-                    policy=script_policy,
-                    execute=False,
-                )
-                assistant_parts.append(piece)
-                if prefix and not spinner.prefix_printed:
-                    spinner.print_prefix()
-                print(piece, end="", flush=True)
+            if event.request_id:
+                request_id = event.request_id
+            input_tokens = event.input_tokens
+            output_tokens = event.output_tokens
+            spinner.stop_and_clear()
+            piece = run_stream_delta_extensions(exts, event.text, ctx)
+            assistant_parts_raw.append(piece)
+            piece = _process_script_command_stream_delta(
+                piece,
+                state=script_state,
+                skills=skills,
+                policy=script_policy,
+                execute=False,
+            )
+            assistant_parts.append(piece)
+            if prefix and not spinner.prefix_printed:
+                spinner.print_prefix()
+            print(piece, end="", flush=True)
         if prefix and not spinner.prefix_printed:
             spinner.print_prefix()
         tail = _flush_script_command_stream(script_state)
@@ -544,16 +525,12 @@ def _stream_chat(
             timing=timing_result,
         )
     finally:
-        try:
-            if response is not None:
-                response.close()
-        except Exception:
-            pass
         spinner.stop_and_clear()
 
 
 def _non_stream_chat(
-    r9s: R9S,
+    api_key: str,
+    base_url: str,
     model: str,
     messages: List[models.MessageTypedDict],
     ctx: ChatContext,
@@ -569,21 +546,21 @@ def _non_stream_chat(
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
 ) -> ChatResult:
-    res = r9s.chat.create(
-        model=model,
-        messages=messages,
-        stream=False,
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty,
+    res = run_conversation(
+        ConversationRequest(
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+        )
     )
-    text = ""
-    if res.choices and res.choices[0].message:
-        text = _content_to_text(res.choices[0].message.content)
     text = _process_script_commands(
-        run_after_response_extensions(exts, text, ctx),
+        run_after_response_extensions(exts, res.text, ctx),
         skills=skills,
         policy=script_policy,
     )
@@ -594,39 +571,12 @@ def _non_stream_chat(
         print_markdown(text)
     else:
         print(text)
-    usage = res.usage
-    input_tokens = usage.prompt_tokens if usage else 0
-    output_tokens = usage.completion_tokens if usage else 0
     return ChatResult(
         text=text,
-        request_id=getattr(res, "id", ""),
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
+        request_id=res.request_id,
+        input_tokens=res.input_tokens,
+        output_tokens=res.output_tokens,
     )
-
-
-def _content_to_text(content: Any) -> str:
-    if content is None:
-        return ""
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts: List[str] = []
-        for item in content:
-            if isinstance(item, dict):
-                if item.get("type") == "text" and isinstance(item.get("text"), str):
-                    parts.append(item["text"])
-            else:
-                item_type = getattr(item, "type", None)
-                item_text = getattr(item, "text", None)
-                if item_type == "text" and isinstance(item_text, str):
-                    parts.append(item_text)
-        if parts:
-            return "".join(parts)
-    try:
-        return json.dumps(content, ensure_ascii=False)
-    except Exception:
-        return str(content)
 
 
 def handle_chat(args: argparse.Namespace) -> None:
@@ -815,23 +765,21 @@ def handle_chat(args: argparse.Namespace) -> None:
         allow_scripts=bool(getattr(args, "allow_scripts", False))
     )
 
-    with R9S(api_key=api_key, server_url=base_url) as r9s:
-        if piped_stdin_bytes is not None:
-            user_msg = _build_user_message_from_piped_stdin(
-                piped_stdin_bytes, lang=lang, exts=exts, ctx=ctx
-            )
-            if user_msg is None:
-                return
-            ctx.history.append(user_msg)
-            messages = run_before_request_extensions(
-                exts, _build_messages(system_prompt_rendered, ctx.history), ctx
-            )
-            # Check if rich rendering is enabled
-            use_rich = getattr(args, "rich", False) or is_rich_enabled()
-
-            result = (
-                _non_stream_chat(
-                    r9s,
+    if piped_stdin_bytes is not None:
+        user_msg = _build_user_message_from_piped_stdin(
+            piped_stdin_bytes, lang=lang, exts=exts, ctx=ctx
+        )
+        if user_msg is None:
+            return
+        ctx.history.append(user_msg)
+        messages = run_before_request_extensions(
+            exts, _build_messages(system_prompt_rendered, ctx.history), ctx
+        )
+        use_rich = getattr(args, "rich", False) or is_rich_enabled()
+        if args.no_stream:
+            result = _non_stream_chat(
+                    api_key,
+                    base_url,
                     model,
                     messages,
                     ctx,
@@ -839,239 +787,230 @@ def handle_chat(args: argparse.Namespace) -> None:
                     loaded_skills,
                     script_policy,
                     use_rich=use_rich,
-                    **{**bot_generation, **agent_generation},
-                )
-                if args.no_stream
-                else _stream_chat(
-                    r9s,
+                    **{**bot_generation, **agent_generation})
+
+        else: 
+            result = _stream_chat(
+                api_key,
+                base_url,
+                model,
+                messages,
+                ctx,
+                exts,
+                loaded_skills,
+                script_policy,
+                timing=timing,
+                **{**bot_generation, **agent_generation})
+        ctx.history.append({"role": "assistant", "content": result.text})
+
+        if result.input_tokens or result.output_tokens:
+            print(
+                t(
+                    "chat.msg.tokens",
+                    lang,
+                    input=result.input_tokens,
+                    output=result.output_tokens,
+                ),
+                file=sys.stderr,
+            )
+
+        if timing and result.timing:
+            print(format_timing_line(result.timing), file=sys.stderr)
+
+        if agent_name and agent_version:
+            _record_agent_execution(agent_name, agent_version, result, record.meta.session_id)
+        if history_path:
+            record.meta.updated_at = _utc_now_iso()
+            record.messages = ctx.history
+            _save_history(history_path, record)
+        return
+
+    header(t("chat.title", lang))
+    info(f"{t('chat.base_url', lang)}: {base_url}")
+    info(f"{t('chat.model', lang)}: {model}")
+    bot_display = bot_or_action or "(none)"
+    info(f"bot: {bot_display}")
+    if agent_name:
+        version_display = agent_version.version if agent_version else "(unknown)"
+        info(f"agent: {agent_name} ({version_display})")
+    if command_names:
+        info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
+    if exts:
+        info(
+            f"{t('chat.extensions', lang)}: "
+            + ", ".join(getattr(e, "name", e.__class__.__name__) for e in exts)
+        )
+    _print_help_lang(lang)
+    print()
+
+    prompt_session = create_chat_session()
+
+    while True:
+        try:
+            user_text = chat_prompt(
+                prompt_session,
+                _style_prompt(t("chat.prompt.user", lang)),
+                color=FG_CYAN,
+            )
+        except EOFError:
+            print()
+            return
+
+        if not user_text:
+            continue
+
+        if user_text.lower() in ("exit", "quit", "bye"):
+            return
+
+        if user_text.startswith("/"):
+            cmd = user_text.strip()
+            if cmd == "/exit":
+                return
+            if cmd == "/help":
+                _print_help_lang(lang)
+                continue
+            if cmd == "/clear":
+                ctx.history.clear()
+                info(t("chat.msg.history_cleared", lang))
+                continue
+            if cmd == "/copy":
+                last_response = _get_last_assistant_response(ctx.history)
+                if not last_response:
+                    error(t("chat.err.no_response", lang))
+                    continue
+                try:
+                    _copy_to_clipboard(last_response)
+                    info(t("chat.msg.copied", lang))
+                except Exception as exc:
+                    error(t("chat.err.copy_failed", lang, err=str(exc)))
+                continue
+            if cmd.startswith("/save ") or cmd == "/save":
+                parts_save = cmd.split(" ", 1)
+                if len(parts_save) < 2 or not parts_save[1].strip():
+                    error(t("chat.err.save_no_path", lang))
+                    continue
+                save_path = Path(parts_save[1].strip()).expanduser()
+                last_response = _get_last_assistant_response(ctx.history)
+                if not last_response:
+                    error(t("chat.err.no_response", lang))
+                    continue
+                try:
+                    save_path.write_text(last_response, encoding="utf-8")
+                    info(t("chat.msg.saved", lang, path=str(save_path)))
+                except Exception as exc:
+                    error(t("chat.err.save_failed", lang, err=str(exc)))
+                continue
+            if cmd.startswith("/model ") or cmd == "/model":
+                parts_model = cmd.split(" ", 1)
+                if len(parts_model) < 2 or not parts_model[1].strip():
+                    info(t("chat.msg.current_model", lang, model=model))
+                    continue
+                new_model = parts_model[1].strip()
+                model = new_model
+                ctx.model = new_model
+                record.meta.model = new_model
+                info(t("chat.msg.model_switched", lang, model=new_model))
+                continue
+            parts = cmd[1:].split(" ", 1)
+            command_name = parts[0]
+            args_text = parts[1] if len(parts) > 1 else ""
+            if command_name in command_names:
+                try:
+                    cfg = load_command(command_name)
+                    rendered = render_template(
+                        cfg.prompt or "",
+                        RenderContext(
+                            args_text=args_text.strip(),
+                            assume_yes=bool(getattr(args, "yes", False)),
+                            interactive=True,
+                        ),
+                    ).strip()
+                except Exception as exc:
+                    error(f"Command failed: /{command_name} ({exc})")
+                    continue
+                if not rendered:
+                    error("Command produced empty prompt.")
+                    continue
+                user_text = rendered
+            else:
+                error(t("chat.err.unknown_command", lang, cmd=cmd))
+                continue
+
+        user_text = run_user_input_extensions(exts, user_text, ctx)
+        ctx.history.append({"role": "user", "content": user_text})
+
+        messages = _build_messages(system_prompt_rendered, ctx.history)
+        messages = run_before_request_extensions(exts, messages, ctx)
+        use_rich = getattr(args, "rich", False) or is_rich_enabled()
+
+        try:
+            result = (
+                _non_stream_chat(
+                    api_key,
+                    base_url,
                     model,
                     messages,
                     ctx,
                     exts,
                     loaded_skills,
                     script_policy,
+                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
+                    use_rich=use_rich,
+                    **{**bot_generation, **agent_generation},
+                )
+                if args.no_stream
+                else _stream_chat(
+                    api_key,
+                    base_url,
+                    model,
+                    messages,
+                    ctx,
+                    exts,
+                    loaded_skills,
+                    script_policy,
+                    prefix=_style_prompt(t("chat.prompt.assistant", lang)),
                     timing=timing,
                     **{**bot_generation, **agent_generation},
                 )
             )
-            ctx.history.append({"role": "assistant", "content": result.text})
+        except errors.AuthenticationError as exc:
+            error(f"Authentication failed: {exc}")
+            ctx.history.pop()
+            continue
+        except errors.RateLimitError as exc:
+            error(f"Rate limit exceeded: {exc}")
+            ctx.history.pop()
+            continue
+        except errors.PermissionDeniedError as exc:
+            error(f"Permission denied: {exc}")
+            ctx.history.pop()
+            continue
+        except errors.R9SError as exc:
+            error(f"API error: {exc}")
+            ctx.history.pop()
+            continue
+        ctx.history.append({"role": "assistant", "content": result.text})
 
-            # Display token usage (to stderr so it doesn't interfere with piped output)
-            if result.input_tokens or result.output_tokens:
-                print(
-                    t(
-                        "chat.msg.tokens",
-                        lang,
-                        input=result.input_tokens,
-                        output=result.output_tokens,
-                    ),
-                    file=sys.stderr,
-                )
-
-            if timing and result.timing:
-                print(format_timing_line(result.timing), file=sys.stderr)
-
-            if agent_name and agent_version:
-                _record_agent_execution(
-                    agent_name, agent_version, result, record.meta.session_id
-                )
-            if history_path:
-                record.meta.updated_at = _utc_now_iso()
-                record.messages = ctx.history
-                _save_history(history_path, record)
-            return
-
-        header(t("chat.title", lang))
-        info(f"{t('chat.base_url', lang)}: {base_url}")
-        info(f"{t('chat.model', lang)}: {model}")
-        bot_display = bot_or_action or "(none)"
-        info(f"bot: {bot_display}")
-        if agent_name:
-            version_display = agent_version.version if agent_version else "(unknown)"
-            info(f"agent: {agent_name} ({version_display})")
-        if command_names:
-            info("slash commands: " + ", ".join(f"/{n}" for n in sorted(command_names)))
-        if exts:
+        if result.input_tokens or result.output_tokens:
             info(
-                f"{t('chat.extensions', lang)}: "
-                + ", ".join(getattr(e, "name", e.__class__.__name__) for e in exts)
+                t(
+                    "chat.msg.tokens",
+                    lang,
+                    input=result.input_tokens,
+                    output=result.output_tokens,
+                )
             )
-        _print_help_lang(lang)
-        print()
 
-        # Create prompt session with history support
-        prompt_session = create_chat_session()
+        if timing and result.timing:
+            info(format_timing_line(result.timing))
 
-        while True:
-            try:
-                user_text = chat_prompt(
-                    prompt_session,
-                    _style_prompt(t("chat.prompt.user", lang)),
-                    color=FG_CYAN,
-                )
-            except EOFError:
-                print()
-                return
+        if agent_name and agent_version:
+            _record_agent_execution(agent_name, agent_version, result, record.meta.session_id)
 
-            if not user_text:
-                continue
-
-            # Handle common exit commands (without slash)
-            if user_text.lower() in ("exit", "quit", "bye"):
-                return
-
-            if user_text.startswith("/"):
-                cmd = user_text.strip()
-                if cmd == "/exit":
-                    return
-                if cmd == "/help":
-                    _print_help_lang(lang)
-                    continue
-                if cmd == "/clear":
-                    ctx.history.clear()
-                    info(t("chat.msg.history_cleared", lang))
-                    continue
-                if cmd == "/copy":
-                    last_response = _get_last_assistant_response(ctx.history)
-                    if not last_response:
-                        error(t("chat.err.no_response", lang))
-                        continue
-                    try:
-                        _copy_to_clipboard(last_response)
-                        info(t("chat.msg.copied", lang))
-                    except Exception as exc:
-                        error(t("chat.err.copy_failed", lang, err=str(exc)))
-                    continue
-                if cmd.startswith("/save ") or cmd == "/save":
-                    parts_save = cmd.split(" ", 1)
-                    if len(parts_save) < 2 or not parts_save[1].strip():
-                        error(t("chat.err.save_no_path", lang))
-                        continue
-                    save_path = Path(parts_save[1].strip()).expanduser()
-                    last_response = _get_last_assistant_response(ctx.history)
-                    if not last_response:
-                        error(t("chat.err.no_response", lang))
-                        continue
-                    try:
-                        save_path.write_text(last_response, encoding="utf-8")
-                        info(t("chat.msg.saved", lang, path=str(save_path)))
-                    except Exception as exc:
-                        error(t("chat.err.save_failed", lang, err=str(exc)))
-                    continue
-                if cmd.startswith("/model ") or cmd == "/model":
-                    parts_model = cmd.split(" ", 1)
-                    if len(parts_model) < 2 or not parts_model[1].strip():
-                        info(t("chat.msg.current_model", lang, model=model))
-                        continue
-                    new_model = parts_model[1].strip()
-                    model = new_model
-                    ctx.model = new_model
-                    record.meta.model = new_model
-                    info(t("chat.msg.model_switched", lang, model=new_model))
-                    continue
-                parts = cmd[1:].split(" ", 1)
-                command_name = parts[0]
-                args_text = parts[1] if len(parts) > 1 else ""
-                if command_name in command_names:
-                    try:
-                        cfg = load_command(command_name)
-                        rendered = render_template(
-                            cfg.prompt or "",
-                            RenderContext(
-                                args_text=args_text.strip(),
-                                assume_yes=bool(getattr(args, "yes", False)),
-                                interactive=True,
-                            ),
-                        ).strip()
-                    except Exception as exc:
-                        error(f"Command failed: /{command_name} ({exc})")
-                        continue
-                    if not rendered:
-                        error("Command produced empty prompt.")
-                        continue
-                    user_text = rendered
-                else:
-                    error(t("chat.err.unknown_command", lang, cmd=cmd))
-                    continue
-
-            user_text = run_user_input_extensions(exts, user_text, ctx)
-            ctx.history.append({"role": "user", "content": user_text})
-
-            messages = _build_messages(system_prompt_rendered, ctx.history)
-            messages = run_before_request_extensions(exts, messages, ctx)
-
-            # Check if rich rendering is enabled (--rich flag or R9S_RICH env)
-            use_rich = getattr(args, "rich", False) or is_rich_enabled()
-
-            try:
-                result = (
-                    _non_stream_chat(
-                        r9s,
-                        model,
-                        messages,
-                        ctx,
-                        exts,
-                        loaded_skills,
-                        script_policy,
-                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                        use_rich=use_rich,
-                        **{**bot_generation, **agent_generation},
-                    )
-                    if args.no_stream
-                    else _stream_chat(
-                        r9s,
-                        model,
-                        messages,
-                        ctx,
-                        exts,
-                        loaded_skills,
-                        script_policy,
-                        prefix=_style_prompt(t("chat.prompt.assistant", lang)),
-                        timing=timing,
-                        **{**bot_generation, **agent_generation},
-                    )
-                )
-            except errors.AuthenticationError as exc:
-                error(f"Authentication failed: {exc}")
-                ctx.history.pop()  # Remove the user message we just added
-                continue
-            except errors.RateLimitError as exc:
-                error(f"Rate limit exceeded: {exc}")
-                ctx.history.pop()
-                continue
-            except errors.PermissionDeniedError as exc:
-                error(f"Permission denied: {exc}")
-                ctx.history.pop()
-                continue
-            except errors.R9SError as exc:
-                error(f"API error: {exc}")
-                ctx.history.pop()
-                continue
-            ctx.history.append({"role": "assistant", "content": result.text})
-
-            # Display token usage
-            if result.input_tokens or result.output_tokens:
-                info(
-                    t(
-                        "chat.msg.tokens",
-                        lang,
-                        input=result.input_tokens,
-                        output=result.output_tokens,
-                    )
-                )
-
-            if timing and result.timing:
-                info(format_timing_line(result.timing))
-
-            if agent_name and agent_version:
-                _record_agent_execution(
-                    agent_name, agent_version, result, record.meta.session_id
-                )
-
-            if history_path:
-                record.meta.updated_at = _utc_now_iso()
-                record.messages = ctx.history
-                _save_history(history_path, record)
+        if history_path:
+            record.meta.updated_at = _utc_now_iso()
+            record.messages = ctx.history
+            _save_history(history_path, record)
 
 
 def _style_prompt(text: str) -> str:
@@ -1160,7 +1099,7 @@ def _list_sessions(root: Path) -> List[SessionInfo]:
             content = msg.get("content")
             if msg.get("role") == "user":
                 preview = (
-                    _content_to_text(content).replace("\n", " ").replace("\\n", " ")
+                    content_to_text(content).replace("\n", " ").replace("\\n", " ")
                 )
                 break
         if preview:
