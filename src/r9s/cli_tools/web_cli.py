@@ -9,13 +9,12 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+from r9s.cli_tools.i18n import resolve_lang, t
 
-def _require_streamlit() -> None:
+
+def _require_streamlit(lang: str) -> None:
     if importlib.util.find_spec("streamlit") is None:
-        raise SystemExit(
-            "未安装 Web UI 依赖：streamlit。\n"
-            "请执行：pip install 'r9s[web]'"
-        )
+        raise SystemExit(t("web.err.streamlit_missing", lang))
 
 
 def _iter_bind_targets(host: str, port: int) -> Iterable[tuple]:
@@ -38,22 +37,22 @@ def _is_port_available(host: str, port: int) -> bool:
         return False
 
 
-def _allocate_ephemeral_port(host: str) -> int:
+def _allocate_ephemeral_port(host: str, lang: str) -> int:
     for family, socktype, proto, sockaddr in _iter_bind_targets(host, 0):
         with socket.socket(family, socktype, proto) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(sockaddr)
             return int(s.getsockname()[1])
-    raise SystemExit(f"无法为 host={host!r} 分配可用端口，请使用 --host 指定一个可绑定的地址。")
+    raise SystemExit(t("web.err.bind_host_failed", lang, host=host))
 
 
-def _pick_port(host: str, preferred_port: int, *, auto_port: bool) -> int:
+def _pick_port(host: str, preferred_port: int, *, auto_port: bool, lang: str) -> int:
     if preferred_port < 0 or preferred_port > 65535:
-        raise SystemExit("--port 必须在 0..65535 范围内")
+        raise SystemExit(t("web.err.port_out_of_range", lang))
 
     if preferred_port == 0:
-        port = _allocate_ephemeral_port(host)
-        print(f"已自动分配可用端口：{port}", file=sys.stderr)
+        port = _allocate_ephemeral_port(host, lang)
+        print(t("web.msg.auto_port_allocated", lang, port=port), file=sys.stderr)
         return port
 
     if not auto_port:
@@ -64,19 +63,15 @@ def _pick_port(host: str, preferred_port: int, *, auto_port: bool) -> int:
 
     for port in range(preferred_port + 1, preferred_port + 101):
         if _is_port_available(host, port):
-            print(
-                f"端口 {preferred_port} 已被占用，自动切换到 {port}（可用 --no-auto-port 禁用）",
-                file=sys.stderr,
-            )
+            print(t("web.msg.port_switched", lang, preferred_port=preferred_port, port=port), file=sys.stderr)
             return port
 
-    raise SystemExit(
-        f"端口 {preferred_port} 已被占用，且后续 100 个端口都不可用；请使用 --port 指定。"
-    )
+    raise SystemExit(t("web.err.port_range_exhausted", lang, preferred_port=preferred_port))
 
 
 def handle_web(args: argparse.Namespace) -> None:
-    _require_streamlit()
+    lang = resolve_lang(getattr(args, "lang", None))
+    _require_streamlit(lang)
 
     from r9s.web import app as web_app
 
@@ -85,7 +80,7 @@ def handle_web(args: argparse.Namespace) -> None:
     host = str(getattr(args, "host", "127.0.0.1"))
     preferred_port = int(getattr(args, "port", 8501))
     auto_port = bool(getattr(args, "auto_port", True))
-    port = _pick_port(host, preferred_port, auto_port=auto_port)
+    port = _pick_port(host, preferred_port, auto_port=auto_port, lang=lang)
 
     cmd = [
         sys.executable,

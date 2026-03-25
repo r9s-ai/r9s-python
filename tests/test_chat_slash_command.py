@@ -8,6 +8,7 @@ import pytest
 
 from r9s.cli_tools.chat_cli import handle_chat
 from r9s.cli_tools.commands import CommandConfig
+from r9s.conversation.models import ConversationResult
 
 
 @dataclass
@@ -86,8 +87,13 @@ def test_chat_slash_command_executes_command(monkeypatch: pytest.MonkeyPatch) ->
         "r9s.cli_tools.chat_cli.create_chat_session", lambda *_, **__: None
     )
 
-    stub = _R9SStub()
-    monkeypatch.setattr("r9s.cli_tools.chat_cli.R9S", lambda **_: stub)
+    captured_requests: list[Any] = []
+
+    def fake_run_conversation(request: Any) -> ConversationResult:
+        captured_requests.append(request)
+        return ConversationResult(text="ok")
+
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.run_conversation", fake_run_conversation)
     monkeypatch.setenv("R9S_MODEL", "m")
 
     args = type(
@@ -111,10 +117,10 @@ def test_chat_slash_command_executes_command(monkeypatch: pytest.MonkeyPatch) ->
     )()
 
     handle_chat(args)
-    assert stub.chat.calls
-    call = stub.chat.calls[-1]
-    assert call["stream"] is False
-    assert call["messages"][-1]["content"] == "Say hello"
+    assert captured_requests
+    request = captured_requests[-1]
+    assert request.model == "m"
+    assert request.messages[-1]["content"] == "Say hello"
 
 
 def test_chat_model_command_switches_model(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -141,8 +147,13 @@ def test_chat_model_command_switches_model(monkeypatch: pytest.MonkeyPatch) -> N
         "r9s.cli_tools.chat_cli.create_chat_session", lambda *_, **__: None
     )
 
-    stub = _R9SStub()
-    monkeypatch.setattr("r9s.cli_tools.chat_cli.R9S", lambda **_: stub)
+    captured_requests: list[Any] = []
+
+    def fake_run_conversation(request: Any) -> ConversationResult:
+        captured_requests.append(request)
+        return ConversationResult(text="ok")
+
+    monkeypatch.setattr("r9s.cli_tools.chat_cli.run_conversation", fake_run_conversation)
     monkeypatch.setenv("R9S_MODEL", "initial-model")
 
     args = type(
@@ -166,7 +177,7 @@ def test_chat_model_command_switches_model(monkeypatch: pytest.MonkeyPatch) -> N
     )()
 
     handle_chat(args)
-    assert stub.chat.calls
-    call = stub.chat.calls[-1]
+    assert captured_requests
+    request = captured_requests[-1]
     # The model should have been switched to gpt-4o
-    assert call["model"] == "gpt-4o"
+    assert request.model == "gpt-4o"

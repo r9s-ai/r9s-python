@@ -1,10 +1,10 @@
 """
-一个最小的 r9s chat 扩展示例。
+A minimal r9s chat extension example.
 
-用法：
+Usage:
   r9s chat --model <MODEL> --ext example/chat_extension.py
 
-或者：
+Or:
   export R9S_CHAT_EXTENSIONS=example/chat_extension.py
   r9s chat --model <MODEL>
 """

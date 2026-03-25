@@ -8,6 +8,27 @@ paths:
       - models
       summary: List available models
       description: List all available models
+      parameters:
+      - name: expand
+        in: query
+        required: false
+        description: Comma-separated expand fields. Supported values include all, channels, modality, context_length, and endpoints.
+        schema:
+          type: string
+        example: all
+      - name: filter
+        in: query
+        required: false
+        description: Filter rule; can be repeated. Supported keys include channel(s), input_modality/input_modalities, output_modality/output_modalities, endpoint(s)/path(s), and context_length_min/context_length_max.
+        schema:
+          type: array
+          items:
+            type: string
+        style: form
+        explode: true
+        example:
+        - channel=*open*
+        - endpoint=/v1/responses
       responses:
         '200':
           description: Successful response
@@ -78,5 +99,53 @@ paths:
           $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
         '404':
           $ref: ../common/common.yaml#/components/responses/NotFoundError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+  /v1/portal/management/usage:
+    get:
+      operationId: getCreditsUsage
+      x-speakeasy-name-override: get
+      tags:
+      - credits
+      summary: Get usage records
+      description: Query token usage records for a time range. This endpoint is served from the management portal API and uses a management key in the Authorization bearer header.
+      parameters:
+      - name: start_time
+        in: query
+        required: true
+        description: Start of the query range as a Unix timestamp in seconds.
+        schema:
+          type: integer
+        example: 1735689600
+      - name: end_time
+        in: query
+        required: true
+        description: End of the query range as a Unix timestamp in seconds.
+        schema:
+          type: integer
+        example: 1736294400
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/CreditsUsageResponse
+              example:
+                data:
+                  records:
+                  - timestamp: 1735689600
+                    tokens: 1024
+                    model: gpt-4o-mini
+                  - timestamp: 1735776000
+                    tokens: 2048
+                    model: claude-sonnet-4.5
+                  total_tokens: 3072
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
         '500':
           $ref: ../common/common.yaml#/components/responses/InternalServerError

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from r9s.audio_sdk import AudioSDK
     from r9s.chat import Chat
     from r9s.completions import Completions
+    from r9s.credits import Credits
     from r9s.edits import Edits
     from r9s.embeddings import Embeddings
     from r9s.gemini import Gemini
@@ -44,6 +45,7 @@ class R9S(BaseSDK):
     audio: "AudioSDK"
     search: "Search"
     gemini: "Gemini"
+    credits: "Credits"
     _sub_sdk_map = {
         "models": ("r9s.models_", "Models"),
         "chat": ("r9s.chat", "Chat"),
@@ -57,11 +59,13 @@ class R9S(BaseSDK):
         "audio": ("r9s.audio_sdk", "AudioSDK"),
         "search": ("r9s.search", "Search"),
         "gemini": ("r9s.gemini", "Gemini"),
+        "credits": ("r9s.credits", "Credits"),
     }
 
     def __init__(
         self,
         api_key: Union[str, Callable[[], str]],
+        manage_key: Optional[str] = None,
         server_idx: Optional[int] = None,
         server_url: Optional[str] = None,
         url_params: Optional[Dict[str, str]] = None,
@@ -74,6 +78,7 @@ class R9S(BaseSDK):
         r"""Instantiates the SDK configuring it with the provided parameters.
 
         :param api_key: The api_key required for authentication
+        :param manage_key: Optional management key used by portal management endpoints such as r9s.credits.get
         :param server_idx: The index of the server to use for all methods
         :param server_url: The server URL to use for all methods
         :param url_params: Parameters to optionally template the server URL with
@@ -122,6 +127,7 @@ class R9S(BaseSDK):
                 async_client=async_client,
                 async_client_supplied=async_client_supplied,
                 security=security,
+                manage_key=(manage_key or "").strip() or None,
                 server_url=server_url,
                 server_idx=server_idx,
                 retry_config=retry_config,

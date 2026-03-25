@@ -3,22 +3,32 @@ from __future__ import annotations
 import base64
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-import httpx
 import streamlit as st
 
 from r9s.agents.local_store import LocalAgentStore
 from r9s.agents.template import render as render_agent_template
+from r9s.client import R9S
+from r9s.conversation.models import ConversationRequest
+from r9s.conversation.adapter import (
+    content_to_text,
+    run_conversation,
+    stream_conversation,
+    will_apply_default_anthropic_max_tokens,
+)
 from r9s.skills.loader import format_skills_context, load_skills
 from r9s.models.message import MessageTypedDict
+from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.web.common import (
     AppConfig,
     as_text,
     format_api_error,
     get_env_default,
     init_chat_state,
-    r9s_client,
 )
-from r9s.web.model_filters import CHAT_COMPLETIONS_ENDPOINT, filter_model_ids_by_endpoint
+from r9s.web.model_filters import (
+    CONVERSATION_ENDPOINTS,
+    filter_models_by_any_endpoint,
+)
 
 
 @st.cache_data(ttl=60)
@@ -43,21 +53,15 @@ def _build_system_prompt_from_agent(
 
 
 @st.cache_data(ttl=60)
-def _get_model_ids(api_key: str, base_url: str) -> List[str]:
-    url = base_url.rstrip("/") + "/models"
-    params = [("expand", "endpoints")]
-    headers = {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
-    with httpx.Client(timeout=10.0) as client:
-        resp = client.get(url, headers=headers, params=params)
-    resp.raise_for_status()
-    payload = resp.json()
-    data: Any = payload.get("data") if isinstance(payload, dict) else payload
-    if not isinstance(data, list):
-        return []
-    return filter_model_ids_by_endpoint(data, CHAT_COMPLETIONS_ENDPOINT)
+def _get_chat_models(api_key: str, base_url: str) -> List[Dict[str, Any]]:
+    with R9S(api_key=api_key, server_url=base_url) as r9s:
+        response = r9s.models.list(expand="endpoints")
+    data = [item.model_dump(by_alias=True, exclude_none=True) for item in response.data]
+    return filter_models_by_any_endpoint(data, CONVERSATION_ENDPOINTS)
 
 
 def run(cfg: AppConfig) -> None:
+    lang = resolve_lang(get_env_default("R9S_LANG", "en"))
     st.header("Chat")
     init_chat_state()
 
@@ -79,15 +83,25 @@ def run(cfg: AppConfig) -> None:
             st.subheader("Chat Settings")
             default_model = get_env_default("R9S_MODEL", "")
 
-            model_ids: List[str] = []
+            model_items: List[Dict[str, Any]] = []
             try:
-                model_ids = _get_model_ids(cfg.api_key, cfg.base_url)
+                model_items = _get_chat_models(cfg.api_key, cfg.base_url)
             except Exception as exc:
                 st.warning(f"Failed to fetch models list: {format_api_error(exc)}")
 
+            model_ids = [str(item.get("id", "")).strip() for item in model_items if str(item.get("id", "")).strip()]
+            model_endpoints_map = {
+                str(item.get("id", "")).strip(): [
+                    str(endpoint).strip()
+                    for endpoint in item.get("endpoints", [])
+                    if str(endpoint).strip()
+                ]
+                for item in model_items
+                if str(item.get("id", "")).strip()
+            }
             model_id = ""
             if model_ids:
-                st.caption(f"仅展示支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型")
+                st.caption(t("web.chat.caption.supported_models", lang))
                 options = model_ids + ["(custom)"]
                 if default_model in model_ids:
                     idx = options.index(default_model)
@@ -110,9 +124,7 @@ def run(cfg: AppConfig) -> None:
                 else:
                     model_id = selection.strip()
             else:
-                st.caption(
-                    f"未获取到支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型列表；可用自定义模型 id"
-                )
+                st.caption(t("web.chat.caption.no_models", lang))
                 model_id = st.text_input("Model", value=default_model, key="chat_model_fallback").strip()
 
             if model_id:
@@ -143,19 +155,22 @@ def run(cfg: AppConfig) -> None:
                 st.rerun()
 
         # Store sidebar values in session state for use during generation
+        model_endpoints = model_endpoints_map.get(model_id, [])
         st.session_state["_chat_model_id"] = model_id
+        st.session_state["_chat_model_endpoints"] = model_endpoints
         st.session_state["_chat_use_stream"] = use_stream
         st.session_state["_chat_agent_name"] = agent_name
         st.session_state["_chat_vars_raw"] = vars_raw
     else:
         # During generation, restore values from session state
         model_id = st.session_state.get("_chat_model_id", get_env_default("R9S_MODEL", "")).strip()
+        model_endpoints = st.session_state.get("_chat_model_endpoints", [])
         use_stream = st.session_state.get("_chat_use_stream", True)
         agent_name = st.session_state.get("_chat_agent_name", "(none)")
         vars_raw = st.session_state.get("_chat_vars_raw", "{}")
 
     if not model_id:
-        st.info("请选择一个模型（Model），然后再开始对话。")
+        st.info(t("web.chat.info.select_model", lang))
         return
 
     # Build system prompt only when not generating (it's already saved in pending_messages)
@@ -418,35 +433,17 @@ def run(cfg: AppConfig) -> None:
         def send_request() -> Tuple[bool, str]:
             """Send request and return (completed, assistant_text)."""
             result_text = ""
-            with r9s_client(cfg) as r9s:
-                if use_stream:
-                    stream = r9s.chat.create(model=model_id, messages=messages, stream=True)
-                    for event in stream:
-                        # Check stop flag
-                        if st.session_state.get("stop_generation", False):
-                            stop_suffix = "Response stopped by user."
-                            partial = result_text or st.session_state.get("current_assistant_partial", "")
-                            stopped_content = (
-                                f"{partial}\n\n{stop_suffix}" if partial else stop_suffix
-                            )
-                            placeholder.markdown(stopped_content)
-                            # Mark stopped content to avoid duplicate append
-                            st.session_state["stopped_content_to_save"] = stopped_content
-                            return False, result_text
-
-                        if not getattr(event, "choices", None):
-                            continue
-                        delta = event.choices[0].delta
-                        piece = getattr(delta, "content", None) or ""
-                        if not piece:
-                            continue
-                        # Ensure piece is text (may come as list/other types)
-                        if not isinstance(piece, str):
-                            piece = as_text(piece)
-                        result_text += piece
-                        st.session_state["current_assistant_partial"] = result_text
-                        placeholder.markdown(result_text)
-                    # If stream ended but user requested stop, still record partial content
+            request = ConversationRequest(
+                api_key=cfg.api_key,
+                base_url=cfg.base_url,
+                model=model_id,
+                messages=messages,
+                model_endpoints=model_endpoints,
+            )
+            if will_apply_default_anthropic_max_tokens(request):
+                st.warning("Anthropic request missing max_tokens; using default max_tokens=4096.")
+            if use_stream:
+                for event in stream_conversation(request):
                     if st.session_state.get("stop_generation", False):
                         stop_suffix = "Response stopped by user."
                         partial = result_text or st.session_state.get("current_assistant_partial", "")
@@ -456,11 +453,28 @@ def run(cfg: AppConfig) -> None:
                         placeholder.markdown(stopped_content)
                         st.session_state["stopped_content_to_save"] = stopped_content
                         return False, result_text
-                else:
-                    res = r9s.chat.create(model=model_id, messages=messages, stream=False)
-                    if res.choices and res.choices[0].message:
-                        result_text = as_text(res.choices[0].message.content)
-                    placeholder.markdown(result_text or "")
+
+                    if event.type != "text_delta":
+                        continue
+                    piece = event.text
+                    if not isinstance(piece, str):
+                        piece = content_to_text(piece)
+                    result_text += piece
+                    st.session_state["current_assistant_partial"] = result_text
+                    placeholder.markdown(result_text)
+                if st.session_state.get("stop_generation", False):
+                    stop_suffix = "Response stopped by user."
+                    partial = result_text or st.session_state.get("current_assistant_partial", "")
+                    stopped_content = (
+                        f"{partial}\n\n{stop_suffix}" if partial else stop_suffix
+                    )
+                    placeholder.markdown(stopped_content)
+                    st.session_state["stopped_content_to_save"] = stopped_content
+                    return False, result_text
+            else:
+                res = run_conversation(request)
+                result_text = res.text
+                placeholder.markdown(result_text or "")
             return True, result_text
 
         try:

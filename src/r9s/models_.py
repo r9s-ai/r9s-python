@@ -5,13 +5,15 @@ from r9s import errors, models, utils
 from r9s._hooks import HookContext
 from r9s.types import OptionalNullable, UNSET
 from r9s.utils.unmarshal_json_response import unmarshal_json_response
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 
 class Models(BaseSDK):
     def list(
         self,
         *,
+        expand: Optional[str] = None,
+        filter: Optional[Sequence[str]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -21,6 +23,8 @@ class Models(BaseSDK):
 
         List all available models
 
+        :param expand: Comma-separated expand fields, for example all or channels,modality,endpoints,context_length
+        :param filter: Filter rules passed as repeated query parameters
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -35,12 +39,16 @@ class Models(BaseSDK):
             base_url = server_url
         else:
             base_url = self._get_url(base_url, url_variables)
+        request = models.ListModelsRequest(
+            expand=expand,
+            filter=list(filter) if filter is not None else None,
+        )
         req = self._build_request(
             method="GET",
             path="/models",
             base_url=base_url,
             url_variables=url_variables,
-            request=None,
+            request=request,
             request_body_required=False,
             request_has_path_params=False,
             request_has_query_params=True,
@@ -103,6 +111,8 @@ class Models(BaseSDK):
     async def list_async(
         self,
         *,
+        expand: Optional[str] = None,
+        filter: Optional[Sequence[str]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -112,6 +122,8 @@ class Models(BaseSDK):
 
         List all available models
 
+        :param expand: Comma-separated expand fields, for example all or channels,modality,endpoints,context_length
+        :param filter: Filter rules passed as repeated query parameters
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -126,12 +138,16 @@ class Models(BaseSDK):
             base_url = server_url
         else:
             base_url = self._get_url(base_url, url_variables)
+        request = models.ListModelsRequest(
+            expand=expand,
+            filter=list(filter) if filter is not None else None,
+        )
         req = self._build_request_async(
             method="GET",
             path="/models",
             base_url=base_url,
             url_variables=url_variables,
-            request=None,
+            request=request,
             request_body_required=False,
             request_has_path_params=False,
             request_has_query_params=True,

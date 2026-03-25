@@ -5,10 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime
-from typing import Any, TYPE_CHECKING, Iterable, Mapping, Sequence
-
-import httpx
-from httpx._types import PrimitiveData
+from typing import Any, TYPE_CHECKING, Iterable, Mapping
 
 from r9s import R9S
 from r9s.cli_tools.config import get_api_key, resolve_base_url
@@ -55,41 +52,6 @@ def _truncate(value: str, max_len: int) -> str:
     return value[: max_len - 1] + "…"
 
 
-def _request_models(
-    *,
-    api_key: str,
-    base_url: str,
-    expand: str | None,
-    filters: Sequence[str] | None,
-) -> Any:
-    url = base_url.rstrip("/") + "/models"
-    params: list[tuple[str, PrimitiveData]] = []
-    if expand:
-        params.append(("expand", expand))
-    if filters:
-        params.extend([("filter", f) for f in filters if f])
-    query_params: httpx.QueryParams | None = None
-    if params:
-        query_params = httpx.QueryParams(params)
-
-    try:
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.get(
-                url,
-                headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
-                params=query_params,
-            )
-    except httpx.HTTPError as exc:
-        raise RuntimeError(f"请求失败: {exc}") from exc
-
-    if resp.status_code != 200:
-        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
-    try:
-        return resp.json()
-    except ValueError as exc:
-        raise RuntimeError("响应不是合法 JSON") from exc
-
-
 def handle_models_list(args: argparse.Namespace) -> None:
     """List available models from the API."""
     lang = resolve_lang(getattr(args, "lang", None))
@@ -101,14 +63,9 @@ def handle_models_list(args: argparse.Namespace) -> None:
     verbose = bool(getattr(args, "verbose", False))
 
     try:
-        if verbose or expand or filters:
-            payload = _request_models(
-                api_key=api_key, base_url=base_url, expand=expand, filters=filters
-            )
-        else:
-            with R9S(api_key=api_key, server_url=base_url) as r9s:
-                response = r9s.models.list()
-            payload = response.model_dump(by_alias=True)
+        with R9S(api_key=api_key, server_url=base_url) as r9s:
+            response = r9s.models.list(expand=expand, filter=filters)
+        payload = response.model_dump(by_alias=True, exclude_none=True)
     except Exception as exc:
         error(f"Failed to fetch models: {exc}")
         raise SystemExit(1)

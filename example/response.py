@@ -138,7 +138,7 @@ def streaming_response():
         )
         print("Assistant: ", end="", flush=True)
         for chunk in res:
-            # 只处理文本增量事件
+            # Only handle text delta events.
             if chunk.type == "response.output_text.delta":
                 print(chunk.delta, end="", flush=True)
         print()  # New line at the end
