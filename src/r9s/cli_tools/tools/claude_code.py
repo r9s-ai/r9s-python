@@ -61,7 +61,8 @@ class ClaudeCodeIntegration(ToolIntegration):
         wire_api: str = "responses",
         reasoning_effort: str | None = None,
     ) -> ToolConfigSetResult:
-        # 标准化base_url：移除尾部斜杠和/v1后缀（Claude Code会自动添加API路径）
+        # Normalize base_url by removing the trailing slash and /v1 suffix;
+        # Claude Code adds its own API path automatically.
         normalized_base_url = self._normalize_base_url_for_claude(base_url)
 
         backup_path = self._create_backup_if_exists()

@@ -9,9 +9,15 @@ from r9s.agents.local_store import LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.client import R9S
 from r9s.conversation.models import ConversationRequest
-from r9s.conversation.runtime import content_to_text, run_conversation, stream_conversation
+from r9s.conversation.adapter import (
+    content_to_text,
+    run_conversation,
+    stream_conversation,
+    will_apply_default_anthropic_max_tokens,
+)
 from r9s.skills.loader import format_skills_context, load_skills
 from r9s.models.message import MessageTypedDict
+from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.web.common import (
     AppConfig,
     as_text,
@@ -19,7 +25,10 @@ from r9s.web.common import (
     get_env_default,
     init_chat_state,
 )
-from r9s.web.model_filters import CHAT_COMPLETIONS_ENDPOINT, filter_model_ids_by_endpoint
+from r9s.web.model_filters import (
+    CONVERSATION_ENDPOINTS,
+    filter_models_by_any_endpoint,
+)
 
 
 @st.cache_data(ttl=60)
@@ -44,14 +53,15 @@ def _build_system_prompt_from_agent(
 
 
 @st.cache_data(ttl=60)
-def _get_model_ids(api_key: str, base_url: str) -> List[str]:
+def _get_chat_models(api_key: str, base_url: str) -> List[Dict[str, Any]]:
     with R9S(api_key=api_key, server_url=base_url) as r9s:
         response = r9s.models.list(expand="endpoints")
     data = [item.model_dump(by_alias=True, exclude_none=True) for item in response.data]
-    return filter_model_ids_by_endpoint(data, CHAT_COMPLETIONS_ENDPOINT)
+    return filter_models_by_any_endpoint(data, CONVERSATION_ENDPOINTS)
 
 
 def run(cfg: AppConfig) -> None:
+    lang = resolve_lang(get_env_default("R9S_LANG", "en"))
     st.header("Chat")
     init_chat_state()
 
@@ -73,15 +83,25 @@ def run(cfg: AppConfig) -> None:
             st.subheader("Chat Settings")
             default_model = get_env_default("R9S_MODEL", "")
 
-            model_ids: List[str] = []
+            model_items: List[Dict[str, Any]] = []
             try:
-                model_ids = _get_model_ids(cfg.api_key, cfg.base_url)
+                model_items = _get_chat_models(cfg.api_key, cfg.base_url)
             except Exception as exc:
                 st.warning(f"Failed to fetch models list: {format_api_error(exc)}")
 
+            model_ids = [str(item.get("id", "")).strip() for item in model_items if str(item.get("id", "")).strip()]
+            model_endpoints_map = {
+                str(item.get("id", "")).strip(): [
+                    str(endpoint).strip()
+                    for endpoint in item.get("endpoints", [])
+                    if str(endpoint).strip()
+                ]
+                for item in model_items
+                if str(item.get("id", "")).strip()
+            }
             model_id = ""
             if model_ids:
-                st.caption(f"仅展示支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型")
+                st.caption(t("web.chat.caption.supported_models", lang))
                 options = model_ids + ["(custom)"]
                 if default_model in model_ids:
                     idx = options.index(default_model)
@@ -104,9 +124,7 @@ def run(cfg: AppConfig) -> None:
                 else:
                     model_id = selection.strip()
             else:
-                st.caption(
-                    f"未获取到支持 `{CHAT_COMPLETIONS_ENDPOINT}` 的模型列表；可用自定义模型 id"
-                )
+                st.caption(t("web.chat.caption.no_models", lang))
                 model_id = st.text_input("Model", value=default_model, key="chat_model_fallback").strip()
 
             if model_id:
@@ -137,19 +155,22 @@ def run(cfg: AppConfig) -> None:
                 st.rerun()
 
         # Store sidebar values in session state for use during generation
+        model_endpoints = model_endpoints_map.get(model_id, [])
         st.session_state["_chat_model_id"] = model_id
+        st.session_state["_chat_model_endpoints"] = model_endpoints
         st.session_state["_chat_use_stream"] = use_stream
         st.session_state["_chat_agent_name"] = agent_name
         st.session_state["_chat_vars_raw"] = vars_raw
     else:
         # During generation, restore values from session state
         model_id = st.session_state.get("_chat_model_id", get_env_default("R9S_MODEL", "")).strip()
+        model_endpoints = st.session_state.get("_chat_model_endpoints", [])
         use_stream = st.session_state.get("_chat_use_stream", True)
         agent_name = st.session_state.get("_chat_agent_name", "(none)")
         vars_raw = st.session_state.get("_chat_vars_raw", "{}")
 
     if not model_id:
-        st.info("请选择一个模型（Model），然后再开始对话。")
+        st.info(t("web.chat.info.select_model", lang))
         return
 
     # Build system prompt only when not generating (it's already saved in pending_messages)
@@ -417,7 +438,10 @@ def run(cfg: AppConfig) -> None:
                 base_url=cfg.base_url,
                 model=model_id,
                 messages=messages,
+                model_endpoints=model_endpoints,
             )
+            if will_apply_default_anthropic_max_tokens(request):
+                st.warning("Anthropic request missing max_tokens; using default max_tokens=4096.")
             if use_stream:
                 for event in stream_conversation(request):
                     if st.session_state.get("stop_generation", False):

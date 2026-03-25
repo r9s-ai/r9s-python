@@ -2014,7 +2014,7 @@ paths:
                     topK: 40
                     maxOutputTokens: 2048
               image_generation:
-                summary: Generate an image (IMAGE 模态输出)
+                summary: Generate an image (IMAGE modality output)
                 value:
                   contents:
                     - parts:
@@ -2150,7 +2150,7 @@ paths:
                         finishReason: STOP
                     responseId: 2d4f6a8c-9b3e-4c1a-7d5f-8e9a2b6c3d4f
                 image_response:
-                  summary: Image generation response (IMAGE 模态)
+                  summary: Image generation response (IMAGE modality)
                   value:
                     candidates:
                       - content:

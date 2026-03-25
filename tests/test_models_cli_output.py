@@ -23,7 +23,7 @@ def test_models_details_table_includes_context_length_column(
                         "created": 0,
                         "context_length": 8192,
                         "modality": "text->text",
-                        "channels": ["OpenAI官方"],
+                        "channels": ["OpenAI Official"],
                         "endpoints": ["/v1/chat/completions", "/v1/responses"],
                     },
                     {"id": "b", "owned_by": "y", "created": 0},
@@ -70,7 +70,7 @@ def test_models_details_table_includes_context_length_column(
     assert "endpoints" in out
     assert "8192" in out
     assert "text->text" in out
-    assert "OpenAI官方" in out
+    assert "OpenAI Official" in out
     assert "/v1/chat/completions" in out
 
 

@@ -17,12 +17,18 @@ from typing import Any, Dict, List, Optional
 
 from r9s import errors, models
 from r9s.models.message import Role
+from r9s.sdk import R9S
 from r9s.cli_tools.bots import BotConfig, load_bot
 from r9s.agents.local_store import LocalAuditStore, LocalAgentStore
 from r9s.agents.template import render as render_agent_template
 from r9s.agents.models import AgentExecution, AgentVersion
 from r9s.conversation.models import ConversationRequest
-from r9s.conversation.runtime import content_to_text, run_conversation, stream_conversation
+from r9s.conversation.adapter import (
+    content_to_text,
+    run_conversation,
+    stream_conversation,
+    will_apply_default_anthropic_max_tokens,
+)
 from r9s.skills.loader import format_skills_context, load_skills, resolve_skill_script
 from r9s.skills.models import ScriptPolicy, Skill
 from r9s.cli_tools.commands import list_commands, load_command
@@ -52,7 +58,7 @@ from r9s.cli_tools.stream_timing import (
 )
 from r9s.cli_tools.ui.chat_prompt import chat_prompt, create_chat_session
 from r9s.cli_tools.ui.rich_output import is_rich_available, is_rich_enabled, print_markdown
-from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text
+from r9s.cli_tools.ui.terminal import FG_CYAN, error, header, info, prompt_text, warning
 from r9s.cli_tools.ui.spinner import Spinner
 
 
@@ -364,6 +370,26 @@ def _read_piped_input_bytes() -> bytes:
         return sys.stdin.read().encode("utf-8", errors="replace")
 
 
+def _fetch_model_endpoints(api_key: str, base_url: str) -> Dict[str, List[str]]:
+    try:
+        with R9S(api_key=api_key, server_url=base_url) as r9s:
+            response = r9s.models.list(expand="endpoints")
+    except Exception:
+        return {}
+
+    out: Dict[str, List[str]] = {}
+    for item in response.data:
+        model_id = str(getattr(item, "id", "")).strip()
+        if not model_id:
+            continue
+        endpoints = getattr(item, "endpoints", None)
+        if not isinstance(endpoints, list):
+            out[model_id] = []
+            continue
+        out[model_id] = [str(endpoint).strip() for endpoint in endpoints if str(endpoint).strip()]
+    return out
+
+
 def _is_probably_text(data: bytes) -> bool:
     if not data:
         return True
@@ -453,6 +479,7 @@ def _stream_chat(
             base_url=base_url,
             model=model,
             messages=messages,
+            model_endpoints=ctx.model_endpoints,
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
@@ -460,6 +487,8 @@ def _stream_chat(
             frequency_penalty=frequency_penalty,
             http_headers=probe_headers(timing),
         )
+        if will_apply_default_anthropic_max_tokens(request):
+            warning("Anthropic request missing max_tokens; using default max_tokens=4096.")
         assistant_parts: List[str] = []
         assistant_parts_raw: List[str] = []
         request_id = ""
@@ -546,19 +575,21 @@ def _non_stream_chat(
     presence_penalty: Optional[float] = None,
     frequency_penalty: Optional[float] = None,
 ) -> ChatResult:
-    res = run_conversation(
-        ConversationRequest(
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-        )
+    request = ConversationRequest(
+        api_key=api_key,
+        base_url=base_url,
+        model=model,
+        messages=messages,
+        model_endpoints=ctx.model_endpoints,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
     )
+    if will_apply_default_anthropic_max_tokens(request):
+        warning("Anthropic request missing max_tokens; using default max_tokens=4096.")
+    res = run_conversation(request)
     text = _process_script_commands(
         run_after_response_extensions(exts, res.text, ctx),
         skills=skills,
@@ -731,9 +762,12 @@ def handle_chat(args: argparse.Namespace) -> None:
     if not model:
         raise SystemExit(t("chat.err.missing_model", lang))
 
+    model_endpoints_by_id = _fetch_model_endpoints(api_key, base_url)
+
     ctx = ChatContext(
         base_url=base_url,
         model=model,
+        model_endpoints=model_endpoints_by_id.get(model, []),
         system_prompt=system_prompt,
         history_file=history_path,
         history=record.messages,
@@ -908,7 +942,12 @@ def handle_chat(args: argparse.Namespace) -> None:
                 new_model = parts_model[1].strip()
                 model = new_model
                 ctx.model = new_model
+                ctx.model_endpoints = model_endpoints_by_id.get(new_model, [])
                 record.meta.model = new_model
+                warning(
+                    "Switched model in the current session. Existing conversation history "
+                    "will be kept, and the backend protocol may change based on the new model's endpoints."
+                )
                 info(t("chat.msg.model_switched", lang, model=new_model))
                 continue
             parts = cmd[1:].split(" ", 1)
@@ -1014,7 +1053,8 @@ def handle_chat(args: argparse.Namespace) -> None:
 
 
 def _style_prompt(text: str) -> str:
-    # 避免在这里引入更多样式依赖：prompt_text 已支持颜色，但我们希望保持提示一致性
+    # Avoid introducing more styling dependencies here; prompt_text already supports color,
+    # and we want to keep prompt rendering consistent.
     return text
 
 

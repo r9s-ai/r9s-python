@@ -25,6 +25,7 @@ from r9s import models
 class ChatContext:
     base_url: str
     model: str
+    model_endpoints: List[str] = field(default_factory=list)
     system_prompt: Optional[str] = None
     history_file: Optional[str] = None
     history: List[models.MessageTypedDict] = field(default_factory=list)

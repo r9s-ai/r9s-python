@@ -6,7 +6,11 @@ from typing import Any, Dict, List, Literal, Optional
 from r9s.models.message import MessageTypedDict
 
 
-ConversationProtocol = Literal["chat_completions"]
+ConversationProtocol = Literal[
+    "chat_completions",
+    "anthropic_messages",
+    "gemini_generate_content",
+]
 ConversationEventType = Literal["probe", "text_delta", "done"]
 
 
@@ -16,6 +20,7 @@ class ConversationRequest:
     base_url: str
     model: str
     messages: List[MessageTypedDict]
+    model_endpoints: Optional[List[str]] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
