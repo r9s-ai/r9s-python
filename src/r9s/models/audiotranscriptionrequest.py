@@ -39,10 +39,12 @@ AudioTranscriptionRequestResponseFormat = Literal[
     "srt",
     "verbose_json",
     "vtt",
+    "diarized_json",
 ]
 r"""Output format. Model support varies:
 - whisper-1: Supports all formats (json, text, srt, verbose_json, vtt)
-- gpt-4o-transcribe, gpt-4o-mini-transcribe: Only json and text
+- gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-mini-transcribe-2025-12-15: Only json and text
+- gpt-4o-transcribe-diarize: Supports json, text, and diarized_json
 
 """
 
@@ -58,6 +60,14 @@ class AudioTranscriptionRequestTypedDict(TypedDict):
     r"""Audio file to transcribe"""
     model: str
     r"""Model name"""
+    chunking_strategy: NotRequired[Union[str, dict]]
+    r"""Chunking strategy. Required for `gpt-4o-transcribe-diarize` inputs longer than 30 seconds."""
+    include: NotRequired[List[str]]
+    r"""Additional response data to include, such as `logprobs` for supported non-diarization GPT transcription models."""
+    known_speaker_names: NotRequired[List[str]]
+    r"""Optional known speaker names for diarization workflows."""
+    known_speaker_references: NotRequired[List[str]]
+    r"""Optional speaker reference audio samples as data URLs for diarization workflows."""
     language: NotRequired[str]
     r"""Audio language (ISO-639-1 format)"""
     prompt: NotRequired[str]
@@ -69,6 +79,9 @@ class AudioTranscriptionRequestTypedDict(TypedDict):
 
     """
     temperature: NotRequired[float]
+    r"""Sampling temperature between 0 and 1."""
+    stream: NotRequired[bool]
+    r"""Stream transcript events as they are generated. Ignored by whisper-1."""
     timestamp_granularities: NotRequired[List[TimestampGranularities]]
     r"""Timestamp granularity levels to include. Options: word, segment.
     **Important:** Only works when response_format is set to verbose_json.
@@ -83,6 +96,22 @@ class AudioTranscriptionRequest(BaseModel):
 
     model: Annotated[str, FieldMetadata(multipart=True)]
     r"""Model name"""
+
+    chunking_strategy: Annotated[Optional[Union[str, dict]], FieldMetadata(multipart=True)] = None
+    r"""Chunking strategy. Required for `gpt-4o-transcribe-diarize` inputs longer than 30 seconds."""
+
+    include: Annotated[Optional[List[str]], FieldMetadata(multipart=True)] = None
+    r"""Additional response data to include, such as `logprobs` for supported non-diarization GPT transcription models."""
+
+    known_speaker_names: Annotated[
+        Optional[List[str]], FieldMetadata(multipart=True)
+    ] = None
+    r"""Optional known speaker names for diarization workflows."""
+
+    known_speaker_references: Annotated[
+        Optional[List[str]], FieldMetadata(multipart=True)
+    ] = None
+    r"""Optional speaker reference audio samples as data URLs for diarization workflows."""
 
     language: Annotated[Optional[str], FieldMetadata(multipart=True)] = None
     r"""Audio language (ISO-639-1 format)"""
@@ -100,6 +129,10 @@ class AudioTranscriptionRequest(BaseModel):
     """
 
     temperature: Annotated[Optional[float], FieldMetadata(multipart=True)] = 0
+    r"""Sampling temperature between 0 and 1."""
+
+    stream: Annotated[Optional[bool], FieldMetadata(multipart=True)] = None
+    r"""Stream transcript events as they are generated. Ignored by whisper-1."""
 
     timestamp_granularities: Annotated[
         Optional[List[TimestampGranularities]], FieldMetadata(multipart=True)

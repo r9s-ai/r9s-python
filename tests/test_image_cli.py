@@ -263,6 +263,24 @@ class TestImageCliParser:
         ])
         assert args.size == "512x512"
 
+    def test_edit_with_auto_size(self) -> None:
+        """Edit supports auto size."""
+        parser = self.get_parser()
+        args = parser.parse_args([
+            "images", "edit", "photo.png", "Edit",
+            "-s", "auto"
+        ])
+        assert args.size == "auto"
+
+    def test_edit_with_gpt_image_size(self) -> None:
+        """Edit supports GPT image size options."""
+        parser = self.get_parser()
+        args = parser.parse_args([
+            "images", "edit", "photo.png", "Edit",
+            "-s", "1536x1024"
+        ])
+        assert args.size == "1536x1024"
+
     def test_edit_with_n(self) -> None:
         """Edit generating multiple variations."""
         parser = self.get_parser()
@@ -736,3 +754,81 @@ class TestImageEditHandler:
         call_kwargs = mock_client.images.edit.call_args.kwargs
         assert "mask" in call_kwargs
         assert call_kwargs["mask"]["file_name"] == "mask.png"
+
+    def test_edit_omits_response_format_for_gpt_image_models(self, tmp_path: Path) -> None:
+        """GPT image edit requests should not send response_format."""
+        from r9s.cli_tools.image_cli import handle_image_edit
+
+        test_image = tmp_path / "input.png"
+        test_image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 50)
+
+        args = argparse.Namespace(
+            image=str(test_image),
+            prompt="Add a hat",
+            output=None,
+            mask=None,
+            model="gpt-image-1",
+            size=None,
+            n=1,
+            format="b64",
+            json=False,
+        )
+
+        mock_image = MagicMock()
+        mock_image.url = None
+        mock_image.b64_json = "aGVsbG8="
+
+        mock_response = MagicMock()
+        mock_response.data = [mock_image]
+
+        mock_client = MagicMock()
+        mock_client.images.edit.return_value = mock_response
+
+        with patch("r9s.cli_tools.image_cli.get_client", return_value=mock_client):
+            with patch("r9s.cli_tools.image_cli.LoadingSpinner"):
+                handle_image_edit(args)
+
+        call_kwargs = mock_client.images.edit.call_args.kwargs
+        assert "response_format" not in call_kwargs
+
+    def test_edit_preserves_multiple_input_images(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Reference-style edit requests should preserve multiple images in the SDK."""
+        from r9s import R9S
+
+        image_1 = tmp_path / "image1.png"
+        image_1.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 10)
+        image_2 = tmp_path / "image2.png"
+        image_2.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x11" * 10)
+
+        captured = {}
+
+        def fake_serialize_request_body(request_body, *_args, **_kwargs):
+            captured["request_body"] = request_body
+            class _Body:
+                media_type = "multipart/form-data"
+                content = None
+                data = {}
+                files = []
+            return _Body()
+
+        def fake_do_request(self, **_kwargs):
+            raise RuntimeError("stop after capturing request")
+
+        monkeypatch.setattr("r9s.images.utils.serialize_request_body", fake_serialize_request_body)
+        monkeypatch.setattr("r9s.images.Images.do_request", fake_do_request)
+
+        client = R9S(api_key="test")
+
+        with pytest.raises(RuntimeError, match="stop after capturing request"):
+            client.images.edit(
+                image=[
+                    {"file_name": image_1.name, "content": image_1.read_bytes()},
+                    {"file_name": image_2.name, "content": image_2.read_bytes()},
+                ],
+                prompt="Blend these images",
+                model="gpt-image-1.5",
+            )
+
+        request_body = captured["request_body"]
+        assert isinstance(request_body.image, list)
+        assert len(request_body.image) == 2

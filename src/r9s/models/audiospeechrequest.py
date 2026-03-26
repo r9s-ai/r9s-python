@@ -8,11 +8,18 @@ from typing_extensions import NotRequired, TypedDict
 
 AudioSpeechRequestVoice = Literal[
     "alloy",
+    "ash",
+    "ballad",
+    "coral",
+    "cedar",
     "echo",
     "fable",
+    "marin",
     "onyx",
     "nova",
+    "sage",
     "shimmer",
+    "verse",
 ]
 r"""Voice type"""
 
@@ -34,9 +41,14 @@ class AudioSpeechRequestTypedDict(TypedDict):
     r"""Text to convert to speech"""
     voice: AudioSpeechRequestVoice
     r"""Voice type"""
+    instructions: NotRequired[str]
+    r"""Additional instructions to control delivery style or tone. Not supported by legacy tts-1 models."""
     response_format: NotRequired[AudioSpeechRequestResponseFormat]
+    r"""Audio output format (mp3, opus, aac, flac, wav, or pcm)."""
+    stream_format: NotRequired[Literal["sse", "audio"]]
+    r"""Streaming transport format. `sse` is not supported by legacy tts-1 models."""
     speed: NotRequired[float]
-    r"""Speech speed"""
+    r"""Speech speed. Valid range is 0.25 to 4.0."""
 
 
 class AudioSpeechRequest(BaseModel):
@@ -49,7 +61,14 @@ class AudioSpeechRequest(BaseModel):
     voice: AudioSpeechRequestVoice
     r"""Voice type"""
 
+    instructions: Optional[str] = None
+    r"""Additional instructions to control delivery style or tone. Not supported by legacy tts-1 models."""
+
     response_format: Optional[AudioSpeechRequestResponseFormat] = "mp3"
+    r"""Audio output format (mp3, opus, aac, flac, wav, or pcm)."""
+
+    stream_format: Optional[Literal["sse", "audio"]] = None
+    r"""Streaming transport format. `sse` is not supported by legacy tts-1 models."""
 
     speed: Optional[float] = 1
-    r"""Speech speed"""
+    r"""Speech speed. Valid range is 0.25 to 4.0."""

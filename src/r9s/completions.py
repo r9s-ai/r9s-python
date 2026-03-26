@@ -44,23 +44,23 @@ class Completions(BaseSDK):
     ) -> models.CompletionResponse:
         r"""Create text completion
 
-        Create a text completion, supports streaming
+        Create a legacy text completion, supports streaming for compatibility workloads
 
         :param model: Model name
         :param prompt: Prompt text
         :param best_of: Generate multiple results and return the best one
         :param echo: Whether to echo the prompt
-        :param frequency_penalty:
-        :param logit_bias:
-        :param max_tokens:
-        :param n:
-        :param presence_penalty:
-        :param seed:
-        :param stop:
-        :param stream:
-        :param temperature:
-        :param top_p:
-        :param user:
+        :param frequency_penalty: Penalizes tokens based on how often they already appeared, reducing repetition
+        :param logit_bias: Adjusts the likelihood of specific tokens by token ID
+        :param max_tokens: Maximum number of tokens to generate
+        :param n: Number of completion choices to generate
+        :param presence_penalty: Penalizes tokens that have already appeared, encouraging new topics
+        :param seed: Best-effort deterministic sampling seed
+        :param stop: Up to four stop sequences where generation should end
+        :param stream: When true, returns SSE events instead of a single JSON response
+        :param temperature: Sampling temperature. Higher values make output more random
+        :param top_p: Nucleus sampling parameter controlling diversity
+        :param user: End-user identifier for abuse monitoring
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -96,23 +96,23 @@ class Completions(BaseSDK):
     ) -> eventstreaming.EventStream[models.CompletionStreamEvent]:
         r"""Create text completion
 
-        Create a text completion, supports streaming
+        Create a legacy text completion, supports streaming for compatibility workloads
 
         :param model: Model name
         :param prompt: Prompt text
         :param best_of: Generate multiple results and return the best one
         :param echo: Whether to echo the prompt
-        :param frequency_penalty:
-        :param logit_bias:
-        :param max_tokens:
-        :param n:
-        :param presence_penalty:
-        :param seed:
-        :param stop:
-        :param stream:
-        :param temperature:
-        :param top_p:
-        :param user:
+        :param frequency_penalty: Penalizes tokens based on how often they already appeared, reducing repetition
+        :param logit_bias: Adjusts the likelihood of specific tokens by token ID
+        :param max_tokens: Maximum number of tokens to generate
+        :param n: Number of completion choices to generate
+        :param presence_penalty: Penalizes tokens that have already appeared, encouraging new topics
+        :param seed: Best-effort deterministic sampling seed
+        :param stop: Up to four stop sequences where generation should end
+        :param stream: When true, returns SSE events instead of a single JSON response
+        :param temperature: Sampling temperature. Higher values make output more random
+        :param top_p: Nucleus sampling parameter controlling diversity
+        :param user: End-user identifier for abuse monitoring
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds

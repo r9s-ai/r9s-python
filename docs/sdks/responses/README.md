@@ -23,14 +23,20 @@ with R9S(
     api_key="<YOUR_BEARER_TOKEN_HERE>",
 ) as r9_s:
 
-    res = r9_s.responses.create(model="gpt-4o-mini", input="Tell me a joke about programming", instructions="You are a funny assistant", temperature=0.7, max_output_tokens=500, stream=False, parallel_tool_calls=True, store=True, background=False, truncation="disabled")
+    res = r9_s.responses.create(
+        model="gpt-4o-mini",
+        input="Tell me a joke about programming",
+        instructions="You are a funny assistant",
+        temperature=0.7,
+        max_output_tokens=500,
+        stream=False,
+    )
 
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
+    print(res.output_text)
 
 ```
+
+For streaming responses, call `responses.create(..., stream=True)` and iterate the returned event stream. When `stream=False`, the SDK returns a normal [models.ResponseObject](../../models/responseobject.md).
 
 ### Parameters
 

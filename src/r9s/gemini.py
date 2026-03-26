@@ -178,6 +178,24 @@ class Gemini(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> GeminiGenerateContentResponse:
+        r"""Generate content (Gemini native API)
+
+        Generate a non-streaming Gemini response.
+
+        :param model: Gemini model name
+        :param contents: Conversation history and multimodal input parts
+        :param generation_config: Generation settings such as temperature, response MIME type, JSON schema, thinking, image, or speech config
+        :param safety_settings: Per-category safety thresholds
+        :param system_instruction: System instruction content
+        :param tools: Tool declarations and built-in Gemini tools such as function calling or code execution
+        :param tool_config: Tool invocation configuration
+        :param cached_content: Cached content reference
+        :param store: Overrides project-level logging behavior for the request
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
         base_url = self._resolve_base_url(server_url)
         if timeout_ms is None:
             timeout_ms = self.sdk_configuration.timeout_ms
@@ -260,6 +278,24 @@ class Gemini(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> eventstreaming.EventStream[GeminiGenerateContentResponse]:
+        r"""Generate content stream (Gemini native API)
+
+        Generate a streaming Gemini response over Server-Sent Events.
+
+        :param model: Gemini model name
+        :param contents: Conversation history and multimodal input parts
+        :param generation_config: Generation settings such as temperature, response MIME type, JSON schema, thinking, image, or speech config
+        :param safety_settings: Per-category safety thresholds
+        :param system_instruction: System instruction content
+        :param tools: Tool declarations and built-in Gemini tools such as function calling or code execution
+        :param tool_config: Tool invocation configuration
+        :param cached_content: Cached content reference
+        :param store: Overrides project-level logging behavior for the request
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
         base_url = self._resolve_base_url(server_url)
         if timeout_ms is None:
             timeout_ms = self.sdk_configuration.timeout_ms
@@ -355,6 +391,24 @@ class Gemini(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> GeminiGenerateContentResponse:
+        r"""Generate content (Gemini native API)
+
+        Generate a non-streaming Gemini response asynchronously.
+
+        :param model: Gemini model name
+        :param contents: Conversation history and multimodal input parts
+        :param generation_config: Generation settings such as temperature, response MIME type, JSON schema, thinking, image, or speech config
+        :param safety_settings: Per-category safety thresholds
+        :param system_instruction: System instruction content
+        :param tools: Tool declarations and built-in Gemini tools such as function calling or code execution
+        :param tool_config: Tool invocation configuration
+        :param cached_content: Cached content reference
+        :param store: Overrides project-level logging behavior for the request
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
         base_url = self._resolve_base_url(server_url)
         if timeout_ms is None:
             timeout_ms = self.sdk_configuration.timeout_ms
@@ -437,6 +491,24 @@ class Gemini(BaseSDK):
         timeout_ms: Optional[int] = None,
         http_headers: Optional[Mapping[str, str]] = None,
     ) -> eventstreaming.EventStreamAsync[GeminiGenerateContentResponse]:
+        r"""Generate content stream (Gemini native API)
+
+        Generate a streaming Gemini response asynchronously over Server-Sent Events.
+
+        :param model: Gemini model name
+        :param contents: Conversation history and multimodal input parts
+        :param generation_config: Generation settings such as temperature, response MIME type, JSON schema, thinking, image, or speech config
+        :param safety_settings: Per-category safety thresholds
+        :param system_instruction: System instruction content
+        :param tools: Tool declarations and built-in Gemini tools such as function calling or code execution
+        :param tool_config: Tool invocation configuration
+        :param cached_content: Cached content reference
+        :param store: Overrides project-level logging behavior for the request
+        :param retries: Override the default retry configuration for this method
+        :param server_url: Override the default server URL for this method
+        :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
+        :param http_headers: Additional headers to set or replace on requests.
+        """
         base_url = self._resolve_base_url(server_url)
         if timeout_ms is None:
             timeout_ms = self.sdk_configuration.timeout_ms

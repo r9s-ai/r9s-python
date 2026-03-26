@@ -25,7 +25,7 @@ paths:
               with_system:
                 summary: Request with system prompt
                 value:
-                  model: qwen-plus
+                  model: gpt-4o-mini
                   messages:
                   - role: system
                     content: You are a helpful assistant.
@@ -109,7 +109,7 @@ paths:
               multi_turn:
                 summary: Multi-turn conversation
                 value:
-                  model: claude-sonnet-4.5
+                  model: gpt-4o-mini
                   messages:
                   - role: system
                     content: You are a knowledgeable programming tutor.
@@ -214,7 +214,7 @@ paths:
               with_reasoning:
                 summary: Reasoning mode (o1 series)
                 value:
-                  model: grok-4-fast-reasoning
+                  model: o1
                   messages:
                   - role: user
                     content: 'Solve this math problem: If a train travels 120 km in
@@ -366,7 +366,7 @@ paths:
               multi_turn_conversation:
                 summary: Multi-turn conversation
                 value:
-                  model: qwen-plus
+                  model: gpt-4o-mini
                   input:
                   - role: user
                     content: What is artificial intelligence?
@@ -578,6 +578,16 @@ paths:
                   instructions: You are a helpful assistant
                   previous_response_id: resp_abc123xyz456
                   max_output_tokens: 1000
+              conversation_state:
+                summary: Stateful conversation reference
+                value:
+                  model: gpt-4o-mini
+                  input: Can you summarize the latest user question?
+                  conversation:
+                    id: conv_abc123xyz456
+                  include:
+                  - file_search_call.results
+                  max_tool_calls: 3
               background_task:
                 summary: Background asynchronous task
                 value:
@@ -845,7 +855,7 @@ paths:
       tags:
       - completions
       summary: Create text completion
-      description: Create a text completion, supports streaming
+      description: Create a legacy text completion endpoint for compatibility use cases
       requestBody:
         required: true
         content:
@@ -856,13 +866,13 @@ paths:
               simple:
                 summary: Simple text completion
                 value:
-                  model: gpt-4o-mini
+                  model: gpt-3.5-turbo-instruct
                   prompt: Once upon a time
                   max_tokens: 50
               with_options:
                 summary: Completion with options
                 value:
-                  model: qwen-plus
+                  model: gpt-3.5-turbo-instruct
                   prompt: Write a haiku about coding
                   max_tokens: 100
                   temperature: 0.8
@@ -871,7 +881,7 @@ paths:
               streaming:
                 summary: Streaming completion
                 value:
-                  model: gpt-4o-mini
+                  model: gpt-3.5-turbo-instruct
                   prompt: List 3 benefits of unit testing
                   max_tokens: 64
                   stream: true
@@ -883,7 +893,7 @@ paths:
               code_completion:
                 summary: Code completion example
                 value:
-                  model: qwen3-coder-plus
+                  model: gpt-3.5-turbo-instruct
                   prompt: 'def fibonacci(n):'
                   max_tokens: 80
                   temperature: 0.3
@@ -956,27 +966,27 @@ paths:
               simple:
                 summary: Simple image generation
                 value:
-                  model: gpt-4o-mini
+                  model: gpt-image-1
                   prompt: A cute cat sitting on a windowsill
                   n: 1
-                  size: 1024x1024
+                  size: auto
               detailed:
                 summary: Image generation with detailed parameters
                 value:
-                  model: gpt-4o-mini
+                  model: gpt-image-1
                   prompt: A futuristic city with flying cars at sunset
                   n: 1
-                  quality: hd
-                  size: 1792x1024
-                  style: vivid
+                  quality: high
+                  size: 1536x1024
+                  output_format: webp
               base64_output:
                 summary: Base64 output
                 value:
-                  model: gpt-4o-mini
+                  model: dall-e-3
                   prompt: Minimalist logo of a cloud with a lightning bolt
                   n: 1
                   response_format: b64_json
-                  size: 512x512
+                  size: 1024x1024
       responses:
         '200':
           description: Successful response
@@ -1140,12 +1150,12 @@ paths:
               single:
                 summary: Single text embedding
                 value:
-                  model: qwen-plus
+                  model: text-embedding-3-small
                   input: The food was delicious and the waiter was friendly.
               multiple:
                 summary: Multiple text embeddings
                 value:
-                  model: qwen-plus
+                  model: text-embedding-3-small
                   input:
                   - Hello world
                   - Goodbye world
@@ -1153,7 +1163,7 @@ paths:
               base64_embedding:
                 summary: Base64 encoded embedding
                 value:
-                  model: gpt-4o-mini
+                  model: text-embedding-3-large
                   input: Convert this to an embedding.
                   encoding_format: base64
                   dimensions: 256
@@ -1210,7 +1220,7 @@ paths:
               simple:
                 summary: Simple text moderation
                 value:
-                  model: gpt-4o-mini
+                  model: omni-moderation-latest
                   input: I want to hurt someone
               multiple:
                 summary: Multiple text moderations
@@ -1218,11 +1228,11 @@ paths:
                   input:
                   - Hello, how are you?
                   - This is a violent message
-                  model: gpt-4o-mini
+                  model: omni-moderation-latest
               user_generated_content:
                 summary: User-generated content safety check
                 value:
-                  model: qwen-plus
+                  model: omni-moderation-latest
                   input: Summarize the top 3 ways to make a bomb
       responses:
         '200':
@@ -1292,26 +1302,28 @@ paths:
               simple:
                 summary: Simple speech synthesis
                 value:
-                  model: speech-2.6-turbo
+                  model: gpt-4o-mini-tts
                   input: Hello, welcome to our service!
                   voice: alloy
               detailed:
                 summary: Speech synthesis with detailed parameters
                 value:
-                  model: speech-2.6-hd
+                  model: gpt-4o-mini-tts
                   input: The quick brown fox jumps over the lazy dog.
                   voice: nova
                   response_format: mp3
                   speed: 1.0
+                  instructions: Speak in a calm, warm tone.
               fast_briefing:
                 summary: Fast-paced briefing
                 value:
-                  model: speech-2.6-turbo
+                  model: gpt-4o-mini-tts
                   input: 'Daily update: traffic is clear, weather is sunny, meetings
                     start at 10 AM.'
-                  voice: echo
+                  voice: ash
                   response_format: opus
                   speed: 1.2
+                  stream_format: sse
       responses:
         '200':
           description: Successful response
@@ -1369,7 +1381,10 @@ paths:
 
         - whisper-1: Supports json, text, srt, verbose_json, vtt formats
 
-        - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only support json and text formats
+        - gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-mini-transcribe-2025-12-15:
+          Only support json and text formats
+
+        - gpt-4o-transcribe-diarize: Supports json, text, and diarized_json
 
 
         **Note:** timestamp_granularities parameter only works when response_format
@@ -1400,11 +1415,18 @@ paths:
                 summary: Transcription with timestamps
                 value:
                   file: meeting.wav
-                  model: gpt-4o-transcribe
+                  model: whisper-1
                   language: en
                   response_format: verbose_json
                   timestamp_granularities:
                   - word
+              diarized:
+                summary: Diarized transcription
+                value:
+                  file: interview.wav
+                  model: gpt-4o-transcribe-diarize
+                  response_format: diarized_json
+                  chunking_strategy: auto
       responses:
         '200':
           description: Successful response
@@ -1453,7 +1475,7 @@ paths:
         language is automatically detected by the model.
 
 
-        **Supported models:** whisper-1 (primary), gpt-4o-transcribe (extended support)
+        **Supported models:** whisper-1
 
         '
       requestBody:
@@ -1479,7 +1501,7 @@ paths:
                 summary: Translate meeting recording to English
                 value:
                   file: meeting_cn.mp3
-                  model: gpt-4o-transcribe
+                  model: whisper-1
                   prompt: Business meeting, summarize clearly
                   response_format: text
       responses:

@@ -582,30 +582,10 @@ components:
           - type: string
           - type: array
             items:
-              $ref: '#/components/schemas/Message'
-          description: 'Input content, required parameter. Can be:
-
-            - String: Single text input
-
-            - Message array: Structured conversation history
-
-
-            **Important limitations:**
-
-            - Messages only support basic fields (role, content, name)
-
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-
-            - content field is required and cannot be null
-
-            - To use tools, define them in the top-level tools parameter; model will
-            call them on first response
-
-
-            Note: Responses API has deprecated messages parameter, now uses input
-            parameter uniformly
-
-            '
+              type: object
+              additionalProperties: true
+          description: Input content for the Responses API. Can be a plain string
+            or an array of native input items.
         instructions:
           type: string
           description: System-level instructions to guide model behavior and response
@@ -624,10 +604,31 @@ components:
           type: integer
           minimum: 1
           description: Maximum number of tokens to generate
+        max_tool_calls:
+          type: integer
+          minimum: 1
+          description: Maximum number of total built-in tool calls that can be processed
+            in the response.
         stream:
           type: boolean
           default: false
           description: Whether to enable streaming
+        include:
+          type: array
+          items:
+            type: string
+          description: Additional response data to include in the response.
+        conversation:
+          oneOf:
+          - type: string
+          - type: object
+            required:
+            - id
+            properties:
+              id:
+                type: string
+                description: Conversation identifier
+          description: Conversation reference for stateful Responses API usage.
         modalities:
           type: array
           items:
@@ -697,14 +698,42 @@ components:
               description: Verbosity level for the text output
         previous_response_id:
           type: string
-          description: 'The ID of a previous response to continue the conversation
-            from. This allows you to chain responses together and maintain conversation
-            state.
-
-            When using previous_response_id, the model will automatically have access
-            to all previously produced reasoning items and conversation history.
-
-            '
+          description: The ID of a previous response to continue the conversation
+            from. Cannot be used together with conversation.
+        prompt:
+          type: object
+          required:
+          - id
+          properties:
+            id:
+              type: string
+              description: Prompt template identifier
+            variables:
+              type: object
+              additionalProperties: true
+              description: Variables substituted into the prompt template
+            version:
+              type: string
+              description: Prompt template version
+          description: Reference to a prompt template and its variables.
+        prompt_cache_key:
+          type: string
+          description: Cache key used for prompt caching.
+        prompt_cache_retention:
+          type: string
+          description: Prompt cache retention policy.
+        safety_identifier:
+          type: string
+          description: Stable user safety identifier recommended by OpenAI.
+        service_tier:
+          type: string
+          enum:
+          - auto
+          - default
+          - flex
+          - scale
+          - priority
+          description: Processing tier used to serve the request.
         store:
           type: boolean
           default: true
@@ -765,6 +794,9 @@ components:
           type: object
           additionalProperties: true
           description: Additional metadata for tracking and organization purposes
+        user:
+          type: string
+          description: Legacy user identifier. Prefer safety_identifier for new integrations.
     ToolChoice:
       type: object
       required:
@@ -810,6 +842,7 @@ components:
           - incomplete
           - failed
           - cancelled
+          - queued
           description: The status of the response
         background:
           type: boolean
@@ -829,6 +862,13 @@ components:
           - type: integer
           - type: 'null'
           description: Unix timestamp when the response was completed
+        conversation:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Conversation identifier
+          description: The conversation that this response belonged to.
         error:
           anyOf:
           - type: object
@@ -866,6 +906,18 @@ components:
           - type: string
           - type: 'null'
           description: ID of the previous response in a chain
+        prompt:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Prompt template identifier
+            variables:
+              type: object
+              additionalProperties: true
+            version:
+              type: string
+          description: Prompt template reference used for the response.
         prompt_cache_key:
           anyOf:
           - type: string
@@ -908,6 +960,9 @@ components:
           enum:
           - auto
           - default
+          - flex
+          - scale
+          - priority
           description: Service tier used
         store:
           type: boolean
@@ -1503,13 +1558,13 @@ components:
               type: string
               format: binary
             description: Array of image files (up to 16 for GPT image models)
-          description: 'The image(s) to edit. Must be a supported image file or an
-            array of images.
+          description: 'The image(s) to edit. Provide a supported image file, or
+            an array of images for GPT image models.
 
 
             For the GPT image models (gpt-image-1, gpt-image-1-mini, and gpt-image-1.5):
 
-            - Each image should be a png, webp, or jpg file less than 50MB
+            - Each image must be a PNG, WebP, or JPG file less than 50MB
 
             - You can provide up to 16 images
 
@@ -1518,7 +1573,7 @@ components:
 
             - You can only provide one image
 
-            - It should be a square png file less than 4MB
+            - It must be a square PNG file less than 4MB
 
             '
         prompt:
@@ -1538,11 +1593,24 @@ components:
           description: 'An additional image whose fully transparent areas (e.g. where
             alpha is zero) indicate where image should be edited.
 
-            If there are multiple images provided, the mask will be applied on the
+            If there are multiple images provided, the mask will be applied to the
             first image.
 
-            Must be a valid PNG file, less than 4MB, and have the same dimensions
-            as image.
+
+            For the GPT image models (gpt-image-1, gpt-image-1-mini, and gpt-image-1.5):
+
+            - The mask must match the input image format and dimensions
+
+            - The image and mask must each be less than 50MB
+
+            - The mask must include an alpha channel
+
+
+            For dall-e-2:
+
+            - The mask must be a valid PNG file less than 4MB
+
+            - It must have the same dimensions as the image
 
             '
         background:

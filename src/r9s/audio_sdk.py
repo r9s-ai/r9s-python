@@ -37,7 +37,9 @@ class AudioSDK(BaseSDK):
         model: str,
         input: str,
         voice: models.AudioSpeechRequestVoice,
+        instructions: Optional[str] = None,
         response_format: Optional[models.AudioSpeechRequestResponseFormat] = "mp3",
+        stream_format: Optional[str] = None,
         speed: Optional[float] = 1,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
@@ -52,8 +54,10 @@ class AudioSDK(BaseSDK):
         :param model: TTS model name
         :param input: Text to convert to speech
         :param voice: Voice type
-        :param response_format:
-        :param speed: Speech speed
+        :param instructions: Additional instructions to control delivery style or tone. Not supported by legacy `tts-1` models.
+        :param response_format: Audio output format such as `mp3`, `opus`, `aac`, `flac`, `wav`, or `pcm`
+        :param stream_format: Streaming transport format. `sse` is not supported by legacy `tts-1` models.
+        :param speed: Speech speed. Valid range is 0.25 to 4.0.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -74,7 +78,9 @@ class AudioSDK(BaseSDK):
             model=model,
             input=input,
             voice=voice,
+            instructions=instructions,
             response_format=response_format,
+            stream_format=stream_format,
             speed=speed,
         )
 
@@ -207,7 +213,9 @@ class AudioSDK(BaseSDK):
         model: str,
         input: str,
         voice: models.AudioSpeechRequestVoice,
+        instructions: Optional[str] = None,
         response_format: Optional[models.AudioSpeechRequestResponseFormat] = "mp3",
+        stream_format: Optional[str] = None,
         speed: Optional[float] = 1,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
@@ -222,8 +230,10 @@ class AudioSDK(BaseSDK):
         :param model: TTS model name
         :param input: Text to convert to speech
         :param voice: Voice type
-        :param response_format:
-        :param speed: Speech speed
+        :param instructions: Additional instructions to control delivery style or tone. Not supported by legacy `tts-1` models.
+        :param response_format: Audio output format such as `mp3`, `opus`, `aac`, `flac`, `wav`, or `pcm`
+        :param stream_format: Streaming transport format. `sse` is not supported by legacy `tts-1` models.
+        :param speed: Speech speed. Valid range is 0.25 to 4.0.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -244,7 +254,9 @@ class AudioSDK(BaseSDK):
             model=model,
             input=input,
             voice=voice,
+            instructions=instructions,
             response_format=response_format,
+            stream_format=stream_format,
             speed=speed,
         )
 
@@ -376,12 +388,17 @@ class AudioSDK(BaseSDK):
         *,
         file: Union[models.File, models.FileTypedDict],
         model: str,
+        chunking_strategy: Optional[Union[str, dict]] = None,
+        include: Optional[List[str]] = None,
+        known_speaker_names: Optional[List[str]] = None,
+        known_speaker_references: Optional[List[str]] = None,
         language: Optional[str] = None,
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranscriptionRequestResponseFormat
         ] = "json",
         temperature: Optional[float] = 0,
+        stream: Optional[bool] = None,
         timestamp_granularities: Optional[List[models.TimestampGranularities]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
@@ -396,19 +413,25 @@ class AudioSDK(BaseSDK):
         **Supported models:**
         - whisper-1: Supports json, text, srt, verbose_json, vtt formats
         - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only support json and text formats
+        - gpt-4o-transcribe-diarize: Supports json, text, and diarized_json formats
 
-        **Note:** timestamp_granularities parameter only works when response_format is set to verbose_json
+        **Note:** `timestamp_granularities` only works when `response_format` is `verbose_json`.
 
 
         :param file: Audio file to transcribe
         :param model: Model name
+        :param chunking_strategy: Chunking strategy. Required for `gpt-4o-transcribe-diarize` inputs longer than 30 seconds.
+        :param include: Additional response data to include, such as `logprobs` for supported non-diarization GPT transcription models.
+        :param known_speaker_names: Optional known speaker names for diarization workflows.
+        :param known_speaker_references: Optional speaker reference audio samples as data URLs for diarization workflows.
         :param language: Audio language (ISO-639-1 format)
         :param prompt: Optional text prompt
         :param response_format: Output format. Model support varies:
-            - whisper-1: Supports all formats (json, text, srt, verbose_json, vtt)
-            - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only json and text
-
-        :param temperature:
+            - whisper-1: Supports json, text, srt, verbose_json, vtt
+            - gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-mini-transcribe-2025-12-15: Only json and text
+            - gpt-4o-transcribe-diarize: Supports json, text, and diarized_json
+        :param temperature: Sampling temperature between 0 and 1.
+        :param stream: Stream transcript events as they are generated. Ignored by `whisper-1`.
         :param timestamp_granularities: Timestamp granularity levels to include. Options: word, segment.
             **Important:** Only works when response_format is set to verbose_json.
             Note: segment timestamps have no additional latency, but word timestamps add latency.
@@ -432,10 +455,15 @@ class AudioSDK(BaseSDK):
         request = models.AudioTranscriptionRequest(
             file=utils.get_pydantic_model(file, models.File),
             model=model,
+            chunking_strategy=chunking_strategy,
+            include=include,
+            known_speaker_names=known_speaker_names,
+            known_speaker_references=known_speaker_references,
             language=language,
             prompt=prompt,
             response_format=response_format,
             temperature=temperature,
+            stream=stream,
             timestamp_granularities=timestamp_granularities,
         )
 
@@ -548,12 +576,17 @@ class AudioSDK(BaseSDK):
         *,
         file: Union[models.File, models.FileTypedDict],
         model: str,
+        chunking_strategy: Optional[Union[str, dict]] = None,
+        include: Optional[List[str]] = None,
+        known_speaker_names: Optional[List[str]] = None,
+        known_speaker_references: Optional[List[str]] = None,
         language: Optional[str] = None,
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranscriptionRequestResponseFormat
         ] = "json",
         temperature: Optional[float] = 0,
+        stream: Optional[bool] = None,
         timestamp_granularities: Optional[List[models.TimestampGranularities]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
@@ -568,19 +601,25 @@ class AudioSDK(BaseSDK):
         **Supported models:**
         - whisper-1: Supports json, text, srt, verbose_json, vtt formats
         - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only support json and text formats
+        - gpt-4o-transcribe-diarize: Supports json, text, and diarized_json formats
 
-        **Note:** timestamp_granularities parameter only works when response_format is set to verbose_json
+        **Note:** `timestamp_granularities` only works when `response_format` is `verbose_json`.
 
 
         :param file: Audio file to transcribe
         :param model: Model name
+        :param chunking_strategy: Chunking strategy. Required for `gpt-4o-transcribe-diarize` inputs longer than 30 seconds.
+        :param include: Additional response data to include, such as `logprobs` for supported non-diarization GPT transcription models.
+        :param known_speaker_names: Optional known speaker names for diarization workflows.
+        :param known_speaker_references: Optional speaker reference audio samples as data URLs for diarization workflows.
         :param language: Audio language (ISO-639-1 format)
         :param prompt: Optional text prompt
         :param response_format: Output format. Model support varies:
-            - whisper-1: Supports all formats (json, text, srt, verbose_json, vtt)
-            - gpt-4o-transcribe, gpt-4o-mini-transcribe: Only json and text
-
-        :param temperature:
+            - whisper-1: Supports json, text, srt, verbose_json, vtt
+            - gpt-4o-transcribe, gpt-4o-mini-transcribe, gpt-4o-mini-transcribe-2025-12-15: Only json and text
+            - gpt-4o-transcribe-diarize: Supports json, text, and diarized_json
+        :param temperature: Sampling temperature between 0 and 1.
+        :param stream: Stream transcript events as they are generated. Ignored by `whisper-1`.
         :param timestamp_granularities: Timestamp granularity levels to include. Options: word, segment.
             **Important:** Only works when response_format is set to verbose_json.
             Note: segment timestamps have no additional latency, but word timestamps add latency.
@@ -604,10 +643,15 @@ class AudioSDK(BaseSDK):
         request = models.AudioTranscriptionRequest(
             file=utils.get_pydantic_model(file, models.File),
             model=model,
+            chunking_strategy=chunking_strategy,
+            include=include,
+            known_speaker_names=known_speaker_names,
+            known_speaker_references=known_speaker_references,
             language=language,
             prompt=prompt,
             response_format=response_format,
             temperature=temperature,
+            stream=stream,
             timestamp_granularities=timestamp_granularities,
         )
 
@@ -740,11 +784,11 @@ class AudioSDK(BaseSDK):
 
         **Important:** This endpoint only translates audio into English. The source language is automatically detected by the model.
 
-        **Supported models:** whisper-1 (primary), gpt-4o-transcribe (extended support)
+        **Supported models:** whisper-1
 
 
         :param file: Audio file to translate to English
-        :param model: Model name (whisper-1 is primary, gpt-4o-transcribe has extended support)
+        :param model: Model name. OpenAI currently documents `whisper-1` for this endpoint.
         :param prompt: Optional text prompt to guide the model's style.
             The source language can be specified in the prompt if needed, though the model will auto-detect it.
 
@@ -899,11 +943,11 @@ class AudioSDK(BaseSDK):
 
         **Important:** This endpoint only translates audio into English. The source language is automatically detected by the model.
 
-        **Supported models:** whisper-1 (primary), gpt-4o-transcribe (extended support)
+        **Supported models:** whisper-1
 
 
         :param file: Audio file to translate to English
-        :param model: Model name (whisper-1 is primary, gpt-4o-transcribe has extended support)
+        :param model: Model name. OpenAI currently documents `whisper-1` for this endpoint.
         :param prompt: Optional text prompt to guide the model's style.
             The source language can be specified in the prompt if needed, though the model will auto-detect it.
 

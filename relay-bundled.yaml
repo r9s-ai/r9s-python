@@ -120,7 +120,7 @@ paths:
       tags:
         - messages
       summary: Create message (Claude native API)
-      description: Create a message using Anthropic Claude's native API format, supports streaming
+      description: Create a message using Anthropic Claude's native API format, supports streaming. Anthropic beta features such as MCP servers, code execution containers, and context editing may require an `anthropic-beta` header.
       requestBody:
         required: true
         content:
@@ -343,6 +343,27 @@ paths:
                   tool_choice:
                     type: tool
                     name: get_weather
+              built_in_tool_with_container:
+                summary: Built-in tool with container state
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 2048
+                  system:
+                    - type: text
+                      text: You can use the code execution tool to inspect data files.
+                  messages:
+                    - role: user
+                      content:
+                        - type: text
+                          text: Load the CSV and calculate the average revenue per month.
+                  tools:
+                    - type: code_execution_20250825
+                      name: code_execution
+                  container:
+                    type: auto
+                  context_management:
+                    edits:
+                      - operation: keep
               complex_conversation:
                 summary: Complex multimodal conversation
                 value:
@@ -1867,7 +1888,7 @@ paths:
 
         **Important:** This endpoint only translates audio into English. The source language is automatically detected by the model.
 
-        **Supported models:** whisper-1 (primary), gpt-4o-transcribe (extended support)
+        **Supported models:** whisper-1
       requestBody:
         required: true
         content:
@@ -1891,7 +1912,7 @@ paths:
                 summary: Translate meeting recording to English
                 value:
                   file: meeting_cn.mp3
-                  model: gpt-4o-transcribe
+                  model: whisper-1
                   prompt: Business meeting, summarize clearly
                   response_format: text
       responses:
@@ -1933,7 +1954,7 @@ paths:
         Generates a model response given an input GenerateContentRequest.
         This endpoint supports multimodal inputs (text, images, audio, video, PDFs) and conversation history.
 
-        Authentication uses Bearer token in Authorization header (compatible with your platform's OpenAI-style auth).
+        Authentication uses a Gemini API key via `x-goog-api-key`.
       security:
         - api_key: []
       parameters:
@@ -2199,7 +2220,7 @@ paths:
         Generates a streamed response from the model given an input GenerateContentRequest.
         The response is returned as Server-Sent Events (SSE) for real-time streaming.
 
-        Authentication uses Bearer token in Authorization header (compatible with your platform's OpenAI-style auth).
+        Authentication uses a Gemini API key via `x-goog-api-key`.
       operationId: streamGenerateContent
       x-speakeasy-name-override: streamGenerateContent
       tags:
@@ -2352,7 +2373,7 @@ paths:
         Generates a text embedding vector from the input content using the specified embedding model.
         Supports different task types for optimized embeddings (retrieval, similarity, classification, etc.).
 
-        Authentication uses Bearer token in Authorization header (compatible with your platform's OpenAI-style auth).
+        Authentication uses a Gemini API key via `x-goog-api-key`.
       operationId: embedContent
       x-speakeasy-name-override: embedContent
       tags:
@@ -3089,10 +3110,10 @@ components:
             type: string
     AnthropicTool:
       type: object
-      required:
-        - name
-        - input_schema
+      additionalProperties: true
       properties:
+        type:
+          type: string
         name:
           type: string
         description:
@@ -3114,8 +3135,13 @@ components:
             $ref: '#/components/schemas/AnthropicMessageMessage'
           description: Messages list, first message must be a user message
         system:
-          type: string
-          description: System prompt
+          description: System prompt. Anthropic supports either a plain string or an array of system content blocks.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
         max_tokens:
           type: integer
           minimum: 1
@@ -3167,6 +3193,22 @@ components:
             An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
           additionalProperties: true
+        container:
+          description: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+        context_management:
+          type: object
+          description: Context management configuration for Anthropic conversation state features.
+          additionalProperties: true
+        mcp_servers:
+          type: array
+          description: MCP servers made available to the model for remote tool execution.
+          items:
+            type: object
+            additionalProperties: true
         thinking:
           type: object
           description: |
@@ -5055,15 +5097,15 @@ components:
                 format: binary
               description: Array of image files (up to 16 for GPT image models)
           description: |
-            The image(s) to edit. Must be a supported image file or an array of images.
+            The image(s) to edit. Provide a supported image file, or an array of images for GPT image models.
 
             For the GPT image models (gpt-image-1, gpt-image-1-mini, and gpt-image-1.5):
-            - Each image should be a png, webp, or jpg file less than 50MB
+            - Each image must be a PNG, WebP, or JPG file less than 50MB
             - You can provide up to 16 images
 
             For dall-e-2:
             - You can only provide one image
-            - It should be a square png file less than 4MB
+            - It must be a square PNG file less than 4MB
         prompt:
           type: string
           description: |
@@ -5076,8 +5118,16 @@ components:
           format: binary
           description: |
             An additional image whose fully transparent areas (e.g. where alpha is zero) indicate where image should be edited.
-            If there are multiple images provided, the mask will be applied on the first image.
-            Must be a valid PNG file, less than 4MB, and have the same dimensions as image.
+            If there are multiple images provided, the mask will be applied to the first image.
+
+            For the GPT image models (gpt-image-1, gpt-image-1-mini, and gpt-image-1.5):
+            - The mask must match the input image format and dimensions
+            - The image and mask must each be less than 50MB
+            - The mask must include an alpha channel
+
+            For dall-e-2:
+            - The mask must be a valid PNG file less than 4MB
+            - It must have the same dimensions as the image
         background:
           anyOf:
             - type: string
@@ -5405,12 +5455,22 @@ components:
           type: string
           enum:
             - alloy
+            - ash
+            - ballad
+            - coral
+            - cedar
             - echo
             - fable
+            - marin
             - onyx
             - nova
+            - sage
             - shimmer
+            - verse
           description: Voice type
+        instructions:
+          type: string
+          description: Additional instructions to control delivery style or tone. Not supported by legacy tts-1 models.
         response_format:
           type: string
           enum:
@@ -5421,12 +5481,19 @@ components:
             - wav
             - pcm
           default: mp3
+          description: Audio output format (mp3, opus, aac, flac, wav, or pcm).
+        stream_format:
+          type: string
+          enum:
+            - sse
+            - audio
+          description: Streaming transport format. `sse` is not supported by legacy tts-1 models.
         speed:
           type: number
           minimum: 0.25
           maximum: 4
           default: 1
-          description: Speech speed
+          description: Speech speed. Valid range is 0.25 to 4.0.
     AudioTranscriptionRequest:
       type: object
       required:
@@ -5539,7 +5606,7 @@ components:
           description: Audio file to translate to English
         model:
           type: string
-          description: Model name (whisper-1 is primary, gpt-4o-transcribe has extended support)
+          description: Model name. OpenAI currently documents `whisper-1` for this endpoint.
         prompt:
           type: string
           description: |

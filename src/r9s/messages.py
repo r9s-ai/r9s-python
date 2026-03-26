@@ -25,7 +25,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Union[Literal[False], None] = None,
@@ -42,6 +42,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -55,21 +58,24 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
 
         :param stop_sequences: Stop sequences
-        :param stream:
-        :param temperature:
-        :param top_p:
+        :param stream: When true, returns an SSE stream instead of a single JSON message response
+        :param temperature: Sampling temperature
+        :param top_p: Nucleus sampling parameter
         :param top_k: Top-k sampling parameter. Only sample from the top K options for each subsequent token.
-        :param tools:
-        :param tool_choice:
+        :param tools: Tool definitions exposed to Claude
+        :param tool_choice: Controls whether Claude can call tools automatically or a specific tool must be used
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -79,7 +85,6 @@ class Messages(BaseSDK):
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -92,7 +97,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Literal[True],
@@ -109,6 +114,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -122,21 +130,24 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
 
         :param stop_sequences: Stop sequences
-        :param stream:
-        :param temperature:
-        :param top_p:
+        :param stream: When true, returns an SSE stream instead of a single JSON message response
+        :param temperature: Sampling temperature
+        :param top_p: Nucleus sampling parameter
         :param top_k: Top-k sampling parameter. Only sample from the top K options for each subsequent token.
-        :param tools:
-        :param tool_choice:
+        :param tools: Tool definitions exposed to Claude
+        :param tool_choice: Controls whether Claude can call tools automatically or a specific tool must be used
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -146,7 +157,6 @@ class Messages(BaseSDK):
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -158,7 +168,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Optional[bool] = False,
@@ -175,6 +185,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -188,7 +201,7 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
@@ -203,6 +216,9 @@ class Messages(BaseSDK):
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -242,6 +258,9 @@ class Messages(BaseSDK):
                 tool_choice, Optional[models.AnthropicMessageRequestToolChoice]
             ),
             metadata=metadata,
+            container=container,
+            context_management=context_management,
+            mcp_servers=mcp_servers,
             thinking=utils.get_pydantic_model(thinking, Optional[models.Thinking]),
             service_tier=service_tier,
         )
@@ -377,7 +396,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Union[Literal[False], None] = None,
@@ -394,6 +413,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -407,7 +429,7 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
@@ -422,6 +444,9 @@ class Messages(BaseSDK):
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -444,7 +469,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Literal[True],
@@ -461,6 +486,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -474,7 +502,7 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
@@ -489,6 +517,9 @@ class Messages(BaseSDK):
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -510,7 +541,7 @@ class Messages(BaseSDK):
             List[models.AnthropicMessageMessage],
             List[models.AnthropicMessageMessageTypedDict],
         ],
-        system: Optional[str] = None,
+        system: Optional[Union[str, List[Dict[str, Any]]]] = None,
         max_tokens: Optional[int] = None,
         stop_sequences: Optional[List[str]] = None,
         stream: Optional[bool] = False,
@@ -527,6 +558,9 @@ class Messages(BaseSDK):
             ]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        container: Optional[Union[str, Dict[str, Any]]] = None,
+        context_management: Optional[Dict[str, Any]] = None,
+        mcp_servers: Optional[List[Dict[str, Any]]] = None,
         thinking: Optional[Union[models.Thinking, models.ThinkingTypedDict]] = None,
         service_tier: Optional[models.AnthropicMessageRequestServiceTier] = "auto",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -540,7 +574,7 @@ class Messages(BaseSDK):
 
         :param model: Claude model name
         :param messages: Messages list, first message must be a user message
-        :param system: System prompt
+        :param system: System prompt. Anthropic supports either a plain string or an array of system content blocks.
         :param max_tokens: Maximum number of output tokens (optional).
             If not provided, the relay service or API may use a default value.
             Different models have different maximum values.
@@ -555,6 +589,9 @@ class Messages(BaseSDK):
         :param metadata: An object describing metadata about the request. Can be used for tracking, identification, or filtering purposes.
             Common use cases: user_id, session_id, request_id, etc.
 
+        :param container: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+        :param context_management: Context management configuration for Anthropic conversation state features.
+        :param mcp_servers: MCP servers made available to the model for remote tool execution.
         :param thinking: Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
         :param service_tier: Service tier for request processing:
@@ -594,6 +631,9 @@ class Messages(BaseSDK):
                 tool_choice, Optional[models.AnthropicMessageRequestToolChoice]
             ),
             metadata=metadata,
+            container=container,
+            context_management=context_management,
+            mcp_servers=mcp_servers,
             thinking=utils.get_pydantic_model(thinking, Optional[models.Thinking]),
             service_tier=service_tier,
         )

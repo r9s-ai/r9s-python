@@ -2,30 +2,39 @@
 
 from __future__ import annotations
 from r9s.types import BaseModel
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from typing_extensions import NotRequired, TypeAliasType, TypedDict
 
 
+ModerationInputItemTypedDict = Dict[str, Any]
+r"""Native moderation input item, such as text or image_url objects."""
+
+ModerationInputItem = Dict[str, Any]
+r"""Native moderation input item, such as text or image_url objects."""
+
 ModerationRequestInputTypedDict = TypeAliasType(
-    "ModerationRequestInputTypedDict", Union[str, List[str]]
+    "ModerationRequestInputTypedDict",
+    Union[str, List[str], List[ModerationInputItemTypedDict]],
 )
-r"""Input text to moderate"""
+r"""Input to moderate. Can be plain text, an array of strings, or a list of native moderation input items."""
 
 
-ModerationRequestInput = TypeAliasType("ModerationRequestInput", Union[str, List[str]])
-r"""Input text to moderate"""
+ModerationRequestInput = TypeAliasType(
+    "ModerationRequestInput", Union[str, List[str], List[ModerationInputItem]]
+)
+r"""Input to moderate. Can be plain text, an array of strings, or a list of native moderation input items."""
 
 
 class ModerationRequestTypedDict(TypedDict):
     input: ModerationRequestInputTypedDict
-    r"""Input text to moderate"""
+    r"""Input to moderate. Can be plain text, an array of strings, or a list of native moderation input items."""
     model: NotRequired[str]
     r"""Model name"""
 
 
 class ModerationRequest(BaseModel):
     input: ModerationRequestInput
-    r"""Input text to moderate"""
+    r"""Input to moderate. Can be plain text, an array of strings, or a list of native moderation input items."""
 
-    model: Optional[str] = "gpt-4o-mini"
-    r"""Model name"""
+    model: Optional[str] = "omni-moderation-latest"
+    r"""Moderation model name. OpenAI currently documents omni-moderation-latest as the primary default."""

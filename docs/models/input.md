@@ -1,16 +1,8 @@
 # Input
 
-Input content, required parameter. Can be:
+Input content for the Responses API. Can be:
 - String: Single text input
-- Message array: Structured conversation history
-
-**Important limitations:**
-- Messages only support basic fields (role, content, name)
-- Does not support tool_calls, tool_call_id and other tool-related fields
-- content field is required and cannot be null
-- To use tools, define them in the top-level tools parameter; model will call them on first response
-
-Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
+- Native input item array: pass plain dictionaries matching the current Responses API item schema
 
 
 
@@ -22,9 +14,8 @@ Note: Responses API has deprecated messages parameter, now uses input parameter 
 value: str = /* values here */
 ```
 
-### `List[models.Message]`
+### `List[Dict[str, Any]]`
 
 ```python
-value: List[models.Message] = /* values here */
+value: List[Dict[str, Any]] = /* values here */
 ```
-

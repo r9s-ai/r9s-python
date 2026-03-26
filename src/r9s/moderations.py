@@ -15,7 +15,7 @@ class Moderations(BaseSDK):
         input: Union[
             models.ModerationRequestInput, models.ModerationRequestInputTypedDict
         ],
-        model: Optional[str] = "gpt-4o-mini",
+        model: Optional[str] = "omni-moderation-latest",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -25,8 +25,8 @@ class Moderations(BaseSDK):
 
         Perform content moderation on input text, detecting potentially harmful content
 
-        :param input: Input text to moderate
-        :param model: Model name
+        :param input: Input to moderate. Can be plain text, an array of strings, or native moderation input items such as text/image objects.
+        :param model: Moderation model name. OpenAI currently documents omni-moderation-latest as the primary default.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
@@ -149,7 +149,7 @@ class Moderations(BaseSDK):
         input: Union[
             models.ModerationRequestInput, models.ModerationRequestInputTypedDict
         ],
-        model: Optional[str] = "gpt-4o-mini",
+        model: Optional[str] = "omni-moderation-latest",
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -159,8 +159,8 @@ class Moderations(BaseSDK):
 
         Perform content moderation on input text, detecting potentially harmful content
 
-        :param input: Input text to moderate
-        :param model: Model name
+        :param input: Input to moderate. Can be plain text, an array of strings, or native moderation input items such as text/image objects.
+        :param model: Moderation model name. OpenAI currently documents omni-moderation-latest as the primary default.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds

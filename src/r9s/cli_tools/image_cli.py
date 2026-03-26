@@ -295,16 +295,19 @@ def handle_image_edit(args: argparse.Namespace) -> None:
     # Determine output file extension from output_format
     output_ext = getattr(args, "output_format", None) or "png"
 
+    model = resolve_image_model(args.model)
+
     # Build request kwargs
     kwargs = {
         "image": {"file_name": image_path.name, "content": image_data},
         "prompt": prompt,
-        "model": resolve_image_model(args.model),
+        "model": model,
         "n": n,
     }
 
     # Only include response_format if explicitly specified (not all models support it)
-    if args.format:
+    # GPT image models don't support response_format at all.
+    if args.format and not _is_gpt_image_model(model):
         kwargs["response_format"] = "b64_json" if args.format == "b64" else "url"
 
     if args.size:
@@ -320,8 +323,6 @@ def handle_image_edit(args: argparse.Namespace) -> None:
 
     # Make API call
     client = get_client()
-    model = kwargs["model"]
-
     if getattr(args, "verbose", False):
         info(f"Endpoint: POST /v1/images/edits")
         info(f"Model: {model}")

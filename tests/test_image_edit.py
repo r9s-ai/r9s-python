@@ -77,7 +77,7 @@ class TestImageEditRequestModel:
         )
         assert request.prompt == "Add a hat"
         assert request.n == 1  # default
-        assert request.size == "1024x1024"  # default
+        assert request.size == "auto"  # default
         assert request.response_format == "url"  # default
         assert request.mask is None
         assert request.model is None
@@ -109,7 +109,16 @@ class TestImageEditRequestModel:
         """Size field accepts valid literals."""
         image = ImageFile(file_name="t.png", content=b"x")
 
-        for size in ["256x256", "512x512", "1024x1024"]:
+        for size in [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1024x1536",
+            "1536x1024",
+            "1024x1792",
+            "1792x1024",
+        ]:
             req = ImageEditRequest(image=image, prompt="test", size=size)  # type: ignore
             assert req.size == size
 
@@ -159,15 +168,40 @@ class TestImageEditRequestModel:
         assert request.mask is not None
         assert request.mask.file_name == "mask.png"
 
+    def test_request_accepts_multiple_input_images(self) -> None:
+        """Request can include multiple input images for GPT image models."""
+        image_1 = ImageFile(file_name="image1.png", content=b"image_1")
+        image_2 = ImageFile(file_name="image2.png", content=b"image_2")
+
+        request = ImageEditRequest(
+            image=[image_1, image_2],
+            prompt="Blend these images",
+            model="gpt-image-1.5",
+        )
+
+        assert isinstance(request.image, list)
+        assert len(request.image) == 2
+        assert request.image[0].file_name == "image1.png"
+        assert request.image[1].file_name == "image2.png"
+
 
 class TestImageEditTypes:
     """Tests for ImageEdit type aliases."""
 
     def test_image_edit_size_values(self) -> None:
         """ImageEditSize should accept valid size strings."""
-        valid_sizes: list[ImageEditSize] = ["256x256", "512x512", "1024x1024"]
+        valid_sizes: list[ImageEditSize] = [
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1024x1536",
+            "1536x1024",
+            "1024x1792",
+            "1792x1024",
+        ]
         for size in valid_sizes:
-            assert size in ["256x256", "512x512", "1024x1024"]
+            assert size in valid_sizes
 
     def test_image_edit_response_format_values(self) -> None:
         """ImageEditResponseFormat should accept valid format strings."""

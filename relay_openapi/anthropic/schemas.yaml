@@ -212,10 +212,10 @@ components:
           description: Result of the tool execution
     AnthropicTool:
       type: object
-      required:
-      - name
-      - input_schema
+      additionalProperties: true
       properties:
+        type:
+          type: string
         name:
           type: string
         description:
@@ -251,8 +251,13 @@ components:
             $ref: '#/components/schemas/AnthropicMessageMessage'
           description: Messages list, first message must be a user message
         system:
-          type: string
-          description: System prompt
+          description: System prompt. Anthropic supports either a plain string or an array of system content blocks.
+          oneOf:
+          - type: string
+          - type: array
+            items:
+              type: object
+              additionalProperties: true
         max_tokens:
           type: integer
           minimum: 1
@@ -311,6 +316,22 @@ components:
 
             '
           additionalProperties: true
+        container:
+          description: Container identifier or configuration used by Anthropic tool runtimes and context editing features.
+          oneOf:
+          - type: string
+          - type: object
+            additionalProperties: true
+        context_management:
+          type: object
+          description: Context management configuration for Anthropic conversation state features.
+          additionalProperties: true
+        mcp_servers:
+          type: array
+          description: MCP servers made available to the model for remote tool execution.
+          items:
+            type: object
+            additionalProperties: true
         thinking:
           type: object
           description: 'Configuration for extended thinking (Claude 3.7+). When enabled,

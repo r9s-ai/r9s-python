@@ -107,8 +107,8 @@ class ImageGenerationRequest(BaseModel):
 |-------|-------|---------|------------|-------|
 | dall-e-2 | 256x256, 512x512, 1024x1024 | 1-10 | 1000 chars | Legacy model |
 | dall-e-3 | 1024x1024, 1024x1792, 1792x1024 | 1 | 4000 chars | High quality |
-| gpt-image-1 | 1024x1024, 1024x1536, 1536x1024 | 1 | 4000 chars | |
-| gpt-image-1.5 | 1024x1024, 1024x1536, 1536x1024 | 1-10 | 4000 chars | 4x faster, 20% cheaper than gpt-image-1 |
+| gpt-image-1 | auto, 1024x1024, 1024x1536, 1536x1024 | 1 | 32000 chars | |
+| gpt-image-1.5 | auto, 1024x1024, 1024x1536, 1536x1024 | 1-10 | 32000 chars | 4x faster, 20% cheaper than gpt-image-1 |
 
 **Key Differences (gpt-image-1 vs gpt-image-1.5):**
 - `gpt-image-1`: n=1 only
@@ -281,6 +281,7 @@ Create/update `src/r9s/models/imagegenerationrequest.py`:
 ```python
 # Add new type literals for extended sizes
 ImageSize = Literal[
+    "auto",                                # GPT image auto sizing
     "256x256", "512x512", "1024x1024",  # Standard
     "1024x1792", "1792x1024",            # DALL-E 3 landscape/portrait
     "1024x1536", "1536x1024",            # GPT-Image-1
@@ -374,14 +375,14 @@ MODEL_CONSTRAINTS = {
         prompt_max=4000,
     ),
     "gpt-image-1": ModelConstraints(
-        sizes=["1024x1024", "1024x1536", "1536x1024"],
+        sizes=["auto", "1024x1024", "1024x1536", "1536x1024"],
         n_range=(1, 1),
-        prompt_max=4000,
+        prompt_max=32000,
     ),
     "gpt-image-1.5": ModelConstraints(
-        sizes=["1024x1024", "1024x1536", "1536x1024"],
+        sizes=["auto", "1024x1024", "1024x1536", "1536x1024"],
         n_range=(1, 10),  # Supports multiple images unlike gpt-image-1
-        prompt_max=4000,
+        prompt_max=32000,
     ),
     "wanx-v1": ModelConstraints(
         sizes=["1024x1024", "720x1280", "1280x720"],
