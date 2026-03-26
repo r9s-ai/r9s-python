@@ -960,7 +960,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     images_edit.add_argument(
         "image",
-        help="Path to the image file to edit (PNG, <4MB)",
+        help="Path to the image file to edit (model-specific format and size limits apply)",
     )
     images_edit.add_argument(
         "prompt",
@@ -980,7 +980,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     images_edit.add_argument(
         "-s", "--size",
-        choices=["256x256", "512x512", "1024x1024"],
+        choices=[
+            "auto",
+            "256x256",
+            "512x512",
+            "1024x1024",
+            "1024x1536",
+            "1536x1024",
+            "1024x1792",
+            "1792x1024",
+        ],
         help="Output size",
     )
     images_edit.add_argument(
@@ -992,7 +1001,7 @@ def build_parser() -> argparse.ArgumentParser:
     images_edit.add_argument(
         "-f", "--format",
         choices=["url", "b64"],
-        help="Response format (default: url, or b64 if -o specified)",
+        help="Response format for models that support it (for example dall-e models)",
     )
     images_edit.add_argument(
         "--json",

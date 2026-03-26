@@ -22,8 +22,7 @@ paths:
         and conversation history.
 
 
-        Authentication uses Bearer token in Authorization header (compatible with
-        your platform''s OpenAI-style auth).
+        Authentication uses a Gemini API key via `x-goog-api-key`.
 
         '
       security:
@@ -302,8 +301,7 @@ paths:
         The response is returned as Server-Sent Events (SSE) for real-time streaming.
 
 
-        Authentication uses Bearer token in Authorization header (compatible with
-        your platform''s OpenAI-style auth).
+        Authentication uses a Gemini API key via `x-goog-api-key`.
 
         '
       operationId: streamGenerateContent

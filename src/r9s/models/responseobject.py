@@ -19,6 +19,7 @@ Status = Literal[
     "incomplete",
     "failed",
     "cancelled",
+    "queued",
 ]
 r"""The status of the response"""
 
@@ -60,6 +61,36 @@ class IncompleteDetails(BaseModel):
     pass
 
 
+class ResponseObjectConversationTypedDict(TypedDict):
+    id: str
+    r"""The unique ID of the conversation that this response was associated with."""
+
+
+class ResponseObjectConversation(BaseModel):
+    id: str
+    r"""The unique ID of the conversation that this response was associated with."""
+
+
+class ResponseObjectPromptTypedDict(TypedDict):
+    id: str
+    r"""The unique identifier of the prompt template used for the response."""
+    variables: NotRequired[Dict[str, Any]]
+    r"""Variables that were substituted into the prompt template."""
+    version: NotRequired[str]
+    r"""Prompt template version used for the response."""
+
+
+class ResponseObjectPrompt(BaseModel):
+    id: str
+    r"""The unique identifier of the prompt template used for the response."""
+
+    variables: Optional[Dict[str, Any]] = None
+    r"""Variables that were substituted into the prompt template."""
+
+    version: Optional[str] = None
+    r"""Prompt template version used for the response."""
+
+
 ResponseObjectEffort = Literal[
     "none",
     "minimal",
@@ -76,7 +107,9 @@ class ResponseObjectReasoningTypedDict(TypedDict):
     effort: NotRequired[Nullable[ResponseObjectEffort]]
     r"""Reasoning effort level (none/minimal for fast, low/medium for balanced, high/xhigh for thorough)"""
     summary: NotRequired[Nullable[str]]
-    r"""Summary of reasoning"""
+    r"""Reasoning summary level or summary payload"""
+    generate_summary: NotRequired[Nullable[str]]
+    r"""Deprecated alias for reasoning summary level. Kept for compatibility with official docs."""
 
 
 class ResponseObjectReasoning(BaseModel):
@@ -86,12 +119,15 @@ class ResponseObjectReasoning(BaseModel):
     r"""Reasoning effort level (none/minimal for fast, low/medium for balanced, high/xhigh for thorough)"""
 
     summary: OptionalNullable[str] = UNSET
-    r"""Summary of reasoning"""
+    r"""Reasoning summary level or summary payload"""
+
+    generate_summary: OptionalNullable[str] = UNSET
+    r"""Deprecated alias for reasoning summary level. Kept for compatibility with official docs."""
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        optional_fields = ["effort", "summary"]
-        nullable_fields = ["effort", "summary"]
+        optional_fields = ["effort", "summary", "generate_summary"]
+        nullable_fields = ["effort", "summary", "generate_summary"]
         null_default_fields = []
 
         serialized = handler(self)
@@ -122,6 +158,9 @@ class ResponseObjectReasoning(BaseModel):
 ResponseObjectServiceTier = Literal[
     "auto",
     "default",
+    "flex",
+    "scale",
+    "priority",
 ]
 r"""Service tier used"""
 
@@ -219,6 +258,8 @@ class ResponseObjectTypedDict(TypedDict):
     r"""Billing information"""
     completed_at: NotRequired[Nullable[int]]
     r"""Unix timestamp when the response was completed"""
+    conversation: NotRequired[ResponseObjectConversationTypedDict]
+    r"""The conversation that this response belonged to."""
     error: NotRequired[Nullable[ErrorTypedDict]]
     r"""Error information if the response failed"""
     incomplete_details: NotRequired[Nullable[IncompleteDetailsTypedDict]]
@@ -231,10 +272,14 @@ class ResponseObjectTypedDict(TypedDict):
     r"""Maximum number of tool calls allowed"""
     output: NotRequired[List[ResponseOutputItemTypedDict]]
     r"""Array of output items produced by the model"""
+    output_text: NotRequired[str]
+    r"""SDK convenience property aggregating all output_text content items."""
     parallel_tool_calls: NotRequired[bool]
     r"""Whether parallel tool calls are enabled"""
     previous_response_id: NotRequired[Nullable[str]]
     r"""ID of the previous response in a chain"""
+    prompt: NotRequired[ResponseObjectPromptTypedDict]
+    r"""Prompt template reference used for the response."""
     prompt_cache_key: NotRequired[Nullable[str]]
     r"""Key for prompt caching"""
     prompt_cache_retention: NotRequired[Nullable[str]]
@@ -295,6 +340,9 @@ class ResponseObject(BaseModel):
     completed_at: OptionalNullable[int] = UNSET
     r"""Unix timestamp when the response was completed"""
 
+    conversation: Optional[ResponseObjectConversation] = None
+    r"""The conversation that this response belonged to."""
+
     error: OptionalNullable[Error] = UNSET
     r"""Error information if the response failed"""
 
@@ -318,6 +366,9 @@ class ResponseObject(BaseModel):
 
     previous_response_id: OptionalNullable[str] = UNSET
     r"""ID of the previous response in a chain"""
+
+    prompt: Optional[ResponseObjectPrompt] = None
+    r"""Prompt template reference used for the response."""
 
     prompt_cache_key: OptionalNullable[str] = UNSET
     r"""Key for prompt caching"""
@@ -372,6 +423,7 @@ class ResponseObject(BaseModel):
             "background",
             "billing",
             "completed_at",
+            "conversation",
             "error",
             "incomplete_details",
             "instructions",
@@ -380,6 +432,7 @@ class ResponseObject(BaseModel):
             "output",
             "parallel_tool_calls",
             "previous_response_id",
+            "prompt",
             "prompt_cache_key",
             "prompt_cache_retention",
             "reasoning",
@@ -433,3 +486,22 @@ class ResponseObject(BaseModel):
                 m[k] = val
 
         return m
+
+    @property
+    def output_text(self) -> Optional[str]:
+        """Aggregate text from all output_text content items."""
+        if not self.output:
+            return None
+
+        parts: List[str] = []
+        for item in self.output:
+            if item.content is None:
+                continue
+            for content in item.content:
+                if content.type == "output_text" and content.text:
+                    parts.append(content.text)
+
+        if not parts:
+            return None
+
+        return "".join(parts)

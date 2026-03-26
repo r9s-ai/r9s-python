@@ -26,7 +26,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Union[Literal[False], None] = None,
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -40,6 +45,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -48,6 +58,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -59,31 +70,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -95,10 +101,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -112,7 +118,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Literal[True],
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -126,6 +137,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -134,6 +150,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -145,31 +162,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -181,10 +193,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -197,7 +209,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Optional[bool] = False,
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -211,6 +228,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -219,6 +241,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -230,31 +253,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -266,10 +284,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
         base_url = None
@@ -289,7 +307,12 @@ class Responses(BaseSDK):
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
+            max_tool_calls=max_tool_calls,
             stream=stream,
+            include=include,
+            conversation=utils.get_pydantic_model(
+                conversation, Optional[models.ConversationRef]
+            ),
             modalities=modalities,
             tools=utils.get_pydantic_model(tools, Optional[List[models.ResponseTool]]),
             tool_choice=utils.get_pydantic_model(
@@ -298,12 +321,18 @@ class Responses(BaseSDK):
             parallel_tool_calls=parallel_tool_calls,
             text=utils.get_pydantic_model(text, Optional[models.Text]),
             previous_response_id=previous_response_id,
+            prompt=utils.get_pydantic_model(prompt, Optional[models.Prompt]),
+            prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            safety_identifier=safety_identifier,
+            service_tier=service_tier,
             store=store,
             background=background,
             reasoning=utils.get_pydantic_model(reasoning, Optional[models.Reasoning]),
             truncation=truncation,
             stop=stop,
             metadata=metadata,
+            user=user,
         )
 
         req = self._build_request(
@@ -439,7 +468,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Union[Literal[False], None] = None,
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -453,6 +487,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -461,6 +500,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -472,31 +512,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -508,10 +543,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -525,7 +560,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Literal[True],
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -539,6 +579,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -547,6 +592,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -558,31 +604,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -594,10 +635,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
 
@@ -610,7 +651,12 @@ class Responses(BaseSDK):
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
+        max_tool_calls: Optional[int] = None,
         stream: Optional[bool] = False,
+        include: Optional[List[models.IncludeItem]] = None,
+        conversation: Optional[
+            Union[models.ConversationRef, models.ConversationRefTypedDict]
+        ] = None,
         modalities: Optional[List[models.ResponseRequestModalities]] = None,
         tools: Optional[
             Union[List[models.ResponseTool], List[models.ResponseToolTypedDict]]
@@ -624,6 +670,11 @@ class Responses(BaseSDK):
         parallel_tool_calls: Optional[bool] = True,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
+        prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
+        prompt_cache_key: Optional[str] = None,
+        prompt_cache_retention: Optional[str] = None,
+        safety_identifier: Optional[str] = None,
+        service_tier: Optional[models.ResponseRequestServiceTier] = None,
         store: Optional[bool] = True,
         background: Optional[bool] = False,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
@@ -632,6 +683,7 @@ class Responses(BaseSDK):
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -643,31 +695,26 @@ class Responses(BaseSDK):
 
 
         :param model: Model name
-        :param input: Input content, required parameter. Can be:
-            - String: Single text input
-            - Message array: Structured conversation history
-
-            **Important limitations:**
-            - Messages only support basic fields (role, content, name)
-            - Does not support tool_calls, tool_call_id and other tool-related fields
-            - content field is required and cannot be null
-            - To use tools, define them in the top-level tools parameter; model will call them on first response
-
-            Note: Responses API has deprecated messages parameter, now uses input parameter uniformly
-
+        :param input: Input content for the Responses API. Can be a plain string or an array of native input items.
         :param instructions: System-level instructions to guide model behavior and response style (similar to system message)
         :param temperature: Controls output randomness, higher values mean more random
         :param top_p: Nucleus sampling parameter, controls output diversity
         :param max_output_tokens: Maximum number of tokens to generate
+        :param max_tool_calls: Maximum number of total built-in tool calls that can be processed in the response.
         :param stream: Whether to enable streaming
+        :param include: Additional response data to include in the response.
+        :param conversation: Conversation reference for stateful Responses API usage. Cannot be used together with previous_response_id.
         :param modalities: Response modality types
         :param tools: Available tools list (using flat format)
         :param tool_choice: Tool selection strategy
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. When false, ensures exactly zero or one tool is called.
         :param text: Text output configuration
-        :param previous_response_id: The ID of a previous response to continue the conversation from. This allows you to chain responses together and maintain conversation state.
-            When using previous_response_id, the model will automatically have access to all previously produced reasoning items and conversation history.
-
+        :param previous_response_id: The ID of a previous response to continue the conversation from. Cannot be used together with conversation.
+        :param prompt: Reference to a prompt template and its variables.
+        :param prompt_cache_key: Cache key used for prompt caching.
+        :param prompt_cache_retention: Prompt cache retention policy.
+        :param safety_identifier: Stable user safety identifier recommended by OpenAI for policy enforcement and abuse detection.
+        :param service_tier: Processing tier used to serve the request.
         :param store: Whether to store the generated model response for later retrieval via API.
             Defaults to true. Set to false to disable storage (required for ZDR organizations).
 
@@ -679,10 +726,10 @@ class Responses(BaseSDK):
 
         :param stop: Up to 4 sequences where the API will stop generating further tokens
         :param metadata: Additional metadata for tracking and organization purposes
+        :param user: Legacy user identifier. Prefer safety_identifier for new integrations.
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
         :param timeout_ms: Override the default request timeout configuration for this method in milliseconds
-        :param accept_header_override: Override the default accept header for this method
         :param http_headers: Additional headers to set or replace on requests.
         """
         base_url = None
@@ -702,7 +749,12 @@ class Responses(BaseSDK):
             temperature=temperature,
             top_p=top_p,
             max_output_tokens=max_output_tokens,
+            max_tool_calls=max_tool_calls,
             stream=stream,
+            include=include,
+            conversation=utils.get_pydantic_model(
+                conversation, Optional[models.ConversationRef]
+            ),
             modalities=modalities,
             tools=utils.get_pydantic_model(tools, Optional[List[models.ResponseTool]]),
             tool_choice=utils.get_pydantic_model(
@@ -711,12 +763,18 @@ class Responses(BaseSDK):
             parallel_tool_calls=parallel_tool_calls,
             text=utils.get_pydantic_model(text, Optional[models.Text]),
             previous_response_id=previous_response_id,
+            prompt=utils.get_pydantic_model(prompt, Optional[models.Prompt]),
+            prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            safety_identifier=safety_identifier,
+            service_tier=service_tier,
             store=store,
             background=background,
             reasoning=utils.get_pydantic_model(reasoning, Optional[models.Reasoning]),
             truncation=truncation,
             stop=stop,
             metadata=metadata,
+            user=user,
         )
 
         req = self._build_request_async(

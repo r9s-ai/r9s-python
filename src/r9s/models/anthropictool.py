@@ -2,20 +2,28 @@
 
 from __future__ import annotations
 from .anthropicinputschema import AnthropicInputSchema, AnthropicInputSchemaTypedDict
+from pydantic import ConfigDict
 from r9s.types import BaseModel
-from typing import Optional
+from typing import Any, Dict, Optional
 from typing_extensions import NotRequired, TypedDict
 
 
 class AnthropicToolTypedDict(TypedDict):
-    name: str
-    input_schema: AnthropicInputSchemaTypedDict
+    type: NotRequired[str]
+    name: NotRequired[str]
+    input_schema: NotRequired[AnthropicInputSchemaTypedDict]
     description: NotRequired[str]
 
 
 class AnthropicTool(BaseModel):
-    name: str
+    model_config = ConfigDict(
+        populate_by_name=True, arbitrary_types_allowed=True, extra="allow"
+    )
 
-    input_schema: AnthropicInputSchema
+    type: Optional[str] = None
+
+    name: Optional[str] = None
+
+    input_schema: Optional[AnthropicInputSchema] = None
 
     description: Optional[str] = None

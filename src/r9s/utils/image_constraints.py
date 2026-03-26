@@ -30,14 +30,19 @@ MODEL_CONSTRAINTS = {
         prompt_max=4000,
     ),
     "gpt-image-1": ModelConstraints(
-        sizes=["1024x1024", "1024x1536", "1536x1024"],
+        sizes=["auto", "1024x1024", "1024x1536", "1536x1024"],
         n_range=(1, 1),
-        prompt_max=4000,
+        prompt_max=32000,
+    ),
+    "gpt-image-1-mini": ModelConstraints(
+        sizes=["auto", "1024x1024", "1024x1536", "1536x1024"],
+        n_range=(1, 1),
+        prompt_max=32000,
     ),
     "gpt-image-1.5": ModelConstraints(
-        sizes=["1024x1024", "1024x1536", "1536x1024"],
+        sizes=["auto", "1024x1024", "1024x1536", "1536x1024"],
         n_range=(1, 10),
-        prompt_max=4000,
+        prompt_max=32000,
     ),
     # Ali/Qwen models
     "wanx-v1": ModelConstraints(
@@ -144,6 +149,7 @@ OPENAI_SIZE_RATIOS = {
     "dall-e-2": {"256x256": 1.0, "512x512": 1.125, "1024x1024": 1.25},
     "dall-e-3": {"1024x1024": 1.0, "1024x1792": 2.0, "1792x1024": 2.0},
     "gpt-image-1": {"1024x1024": 1.0, "1024x1536": 2.0, "1536x1024": 2.0},
+    "gpt-image-1-mini": {"1024x1024": 1.0, "1024x1536": 2.0, "1536x1024": 2.0},
     "gpt-image-1.5": {"1024x1024": 1.0, "1024x1536": 2.0, "1536x1024": 2.0},
 }
 

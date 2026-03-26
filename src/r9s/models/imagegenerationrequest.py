@@ -7,6 +7,7 @@ from typing_extensions import NotRequired, TypedDict
 
 
 Quality = Literal[
+    "auto",
     "standard",
     "hd",
     # Extended quality options for GPT-Image models
@@ -23,6 +24,7 @@ ImageGenerationRequestResponseFormat = Literal[
 
 
 Size = Literal[
+    "auto",
     # DALL-E 2 sizes
     "256x256",
     "512x512",
@@ -133,19 +135,20 @@ class ImageGenerationRequest(BaseModel):
     - gemini-*: 1
     """
 
-    quality: Optional[Quality] = "standard"
+    quality: Optional[Quality] = None
     r"""Image quality. Options depend on model:
+    - auto: let the provider choose the default quality for the selected model
     - dall-e-3: 'standard', 'hd'
-    - gpt-image-1/1.5: 'low', 'medium', 'high', 'standard', 'hd'
+    - gpt-image-1/gpt-image-1-mini/gpt-image-1.5: 'low', 'medium', 'high'
     - gemini-*: 'standard' (1K), 'hd' (2K)
     """
 
-    response_format: Optional[ImageGenerationRequestResponseFormat] = "url"
+    response_format: Optional[ImageGenerationRequestResponseFormat] = None
 
-    size: Optional[Size] = "1024x1024"
-    r"""Image size. Options depend on model. Can also use aspect ratios for Gemini/Minimax."""
+    size: Optional[Size] = None
+    r"""Image size. Use auto to let the provider pick a model-specific default. Can also use aspect ratios for Gemini/Minimax."""
 
-    style: Optional[Style] = "vivid"
+    style: Optional[Style] = None
 
     user: Optional[str] = None
 

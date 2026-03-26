@@ -17,7 +17,8 @@ paths:
       - messages
       summary: Create message (Claude native API)
       description: Create a message using Anthropic Claude's native API format, supports
-        streaming
+        streaming. Anthropic beta features such as MCP servers, code execution containers,
+        and context editing may require an `anthropic-beta` header.
       requestBody:
         required: true
         content:
@@ -244,6 +245,27 @@ paths:
                   tool_choice:
                     type: tool
                     name: get_weather
+              built_in_tool_with_container:
+                summary: Built-in tool with container state
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 2048
+                  system:
+                  - type: text
+                    text: You can use the code execution tool to inspect data files.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Load the CSV and calculate the average revenue per month.
+                  tools:
+                  - type: code_execution_20250825
+                    name: code_execution
+                  container:
+                    type: auto
+                  context_management:
+                    edits:
+                    - operation: keep
               complex_conversation:
                 summary: Complex multimodal conversation
                 value:

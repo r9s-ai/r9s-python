@@ -9,7 +9,7 @@
 
 ## create
 
-Create a text completion, supports streaming
+Create a legacy text completion endpoint for compatibility use cases
 
 ### Example Usage
 
@@ -22,14 +22,18 @@ with R9S(
     api_key="<YOUR_BEARER_TOKEN_HERE>",
 ) as r9_s:
 
-    res = r9_s.completions.create(model="gpt-4o-mini", prompt="Once upon a time", echo=False, frequency_penalty=0, max_tokens=50, n=1, presence_penalty=0, stream=False, temperature=1, top_p=1)
+    res = r9_s.completions.create(
+        model="gpt-3.5-turbo-instruct",
+        prompt="Once upon a time",
+        max_tokens=50,
+        stream=False,
+    )
 
-    with res as event_stream:
-        for event in event_stream:
-            # handle event
-            print(event, flush=True)
+    print(res.choices[0].text)
 
 ```
+
+For streaming responses, call `completions.create(..., stream=True)` and iterate the returned event stream. When `stream=False`, the SDK returns a normal [models.CompletionResponse](../../models/completionresponse.md).
 
 ### Parameters
 
@@ -39,17 +43,17 @@ with R9S(
 | `prompt`                                                                        | *str*                                                                           | :heavy_check_mark:                                                              | Prompt text                                                                     |
 | `best_of`                                                                       | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | Generate multiple results and return the best one                               |
 | `echo`                                                                          | *Optional[bool]*                                                                | :heavy_minus_sign:                                                              | Whether to echo the prompt                                                      |
-| `frequency_penalty`                                                             | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `logit_bias`                                                                    | Dict[str, *float*]                                                              | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `max_tokens`                                                                    | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `n`                                                                             | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `presence_penalty`                                                              | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `seed`                                                                          | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `stop`                                                                          | [Optional[models.CompletionRequestStop]](../../models/completionrequeststop.md) | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `stream`                                                                        | *Optional[bool]*                                                                | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `temperature`                                                                   | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `top_p`                                                                         | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | N/A                                                                             |
-| `user`                                                                          | *Optional[str]*                                                                 | :heavy_minus_sign:                                                              | N/A                                                                             |
+| `frequency_penalty`                                                             | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | Penalizes tokens based on how often they already appeared, reducing repetition |
+| `logit_bias`                                                                    | Dict[str, *float*]                                                              | :heavy_minus_sign:                                                              | Adjusts the likelihood of specific tokens by token ID                         |
+| `max_tokens`                                                                    | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | Maximum number of tokens to generate                                          |
+| `n`                                                                             | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | Number of completion choices to generate                                      |
+| `presence_penalty`                                                              | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | Penalizes tokens that have already appeared, encouraging new topics          |
+| `seed`                                                                          | *Optional[int]*                                                                 | :heavy_minus_sign:                                                              | Best-effort deterministic sampling seed                                       |
+| `stop`                                                                          | [Optional[models.CompletionRequestStop]](../../models/completionrequeststop.md) | :heavy_minus_sign:                                                              | Up to four stop sequences where generation should end                         |
+| `stream`                                                                        | *Optional[bool]*                                                                | :heavy_minus_sign:                                                              | When true, returns SSE events instead of a single JSON response               |
+| `temperature`                                                                   | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | Sampling temperature. Higher values make output more random                   |
+| `top_p`                                                                         | *Optional[float]*                                                               | :heavy_minus_sign:                                                              | Nucleus sampling parameter controlling diversity                              |
+| `user`                                                                          | *Optional[str]*                                                                 | :heavy_minus_sign:                                                              | End-user identifier for abuse monitoring                                      |
 | `retries`                                                                       | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                | :heavy_minus_sign:                                                              | Configuration to override the default retry behavior of the client.             |
 
 ### Response

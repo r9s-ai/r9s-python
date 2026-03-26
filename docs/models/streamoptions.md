@@ -5,4 +5,4 @@
 
 | Field                               | Type                                | Required                            | Description                         |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- |
-| `include_usage`                     | *Optional[bool]*                    | :heavy_minus_sign:                  | Whether to include usage statistics |
+| `include_usage`                     | *Optional[bool]*                    | :heavy_minus_sign:                  | Whether to include usage statistics in the final streaming event |

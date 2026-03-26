@@ -73,6 +73,22 @@ class Thinking(BaseModel):
     r"""Maximum number of tokens to use for thinking (1000-10000)"""
 
 
+AnthropicSystemBlockTypedDict = TypedDict(
+    "AnthropicSystemBlockTypedDict",
+    {"type": str, "text": str},
+    total=False,
+)
+
+
+AnthropicSystemBlock = Dict[str, Any]
+
+
+AnthropicMessageRequestMCPServerTypedDict = Dict[str, Any]
+
+
+AnthropicMessageRequestMCPServer = Dict[str, Any]
+
+
 AnthropicMessageRequestServiceTier = Literal[
     "auto",
     "standard_only",
@@ -89,8 +105,8 @@ class AnthropicMessageRequestTypedDict(TypedDict):
     r"""Claude model name"""
     messages: List[AnthropicMessageMessageTypedDict]
     r"""Messages list, first message must be a user message"""
-    system: NotRequired[str]
-    r"""System prompt"""
+    system: NotRequired[Union[str, List[AnthropicSystemBlockTypedDict]]]
+    r"""System prompt. Anthropic supports either a plain string or an array of system content blocks."""
     max_tokens: NotRequired[int]
     r"""Maximum number of output tokens (optional).
     If not provided, the relay service or API may use a default value.
@@ -111,6 +127,12 @@ class AnthropicMessageRequestTypedDict(TypedDict):
     Common use cases: user_id, session_id, request_id, etc.
 
     """
+    container: NotRequired[Union[str, Dict[str, Any]]]
+    r"""Container identifier or configuration used by Anthropic tool runtimes and context editing features."""
+    context_management: NotRequired[Dict[str, Any]]
+    r"""Context management configuration for Anthropic conversation state features."""
+    mcp_servers: NotRequired[List[AnthropicMessageRequestMCPServerTypedDict]]
+    r"""MCP servers made available to the model for remote tool execution."""
     thinking: NotRequired[ThinkingTypedDict]
     r"""Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.
 
@@ -130,8 +152,8 @@ class AnthropicMessageRequest(BaseModel):
     messages: List[AnthropicMessageMessage]
     r"""Messages list, first message must be a user message"""
 
-    system: Optional[str] = None
-    r"""System prompt"""
+    system: Optional[Union[str, List[AnthropicSystemBlock]]] = None
+    r"""System prompt. Anthropic supports either a plain string or an array of system content blocks."""
 
     max_tokens: Optional[int] = None
     r"""Maximum number of output tokens (optional).
@@ -161,6 +183,15 @@ class AnthropicMessageRequest(BaseModel):
     Common use cases: user_id, session_id, request_id, etc.
 
     """
+
+    container: Optional[Union[str, Dict[str, Any]]] = None
+    r"""Container identifier or configuration used by Anthropic tool runtimes and context editing features."""
+
+    context_management: Optional[Dict[str, Any]] = None
+    r"""Context management configuration for Anthropic conversation state features."""
+
+    mcp_servers: Optional[List[AnthropicMessageRequestMCPServer]] = None
+    r"""MCP servers made available to the model for remote tool execution."""
 
     thinking: Optional[Thinking] = None
     r"""Configuration for extended thinking (Claude 3.7+). When enabled, the model will spend more time thinking before responding.

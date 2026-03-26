@@ -22,7 +22,10 @@ with R9S(
     api_key="<YOUR_BEARER_TOKEN_HERE>",
 ) as r9_s:
 
-    res = r9_s.moderations.create(input="I want to hurt someone", model="gpt-4o-mini")
+    res = r9_s.moderations.create(
+        input="I want to hurt someone",
+        model="omni-moderation-latest",
+    )
 
     # Handle response
     print(res)
@@ -33,8 +36,8 @@ with R9S(
 
 | Parameter                                                               | Type                                                                    | Required                                                                | Description                                                             |
 | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `input`                                                                 | [models.ModerationRequestInput](../../models/moderationrequestinput.md) | :heavy_check_mark:                                                      | Input text to moderate                                                  |
-| `model`                                                                 | *Optional[str]*                                                         | :heavy_minus_sign:                                                      | Model name                                                              |
+| `input`                                                                 | [models.ModerationRequestInput](../../models/moderationrequestinput.md) | :heavy_check_mark:                                                      | Input to moderate. Can be plain text, an array of strings, or native moderation input items |
+| `model`                                                                 | *Optional[str]*                                                         | :heavy_minus_sign:                                                      | Moderation model name. OpenAI currently documents `omni-moderation-latest` as the primary default |
 | `retries`                                                               | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)        | :heavy_minus_sign:                                                      | Configuration to override the default retry behavior of the client.     |
 
 ### Response

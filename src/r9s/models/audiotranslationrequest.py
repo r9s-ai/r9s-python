@@ -47,7 +47,7 @@ class AudioTranslationRequestTypedDict(TypedDict):
     file: AudioTranslationRequestFileTypedDict
     r"""Audio file to translate to English"""
     model: str
-    r"""Model name (whisper-1 is primary, gpt-4o-transcribe has extended support)"""
+    r"""Model name. OpenAI currently documents whisper-1 as the only supported translation model."""
     prompt: NotRequired[str]
     r"""Optional text prompt to guide the model's style.
     The source language can be specified in the prompt if needed, though the model will auto-detect it.
@@ -67,7 +67,7 @@ class AudioTranslationRequest(BaseModel):
     r"""Audio file to translate to English"""
 
     model: Annotated[str, FieldMetadata(multipart=True)]
-    r"""Model name (whisper-1 is primary, gpt-4o-transcribe has extended support)"""
+    r"""Model name. OpenAI currently documents whisper-1 as the only supported translation model."""
 
     prompt: Annotated[Optional[str], FieldMetadata(multipart=True)] = None
     r"""Optional text prompt to guide the model's style.

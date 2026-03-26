@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from r9s.utils.image_constraints import get_model_constraints
 from r9s.models.imagegenerationrequest import (
     ImageGenerationRequest,
     ImageGenerationRequestTypedDict,
@@ -23,10 +24,10 @@ class TestImageGenerationRequestModel:
         assert request.prompt == "A beautiful sunset"
         assert request.model is None
         assert request.n == 1
-        assert request.quality == "standard"
-        assert request.response_format == "url"
-        assert request.size == "1024x1024"
-        assert request.style == "vivid"
+        assert request.quality is None
+        assert request.response_format is None
+        assert request.size is None
+        assert request.style is None
         assert request.user is None
         # Extended parameters default to None
         assert request.negative_prompt is None
@@ -116,7 +117,7 @@ class TestImageGenerationRequestSizes:
 
     def test_standard_sizes(self) -> None:
         """Standard OpenAI sizes are accepted."""
-        standard_sizes = ["256x256", "512x512", "1024x1024"]
+        standard_sizes = ["auto", "256x256", "512x512", "1024x1024"]
         for size in standard_sizes:
             req = ImageGenerationRequest(prompt="test", size=size)  # type: ignore
             assert req.size == size
@@ -155,7 +156,7 @@ class TestImageGenerationRequestQuality:
 
     def test_standard_quality_values(self) -> None:
         """Standard quality values are accepted."""
-        for quality in ["standard", "hd"]:
+        for quality in ["auto", "standard", "hd"]:
             req = ImageGenerationRequest(prompt="test", quality=quality)  # type: ignore
             assert req.quality == quality
 
@@ -190,6 +191,19 @@ class TestImageGenerationRequestTypedDict:
         assert data["seed"] == 12345
         assert data["prompt_extend"] is True
         assert data["watermark"] is False
+
+
+class TestImageGenerationConstraints:
+    """Tests for local image constraint helpers."""
+
+    def test_gpt_image_mini_constraints_present(self) -> None:
+        """gpt-image-1-mini should use the same basic size envelope as other GPT image models."""
+        constraints = get_model_constraints("gpt-image-1-mini")
+
+        assert constraints is not None
+        assert constraints.sizes == ["auto", "1024x1024", "1024x1536", "1536x1024"]
+        assert constraints.n_range == (1, 1)
+        assert constraints.prompt_max == 32000
 
 
 class TestImageUsageModel:

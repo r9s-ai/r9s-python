@@ -39,7 +39,16 @@ class ImageFile(BaseModel):
 
 ImageEditResponseFormat = Literal["url", "b64_json"]
 
-ImageEditSize = Literal["256x256", "512x512", "1024x1024"]
+ImageEditSize = Literal[
+    "auto",
+    "256x256",
+    "512x512",
+    "1024x1024",
+    "1024x1536",
+    "1536x1024",
+    "1024x1792",
+    "1792x1024",
+]
 
 ImageEditBackground = Literal["transparent", "opaque", "auto"]
 
@@ -53,7 +62,7 @@ ImageEditQuality = Literal["auto", "high", "medium", "low", "hd", "standard"]
 
 
 class ImageEditRequestTypedDict(TypedDict):
-    image: ImageFileTypedDict
+    image: Union[ImageFileTypedDict, list[ImageFileTypedDict]]
     prompt: str
     model: NotRequired[str]
     mask: NotRequired[ImageFileTypedDict]
@@ -75,9 +84,14 @@ class ImageEditRequest(BaseModel):
     """Request model for image editing (inpainting) operations."""
 
     image: Annotated[
-        ImageFile, FieldMetadata(multipart=MultipartFormMetadata(file=True))
+        Union[ImageFile, list[ImageFile]],
+        FieldMetadata(multipart=MultipartFormMetadata(file=True)),
     ]
-    r"""The image to edit. Must be PNG, less than 4MB, and square."""
+    r"""Input image file(s) for editing.
+
+    GPT image models accept up to 16 PNG, WebP, or JPG images under 50MB each.
+    `dall-e-2` accepts one square PNG image under 4MB.
+    """
 
     prompt: Annotated[str, FieldMetadata(multipart=True)]
     r"""A text description of the desired image(s)."""
@@ -89,20 +103,32 @@ class ImageEditRequest(BaseModel):
         Optional[ImageFile],
         FieldMetadata(multipart=MultipartFormMetadata(file=True)),
     ] = None
-    r"""PNG with transparent areas indicating where to edit."""
+    r"""Optional edit mask.
+
+    For GPT image models, the mask must match the input image format and dimensions,
+    include an alpha channel, and remain under 50MB.
+    For `dall-e-2`, the mask must be a PNG under 4MB with matching dimensions.
+    """
 
     n: Annotated[Optional[int], FieldMetadata(multipart=True)] = 1
     r"""Number of images to generate. Range: 1-10."""
 
-    size: Annotated[Optional[ImageEditSize], FieldMetadata(multipart=True)] = (
-        "1024x1024"
-    )
-    r"""The size of the generated images."""
+    size: Annotated[Optional[ImageEditSize], FieldMetadata(multipart=True)] = "auto"
+    r"""Model-specific output size.
+
+    GPT image models support `1024x1024`, `1536x1024`, `1024x1536`, or `auto`.
+    `dall-e-2` supports `256x256`, `512x512`, or `1024x1024`.
+    `dall-e-3` supports `1024x1024`, `1792x1024`, or `1024x1792`.
+    """
 
     response_format: Annotated[
         Optional[ImageEditResponseFormat], FieldMetadata(multipart=True)
     ] = "url"
-    r"""Format of returned images: 'url' or 'b64_json'."""
+    r"""Output format for models that support it.
+
+    `dall-e-2` and `dall-e-3` support `url` or `b64_json`.
+    GPT image models always return base64 image data and do not support this parameter.
+    """
 
     user: Annotated[Optional[str], FieldMetadata(multipart=True)] = None
     r"""Unique identifier for end-user tracking."""

@@ -22,7 +22,11 @@ with R9S(
     api_key="<YOUR_BEARER_TOKEN_HERE>",
 ) as r9_s:
 
-    res = r9_s.embeddings.create(model="qwen-plus", input="The food was delicious and the waiter was friendly.", encoding_format="float")
+    res = r9_s.embeddings.create(
+        model="text-embedding-3-small",
+        input="The food was delicious and the waiter was friendly.",
+        encoding_format="float",
+    )
 
     # Handle response
     print(res)
@@ -33,11 +37,11 @@ with R9S(
 
 | Parameter                                                             | Type                                                                  | Required                                                              | Description                                                           |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `model`                                                               | *str*                                                                 | :heavy_check_mark:                                                    | Model name                                                            |
-| `input`                                                               | [models.EmbeddingRequestInput](../../models/embeddingrequestinput.md) | :heavy_check_mark:                                                    | Input text                                                            |
-| `encoding_format`                                                     | [Optional[models.EncodingFormat]](../../models/encodingformat.md)     | :heavy_minus_sign:                                                    | N/A                                                                   |
+| `model`                                                               | *str*                                                                 | :heavy_check_mark:                                                    | Embedding model identifier such as `text-embedding-3-small` or `text-embedding-3-large` |
+| `input`                                                               | [models.EmbeddingRequestInput](../../models/embeddingrequestinput.md) | :heavy_check_mark:                                                    | Input text or token array to embed                                    |
+| `encoding_format`                                                     | [Optional[models.EncodingFormat]](../../models/encodingformat.md)     | :heavy_minus_sign:                                                    | Output embedding format, either `float` or `base64`                   |
 | `dimensions`                                                          | *Optional[int]*                                                       | :heavy_minus_sign:                                                    | Output dimensions                                                     |
-| `user`                                                                | *Optional[str]*                                                       | :heavy_minus_sign:                                                    | N/A                                                                   |
+| `user`                                                                | *Optional[str]*                                                       | :heavy_minus_sign:                                                    | End-user identifier for abuse monitoring                              |
 | `retries`                                                             | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)      | :heavy_minus_sign:                                                    | Configuration to override the default retry behavior of the client.   |
 
 ### Response

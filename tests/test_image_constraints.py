@@ -77,15 +77,17 @@ class TestGetModelConstraints:
         """Get constraints for gpt-image-1."""
         constraints = get_model_constraints("gpt-image-1")
         assert constraints is not None
+        assert "auto" in constraints.sizes
         assert constraints.n_range == (1, 1)
-        assert constraints.prompt_max == 4000
+        assert constraints.prompt_max == 32000
 
     def test_get_gpt_image_15_constraints(self) -> None:
         """Get constraints for gpt-image-1.5."""
         constraints = get_model_constraints("gpt-image-1.5")
         assert constraints is not None
+        assert "auto" in constraints.sizes
         assert constraints.n_range == (1, 10)  # Supports multiple images
-        assert constraints.prompt_max == 4000
+        assert constraints.prompt_max == 32000
 
     def test_get_wanx_constraints(self) -> None:
         """Get constraints for wanx-v1."""
@@ -204,6 +206,15 @@ class TestValidateImageRequest:
         )
         assert len(errors) == 1
         assert "Invalid n" in errors[0]
+
+    def test_gpt_image_auto_size_is_valid(self) -> None:
+        """GPT image models accept auto size."""
+        errors = validate_image_request(
+            model="gpt-image-1",
+            prompt="Test",
+            size="auto",
+        )
+        assert errors == []
 
     def test_negative_prompt_unsupported(self) -> None:
         """negative_prompt on unsupported model returns error."""

@@ -19,7 +19,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -50,7 +50,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -80,7 +80,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -107,10 +107,10 @@ class Images(BaseSDK):
         :param prompt: Image description prompt
         :param model: Model name
         :param n: Number of images to generate
-        :param quality:
-        :param response_format:
-        :param size:
-        :param style:
+        :param quality: Model-specific image quality. Use auto or omit it to let the provider choose.
+        :param response_format: Output wrapper for DALL-E models. GPT image models always return base64 image data.
+        :param size: Model-specific output size. Omit it to let the provider choose the default.
+        :param style: DALL-E 3 style hint (vivid or natural)
         :param user:
         :param background: Background transparency setting (GPT models only)
         :param moderation: Content moderation level (GPT models only)
@@ -281,7 +281,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -312,7 +312,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -342,7 +342,7 @@ class Images(BaseSDK):
         n: Optional[int] = 1,
         quality: Optional[models.Quality] = None,
         response_format: Optional[models.ImageGenerationRequestResponseFormat] = None,
-        size: Optional[models.Size] = "1024x1024",
+        size: Optional[models.Size] = None,
         style: Optional[models.Style] = None,
         user: Optional[str] = None,
         # GPT Image model parameters
@@ -369,10 +369,10 @@ class Images(BaseSDK):
         :param prompt: Image description prompt
         :param model: Model name
         :param n: Number of images to generate
-        :param quality:
-        :param response_format:
-        :param size:
-        :param style:
+        :param quality: Model-specific image quality. Use auto or omit it to let the provider choose.
+        :param response_format: Output wrapper for DALL-E models. GPT image models always return base64 image data.
+        :param size: Model-specific output size. Omit it to let the provider choose the default.
+        :param style: DALL-E 3 style hint (vivid or natural)
         :param user:
         :param background: Background transparency setting (GPT models only)
         :param moderation: Content moderation level (GPT models only)
@@ -555,7 +555,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Union[Literal[False], None] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -586,7 +586,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Literal[True] = ...,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -616,7 +616,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Optional[bool] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -628,13 +628,13 @@ class Images(BaseSDK):
 
         Edit an existing image using a text prompt (inpainting).
 
-        :param image: The image to edit (PNG, <4MB, square)
+        :param image: Input image file(s). GPT image models accept up to 16 PNG, WebP, or JPG inputs under 50MB each; `dall-e-2` accepts one square PNG under 4MB.
         :param prompt: Text description of desired edit
         :param model: Model name
-        :param mask: Optional mask PNG with transparent edit regions
+        :param mask: Optional transparent edit mask. GPT image models require matching image format and dimensions; `dall-e-2` requires a PNG mask with matching dimensions.
         :param n: Number of images to generate (1-10)
-        :param size: Output size
-        :param response_format: 'url' or 'b64_json'
+        :param size: Model-specific output size. GPT image models support `1024x1024`, `1536x1024`, `1024x1536`, or `auto`.
+        :param response_format: Output format for models that support it. GPT image models always return base64 image data.
         :param user: End-user identifier
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -651,11 +651,10 @@ class Images(BaseSDK):
         else:
             base_url = self._get_url(base_url, url_variables)
 
-        # Handle list of images - use first image if list is provided
-        image_to_use = image[0] if isinstance(image, list) else image
-
         request = models.ImageEditRequest(
-            image=utils.get_pydantic_model(image_to_use, models.ImageFile),
+            image=utils.get_pydantic_model(
+                image, Union[models.ImageFile, list[models.ImageFile]]
+            ),
             prompt=prompt,
             background=background,
             input_fidelity=input_fidelity,
@@ -808,7 +807,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Union[Literal[False], None] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -839,7 +838,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Literal[True] = ...,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -869,7 +868,7 @@ class Images(BaseSDK):
         partial_images: Optional[int] = 0,
         quality: Optional[models.ImageEditQuality] = None,
         response_format: Optional[models.ImageEditResponseFormat] = None,
-        size: Optional[models.ImageEditSize] = "1024x1024",
+        size: Optional[models.ImageEditSize] = "auto",
         stream: Optional[bool] = None,
         user: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -881,13 +880,13 @@ class Images(BaseSDK):
 
         Edit an existing image using a text prompt (inpainting).
 
-        :param image: The image to edit (PNG, <4MB, square)
+        :param image: Input image file(s). GPT image models accept up to 16 PNG, WebP, or JPG inputs under 50MB each; `dall-e-2` accepts one square PNG under 4MB.
         :param prompt: Text description of desired edit
         :param model: Model name
-        :param mask: Optional mask PNG with transparent edit regions
+        :param mask: Optional transparent edit mask. GPT image models require matching image format and dimensions; `dall-e-2` requires a PNG mask with matching dimensions.
         :param n: Number of images to generate (1-10)
-        :param size: Output size
-        :param response_format: 'url' or 'b64_json'
+        :param size: Model-specific output size. GPT image models support `1024x1024`, `1536x1024`, `1024x1536`, or `auto`.
+        :param response_format: Output format for models that support it. GPT image models always return base64 image data.
         :param user: End-user identifier
         :param retries: Override the default retry configuration for this method
         :param server_url: Override the default server URL for this method
@@ -904,11 +903,10 @@ class Images(BaseSDK):
         else:
             base_url = self._get_url(base_url, url_variables)
 
-        # Handle list of images - use first image if list is provided
-        image_to_use = image[0] if isinstance(image, list) else image
-
         request = models.ImageEditRequest(
-            image=utils.get_pydantic_model(image_to_use, models.ImageFile),
+            image=utils.get_pydantic_model(
+                image, Union[models.ImageFile, list[models.ImageFile]]
+            ),
             prompt=prompt,
             background=background,
             input_fidelity=input_fidelity,

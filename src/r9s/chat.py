@@ -68,26 +68,26 @@ class Chat(BaseSDK):
 
         :param model: Model name
         :param messages: Messages list
-        :param frequency_penalty:
-        :param logit_bias:
+        :param frequency_penalty: Penalizes tokens based on how often they already appeared, reducing repetition
+        :param logit_bias: Adjusts the likelihood of specific tokens by token ID
         :param logprobs: When true, stream must be false (OpenAI constraint)
-        :param top_logprobs:
-        :param max_tokens:
+        :param top_logprobs: Number of most likely tokens to return at each position when logprobs is enabled
+        :param max_tokens: Legacy token cap for the completion. Prefer max_completion_tokens when supported
         :param n: Number of chat completion choices to generate
         :param modalities: Output modality types. Use [\"text\", \"audio\"] for audio output
-        :param audio:
-        :param presence_penalty:
-        :param response_format:
-        :param seed:
-        :param service_tier:
-        :param stop:
-        :param stream:
-        :param stream_options:
-        :param temperature:
-        :param top_p:
+        :param audio: Audio output settings used when modalities includes audio
+        :param presence_penalty: Penalizes tokens that have already appeared, encouraging new topics
+        :param response_format: Constrains the output format, for example JSON mode or JSON schema
+        :param seed: Best-effort deterministic sampling seed
+        :param service_tier: Processing tier used to serve the request
+        :param stop: Up to four stop sequences where generation should end
+        :param stream: When true, returns SSE events instead of a single JSON response
+        :param stream_options: Extra streaming controls such as whether to include usage stats
+        :param temperature: Sampling temperature. Higher values make output more random
+        :param top_p: Nucleus sampling parameter controlling diversity
         :param top_k: Top-k sampling parameter (non-OpenAI standard, model-specific)
-        :param tools:
-        :param tool_choice:
+        :param tools: Tool definitions the model may call during generation
+        :param tool_choice: Controls whether the model may call tools automatically or must call a specific function
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. Only valid when tools are specified.
         :param user: Unique identifier representing end-user for abuse monitoring
         :param reasoning_effort: Reasoning effort level for o1 series models (low, medium, high)
@@ -153,26 +153,26 @@ class Chat(BaseSDK):
 
         :param model: Model name
         :param messages: Messages list
-        :param frequency_penalty:
-        :param logit_bias:
+        :param frequency_penalty: Penalizes tokens based on how often they already appeared, reducing repetition
+        :param logit_bias: Adjusts the likelihood of specific tokens by token ID
         :param logprobs: When true, stream must be false (OpenAI constraint)
-        :param top_logprobs:
-        :param max_tokens:
+        :param top_logprobs: Number of most likely tokens to return at each position when logprobs is enabled
+        :param max_tokens: Legacy token cap for the completion. Prefer max_completion_tokens when supported
         :param n: Number of chat completion choices to generate
         :param modalities: Output modality types. Use [\"text\", \"audio\"] for audio output
-        :param audio:
-        :param presence_penalty:
-        :param response_format:
-        :param seed:
-        :param service_tier:
-        :param stop:
-        :param stream:
-        :param stream_options:
-        :param temperature:
-        :param top_p:
+        :param audio: Audio output settings used when modalities includes audio
+        :param presence_penalty: Penalizes tokens that have already appeared, encouraging new topics
+        :param response_format: Constrains the output format, for example JSON mode or JSON schema
+        :param seed: Best-effort deterministic sampling seed
+        :param service_tier: Processing tier used to serve the request
+        :param stop: Up to four stop sequences where generation should end
+        :param stream: When true, returns SSE events instead of a single JSON response
+        :param stream_options: Extra streaming controls such as whether to include usage stats
+        :param temperature: Sampling temperature. Higher values make output more random
+        :param top_p: Nucleus sampling parameter controlling diversity
         :param top_k: Top-k sampling parameter (non-OpenAI standard, model-specific)
-        :param tools:
-        :param tool_choice:
+        :param tools: Tool definitions the model may call during generation
+        :param tool_choice: Controls whether the model may call tools automatically or must call a specific function
         :param parallel_tool_calls: Whether to enable parallel function calling during tool use. Only valid when tools are specified.
         :param user: Unique identifier representing end-user for abuse monitoring
         :param reasoning_effort: Reasoning effort level for o1 series models (low, medium, high)

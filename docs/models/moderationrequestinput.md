@@ -1,6 +1,6 @@
 # ModerationRequestInput
 
-Input text to moderate
+Input to moderate. Can be plain text, an array of strings, or native moderation input items such as text/image objects.
 
 
 ## Supported Types
@@ -17,3 +17,8 @@ value: str = /* values here */
 value: List[str] = /* values here */
 ```
 
+### `List[Dict[str, Any]]`
+
+```python
+value: List[Dict[str, Any]] = /* values here */
+```

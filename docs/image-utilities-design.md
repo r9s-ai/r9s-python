@@ -469,24 +469,29 @@ The SDK is generated from OpenAPI specifications using Speakeasy, ensuring:
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `image` | `file` | **Yes** | - | The image to edit. Must be PNG format, less than 4MB, and square. |
-| `prompt` | `string` | **Yes** | - | A text description of the desired edit or result. Max 1000 characters. |
+| `image` | `file` or `file[]` | **Yes** | - | GPT image models accept up to 16 PNG, WebP, or JPG images under 50MB each. `dall-e-2` accepts one square PNG under 4MB. |
+| `prompt` | `string` | **Yes** | - | A text description of the desired edit or result. Max 32000 chars for GPT image models, 1000 for `dall-e-2`, and 4000 for `dall-e-3`. |
 | `model` | `string` | No | Provider default | Model identifier (e.g., "dall-e-2", "gpt-image-1") |
-| `mask` | `file` | No | - | PNG file with transparent areas indicating where to edit. Must match image dimensions. |
+| `mask` | `file` | No | - | Transparent edit mask. GPT image models require matching image format and dimensions plus an alpha channel; `dall-e-2` requires a PNG mask with matching dimensions. |
 | `n` | `integer` | No | `1` | Number of images to generate. Range: 1-10. |
-| `size` | `string` | No | `"1024x1024"` | Output image size. |
-| `response_format` | `string` | No | `"url"` | `"url"` or `"b64_json"` |
+| `size` | `string` | No | `"auto"` | Model-specific output size. |
+| `response_format` | `string` | No | `"url"` | `dall-e-2` and `dall-e-3` support `"url"` or `"b64_json"`; GPT image models always return base64 image data. |
 | `user` | `string` | No | - | Unique identifier for end-user tracking. |
 
 ### Supported Sizes (Image Edit)
 
 | Size | Notes |
 |------|-------|
-| `256x256` | Fastest |
-| `512x512` | Balanced |
-| `1024x1024` | Default, best quality |
+| `auto` | Automatic size selection for GPT image models |
+| `256x256` | `dall-e-2` |
+| `512x512` | `dall-e-2` |
+| `1024x1024` | Supported across OpenAI image models |
+| `1024x1536` | GPT image models |
+| `1536x1024` | GPT image models |
+| `1024x1792` | `dall-e-3` |
+| `1792x1024` | `dall-e-3` |
 
-> Note: Unlike image generation, image editing does NOT support `1792x1024` or `1024x1792`.
+> Note: Valid image edit sizes depend on the selected model.
 
 ### Response Format
 
@@ -589,11 +594,20 @@ class ImageFile(BaseModel):
 
 ImageEditResponseFormat = Literal["url", "b64_json"]
 
-ImageEditSize = Literal["256x256", "512x512", "1024x1024"]
+ImageEditSize = Literal[
+    "auto",
+    "256x256",
+    "512x512",
+    "1024x1024",
+    "1024x1536",
+    "1536x1024",
+    "1024x1792",
+    "1792x1024",
+]
 
 
 class ImageEditRequestTypedDict(TypedDict):
-    image: ImageFileTypedDict
+    image: Union[ImageFileTypedDict, list[ImageFileTypedDict]]
     prompt: str
     model: NotRequired[str]
     mask: NotRequired[ImageFileTypedDict]
@@ -607,9 +621,14 @@ class ImageEditRequest(BaseModel):
     """Request model for image editing (inpainting) operations."""
 
     image: Annotated[
-        ImageFile, FieldMetadata(multipart=MultipartFormMetadata(file=True))
+        Union[ImageFile, list[ImageFile]],
+        FieldMetadata(multipart=MultipartFormMetadata(file=True))
     ]
-    r"""The image to edit. Must be PNG, less than 4MB, and square."""
+    r"""Input image file(s) for editing.
+
+    GPT image models accept up to 16 PNG, WebP, or JPG images under 50MB each.
+    `dall-e-2` accepts one square PNG image under 4MB.
+    """
 
     prompt: Annotated[str, FieldMetadata(multipart=True)]
     r"""A text description of the desired image(s)."""
@@ -621,20 +640,23 @@ class ImageEditRequest(BaseModel):
         Optional[ImageFile],
         FieldMetadata(multipart=MultipartFormMetadata(file=True)),
     ] = None
-    r"""PNG with transparent areas indicating where to edit."""
+    r"""Optional edit mask.
+
+    For GPT image models, the mask must match the input image format and dimensions,
+    include an alpha channel, and remain under 50MB.
+    For `dall-e-2`, the mask must be a PNG under 4MB with matching dimensions.
+    """
 
     n: Annotated[Optional[int], FieldMetadata(multipart=True)] = 1
     r"""Number of images to generate. Range: 1-10."""
 
-    size: Annotated[Optional[ImageEditSize], FieldMetadata(multipart=True)] = (
-        "1024x1024"
-    )
-    r"""The size of the generated images."""
+    size: Annotated[Optional[ImageEditSize], FieldMetadata(multipart=True)] = "auto"
+    r"""Model-specific output size."""
 
     response_format: Annotated[
         Optional[ImageEditResponseFormat], FieldMetadata(multipart=True)
     ] = "url"
-    r"""Format of returned images: 'url' or 'b64_json'."""
+    r"""Output format for models that support it."""
 
     user: Annotated[Optional[str], FieldMetadata(multipart=True)] = None
     r"""Unique identifier for end-user tracking."""
@@ -650,12 +672,16 @@ Add these methods to the `Images` class in `src/r9s/images.py`:
 def edit(
     self,
     *,
-    image: Union[models.ImageFile, models.ImageFileTypedDict],
+    image: Union[
+        models.ImageFile,
+        models.ImageFileTypedDict,
+        list[Union[models.ImageFile, models.ImageFileTypedDict]],
+    ],
     prompt: str,
     model: Optional[str] = None,
     mask: Optional[Union[models.ImageFile, models.ImageFileTypedDict]] = None,
     n: Optional[int] = 1,
-    size: Optional[models.ImageEditSize] = "1024x1024",
+    size: Optional[models.ImageEditSize] = "auto",
     response_format: Optional[models.ImageEditResponseFormat] = "url",
     user: Optional[str] = None,
     retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -667,13 +693,13 @@ def edit(
 
     Edit an existing image using a text prompt (inpainting).
 
-    :param image: The image to edit (PNG, <4MB, square)
+    :param image: Input image file(s). GPT image models accept up to 16 PNG, WebP, or JPG inputs under 50MB each; `dall-e-2` accepts one square PNG under 4MB.
     :param prompt: Text description of desired edit
     :param model: Model name
-    :param mask: Optional mask PNG with transparent edit regions
+    :param mask: Optional transparent edit mask. GPT image models require matching image format and dimensions; `dall-e-2` requires a PNG mask with matching dimensions.
     :param n: Number of images to generate (1-10)
-    :param size: Output size
-    :param response_format: 'url' or 'b64_json'
+    :param size: Model-specific output size
+    :param response_format: Output format for models that support it
     :param user: End-user identifier
     :param retries: Override default retry configuration
     :param server_url: Override default server URL
@@ -691,7 +717,7 @@ def edit(
         base_url = self._get_url(base_url, url_variables)
 
     request = models.ImageEditRequest(
-        image=utils.get_pydantic_model(image, models.ImageFile),
+        image=utils.get_pydantic_model(image, Union[models.ImageFile, list[models.ImageFile]]),
         prompt=prompt,
         model=model,
         mask=utils.get_pydantic_model(mask, models.ImageFile) if mask else None,
@@ -949,7 +975,7 @@ class TestImageEditRequestModel:
         )
         assert request.prompt == "Add a hat"
         assert request.n == 1  # default
-        assert request.size == "1024x1024"  # default
+        assert request.size == "auto"  # default
         assert request.response_format == "url"  # default
         assert request.mask is None
         assert request.model is None
@@ -981,7 +1007,7 @@ class TestImageEditRequestModel:
         """Size field only accepts valid literals."""
         image = ImageFile(file_name="t.png", content=b"x")
 
-        for size in ["256x256", "512x512", "1024x1024"]:
+        for size in ["auto", "256x256", "512x512", "1024x1024", "1024x1536", "1536x1024", "1024x1792", "1792x1024"]:
             req = ImageEditRequest(image=image, prompt="test", size=size)
             assert req.size == size
 
