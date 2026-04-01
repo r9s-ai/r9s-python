@@ -14,7 +14,7 @@ class RenderContext:
     args_text: str
     assume_yes: bool
     interactive: bool
-    shell_timeout_seconds: int = 10
+    shell_timeout_seconds: int = 300  # 5 minutes (increased from 10s)
     shell_max_output_bytes: int = 1024 * 1024
     file_max_bytes: int = 1024 * 1024
 
@@ -105,6 +105,18 @@ def _confirm_shell(cmd: str) -> None:
         raise SystemExit("Cancelled.")
 
 
+def _resolve_shell_timeout(ctx: RenderContext) -> int:
+    """Resolve shell timeout from environment or context."""
+    raw = (os.getenv("R9S_SHELL_TIMEOUT_SECONDS") or "").strip()
+    if not raw:
+        return ctx.shell_timeout_seconds
+    try:
+        value = int(raw)
+        return value if value > 0 else ctx.shell_timeout_seconds
+    except ValueError:
+        return ctx.shell_timeout_seconds
+
+
 def _run_shell(cmd: str, ctx: RenderContext) -> str:
     if not ctx.assume_yes:
         if not ctx.interactive:
@@ -113,17 +125,19 @@ def _run_shell(cmd: str, ctx: RenderContext) -> str:
             )
         _confirm_shell(cmd)
 
+    timeout_seconds = _resolve_shell_timeout(ctx)
     try:
         completed = subprocess.run(
             ["bash", "-lc", cmd],
             capture_output=True,
             text=True,
-            timeout=ctx.shell_timeout_seconds,
+            timeout=timeout_seconds,
             env=os.environ.copy(),
         )
     except subprocess.TimeoutExpired as exc:
+        timeout_seconds = _resolve_shell_timeout(ctx)
         raise RuntimeError(
-            f"Command timed out after {ctx.shell_timeout_seconds}s: {cmd}"
+            f"Command timed out after {timeout_seconds}s: {cmd}"
         ) from exc
 
     out = completed.stdout or ""
