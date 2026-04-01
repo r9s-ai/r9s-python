@@ -1,0 +1,357 @@
+openapi: 3.1.0
+info:
+  title: R9S Anthropic API
+  version: 0.3.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.r9s.ai
+    description: Production Server
+paths:
+  /v1/messages:
+    post:
+      operationId: createMessage
+      x-speakeasy-name-override: create
+      tags:
+      - messages
+      summary: Create message (Claude native API)
+      description: Create a message using Anthropic Claude's native API format, supports
+        streaming
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/components/schemas/AnthropicMessageRequest
+            examples:
+              simple:
+                summary: Simple Claude message
+                value:
+                  model: claude-opus-4.5
+                  max_tokens: 1024
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Hello, Claude!
+              with_system:
+                summary: Message with system prompt
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 2048
+                  system: You are a helpful coding assistant.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: How do I write a Python function?
+                  temperature: 0.7
+              with_vision:
+                summary: Image understanding (Vision)
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 2048
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: What do you see in this image?
+                    - type: image
+                      source:
+                        type: base64
+                        media_type: image/jpeg
+                        data: /9j/4AAQSkZJRg...
+                  temperature: 0.5
+              with_tools:
+                summary: With tool calls
+                value:
+                  model: claude-opus-4.5
+                  max_tokens: 4096
+                  system: You are a helpful assistant with access to tools.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: What's the weather in Paris and what time is it there?
+                  tools:
+                  - name: get_weather
+                    description: Get current weather information for a location
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                          description: City name
+                        units:
+                          type: string
+                          enum:
+                          - celsius
+                          - fahrenheit
+                          description: Temperature units
+                      required:
+                      - location
+                  - name: get_time
+                    description: Get current time for a location
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                          description: City or timezone
+                      required:
+                      - location
+                  tool_choice: auto
+              tool_use_response:
+                summary: Tool use result response
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 2048
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: What's the weather in Tokyo?
+                  - role: assistant
+                    content:
+                    - type: tool_use
+                      id: toolu_01A
+                      name: get_weather
+                      input:
+                        location: Tokyo
+                        units: celsius
+                  - role: user
+                    content:
+                    - type: tool_result
+                      tool_use_id: toolu_01A
+                      content: '{"temperature": 22, "condition": "cloudy", "humidity":
+                        70}'
+                  tools:
+                  - name: get_weather
+                    description: Get weather information
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                        units:
+                          type: string
+                      required:
+                      - location
+              multi_turn_with_tools:
+                summary: Multi-turn conversation with tool calls
+                value:
+                  model: claude-opus-4.5
+                  max_tokens: 4096
+                  system: You are a research assistant. Use tools when needed to provide
+                    accurate information.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Find me information about the latest SpaceX launch
+                  - role: assistant
+                    content:
+                    - type: tool_use
+                      id: toolu_01B
+                      name: web_search
+                      input:
+                        query: latest SpaceX launch
+                        max_results: 5
+                  - role: user
+                    content:
+                    - type: tool_result
+                      tool_use_id: toolu_01B
+                      content: '{"results": [{"title": "SpaceX Starship Launch", "date":
+                        "2024-12-15", "summary": "..."}]}'
+                  - role: assistant
+                    content:
+                    - type: text
+                      text: Based on the search results, the latest SpaceX launch
+                        was...
+                  - role: user
+                    content:
+                    - type: text
+                      text: What was the weather during that launch?
+                  tools:
+                  - name: web_search
+                    description: Search the web
+                    input_schema:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        max_results:
+                          type: integer
+                      required:
+                      - query
+                  - name: get_weather
+                    description: Get weather information
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                        date:
+                          type: string
+                      required:
+                      - location
+                  temperature: 0.7
+              streaming:
+                summary: Streaming
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 3000
+                  stream: true
+                  system: You are a creative writing assistant.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Write a short story about a robot learning to paint
+                  temperature: 0.9
+              specific_tool:
+                summary: Specify specific tool
+                value:
+                  model: claude-opus-4.5
+                  max_tokens: 2048
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Tell me about the weather
+                  tools:
+                  - name: get_weather
+                    description: Get weather information
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                      required:
+                      - location
+                  - name: get_forecast
+                    description: Get weather forecast
+                    input_schema:
+                      type: object
+                      properties:
+                        location:
+                          type: string
+                        days:
+                          type: integer
+                      required:
+                      - location
+                  tool_choice:
+                    type: tool
+                    name: get_weather
+              complex_conversation:
+                summary: Complex multimodal conversation
+                value:
+                  model: claude-opus-4.5
+                  max_tokens: 4096
+                  system: You are an AI assistant helping with data analysis and visualization.
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Analyze this chart and tell me the trends
+                    - type: image
+                      source:
+                        type: base64
+                        media_type: image/png
+                        data: iVBORw0KGgoAAAANS...
+                  - role: assistant
+                    content:
+                    - type: text
+                      text: I can see the chart shows a clear upward trend...
+                  - role: user
+                    content:
+                    - type: text
+                      text: Can you fetch the latest data to compare?
+                  tools:
+                  - name: fetch_data
+                    description: Fetch latest dataset
+                    input_schema:
+                      type: object
+                      properties:
+                        dataset_id:
+                          type: string
+                        date_range:
+                          type: string
+                      required:
+                      - dataset_id
+                  temperature: 0.5
+                  top_p: 0.9
+                  top_k: 40
+              stop_sequences:
+                summary: Using stop sequences
+                value:
+                  model: claude-sonnet-4.5
+                  max_tokens: 1500
+                  messages:
+                  - role: user
+                    content:
+                    - type: text
+                      text: Generate a numbered list of programming tips
+                  stop_sequences:
+                  - '
+
+
+                    '
+                  - Conclusion
+                  temperature: 0.8
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas.yaml#/components/schemas/AnthropicMessageResponse
+              example:
+                id: msg_123
+                type: message
+                role: assistant
+                content:
+                - type: text
+                  text: Hello! It's nice to meet you. How can I help you today?
+                model: claude-opus-4.5
+                stop_reason: end_turn
+                stop_sequence: null
+                usage:
+                  input_tokens: 12
+                  output_tokens: 15
+            text/event-stream:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: ./schemas.yaml#/components/schemas/AnthropicStreamEvent
+                  id:
+                    type: string
+                  event:
+                    type: string
+                  retry:
+                    type: integer
+        '400':
+          $ref: ../common/common.yaml#/components/responses/BadRequestError
+        '401':
+          $ref: ../common/common.yaml#/components/responses/AuthenticationError
+        '403':
+          $ref: ../common/common.yaml#/components/responses/PermissionDeniedError
+        '409':
+          $ref: ../common/common.yaml#/components/responses/ConflictError
+        '422':
+          $ref: ../common/common.yaml#/components/responses/UnprocessableEntityError
+        '429':
+          $ref: ../common/common.yaml#/components/responses/RateLimitError
+        '500':
+          $ref: ../common/common.yaml#/components/responses/InternalServerError
+        '503':
+          $ref: ../common/common.yaml#/components/responses/ServiceUnavailableError
+
+components:
+  securitySchemes:
+    api_key:
+      $ref: ../common/common.yaml#/components/securitySchemes/api_key

@@ -1,0 +1,600 @@
+openapi: 3.1.0
+components:
+  schemas:
+    AnthropicMessageMessage:
+      type: object
+      required:
+      - role
+      - content
+      properties:
+        role:
+          type: string
+          enum:
+          - user
+          - assistant
+          description: Role of the message sender (user or assistant)
+        content:
+          oneOf:
+          - type: array
+            items:
+              $ref: '#/components/schemas/AnthropicContent'
+            description: Array of content blocks for user messages or assistant responses
+          - type: string
+            description: Simple text content (deprecated but supported for backward
+              compatibility)
+          description: Message content - can be array of content blocks or string
+    AnthropicContent:
+      oneOf:
+      - $ref: '#/components/schemas/AnthropicTextContent'
+      - $ref: '#/components/schemas/AnthropicImageContent'
+      - $ref: '#/components/schemas/AnthropicDocumentContent'
+      - $ref: '#/components/schemas/AnthropicThinkingContent'
+      - $ref: '#/components/schemas/AnthropicToolContent'
+    AnthropicTextContent:
+      type: object
+      required:
+      - type
+      - text
+      properties:
+        type:
+          type: string
+          const: text
+        text:
+          type: string
+    AnthropicImageContent:
+      type: object
+      required:
+      - type
+      - source
+      properties:
+        type:
+          type: string
+          const: image
+        source:
+          $ref: '#/components/schemas/AnthropicImageSource'
+    AnthropicImageSource:
+      oneOf:
+      - $ref: '#/components/schemas/AnthropicImageSourceBase64'
+      - $ref: '#/components/schemas/AnthropicImageSourceUrl'
+      discriminator:
+        propertyName: type
+        mapping:
+          base64: '#/components/schemas/AnthropicImageSourceBase64'
+          url: '#/components/schemas/AnthropicImageSourceUrl'
+    AnthropicImageSourceBase64:
+      type: object
+      required:
+      - type
+      - media_type
+      - data
+      properties:
+        type:
+          type: string
+          const: base64
+        media_type:
+          type: string
+          enum:
+          - image/jpeg
+          - image/png
+          - image/gif
+          - image/webp
+          description: MIME type of the image
+        data:
+          type: string
+          description: Base64-encoded image data
+    AnthropicImageSourceUrl:
+      type: object
+      required:
+      - type
+      - url
+      properties:
+        type:
+          type: string
+          const: url
+        url:
+          type: string
+          format: uri
+          description: URL of the image to fetch
+    AnthropicDocumentContent:
+      type: object
+      required:
+      - type
+      - source
+      properties:
+        type:
+          type: string
+          const: document
+          description: Document content type (PDFs, text files, etc.)
+        source:
+          $ref: '#/components/schemas/AnthropicDocumentSource'
+    AnthropicDocumentSource:
+      oneOf:
+      - $ref: '#/components/schemas/AnthropicDocumentSourceBase64'
+      - $ref: '#/components/schemas/AnthropicDocumentSourceUrl'
+      discriminator:
+        propertyName: type
+        mapping:
+          base64: '#/components/schemas/AnthropicDocumentSourceBase64'
+          url: '#/components/schemas/AnthropicDocumentSourceUrl'
+    AnthropicDocumentSourceBase64:
+      type: object
+      required:
+      - type
+      - media_type
+      - data
+      properties:
+        type:
+          type: string
+          const: base64
+        media_type:
+          type: string
+          enum:
+          - application/pdf
+          - text/plain
+          description: Document MIME type
+        data:
+          type: string
+          description: Base64-encoded document data
+    AnthropicDocumentSourceUrl:
+      type: object
+      required:
+      - type
+      - url
+      properties:
+        type:
+          type: string
+          const: url
+        url:
+          type: string
+          format: uri
+          description: URL of the document to fetch
+    AnthropicThinkingContent:
+      type: object
+      required:
+      - type
+      - thinking
+      properties:
+        type:
+          type: string
+          const: thinking
+          description: Extended thinking output content
+        thinking:
+          type: string
+          description: The model's thinking process/reasoning
+        signature:
+          type: string
+          description: Cryptographic signature for thinking content verification
+    AnthropicToolContent:
+      oneOf:
+      - $ref: '#/components/schemas/AnthropicToolUseContent'
+      - $ref: '#/components/schemas/AnthropicToolResultContent'
+      discriminator:
+        propertyName: type
+        mapping:
+          tool_use: '#/components/schemas/AnthropicToolUseContent'
+          tool_result: '#/components/schemas/AnthropicToolResultContent'
+    AnthropicToolUseContent:
+      type: object
+      required:
+      - type
+      - id
+      - name
+      - input
+      properties:
+        type:
+          type: string
+          const: tool_use
+        id:
+          type: string
+          description: Unique identifier for this tool use
+        name:
+          type: string
+          description: Name of the tool being called
+        input:
+          type: object
+          additionalProperties: true
+          description: Input parameters for the tool
+    AnthropicToolResultContent:
+      type: object
+      required:
+      - type
+      - tool_use_id
+      - content
+      properties:
+        type:
+          type: string
+          const: tool_result
+        tool_use_id:
+          type: string
+          description: ID of the tool use this result corresponds to
+        content:
+          type: string
+          description: Result of the tool execution
+    AnthropicTool:
+      type: object
+      required:
+      - name
+      - input_schema
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        input_schema:
+          $ref: '#/components/schemas/AnthropicInputSchema'
+    AnthropicInputSchema:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: object
+        properties:
+          type: object
+        required:
+          type: array
+          items:
+            type: string
+    AnthropicMessageRequest:
+      type: object
+      required:
+      - model
+      - messages
+      properties:
+        model:
+          type: string
+          description: Claude model name
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnthropicMessageMessage'
+          description: Messages list, first message must be a user message
+        system:
+          type: string
+          description: System prompt
+        max_tokens:
+          type: integer
+          minimum: 1
+          description: 'Maximum number of output tokens (optional).
+
+            If not provided, the relay service or API may use a default value.
+
+            Different models have different maximum values.
+
+            '
+        stop_sequences:
+          type: array
+          items:
+            type: string
+          description: Stop sequences
+        stream:
+          type: boolean
+          default: false
+        temperature:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        top_p:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+        top_k:
+          type: integer
+          minimum: 1
+          description: Top-k sampling parameter. Only sample from the top K options
+            for each subsequent token.
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnthropicTool'
+        tool_choice:
+          oneOf:
+          - type: string
+            enum:
+            - none
+            - auto
+            - any
+          - type: object
+            properties:
+              type:
+                type: string
+                const: tool
+              name:
+                type: string
+        metadata:
+          type: object
+          description: 'An object describing metadata about the request. Can be used
+            for tracking, identification, or filtering purposes.
+
+            Common use cases: user_id, session_id, request_id, etc.
+
+            '
+          additionalProperties: true
+        thinking:
+          type: object
+          description: 'Configuration for extended thinking (Claude 3.7+). When enabled,
+            the model will spend more time thinking before responding.
+
+            '
+          properties:
+            type:
+              type: string
+              enum:
+              - enabled
+              - disabled
+              default: disabled
+              description: Whether to enable extended thinking
+            budget_tokens:
+              type: integer
+              minimum: 1000
+              maximum: 10000
+              description: Maximum number of tokens to use for thinking (1000-10000)
+        service_tier:
+          type: string
+          enum:
+          - auto
+          - standard_only
+          default: auto
+          description: 'Service tier for request processing:
+
+            - auto: Automatically select between standard and priority capacity
+
+            - standard_only: Only use standard capacity (may have longer wait times
+            during high load)
+
+            '
+    AnthropicMessageResponse:
+      type: object
+      required:
+      - id
+      - type
+      - role
+      - content
+      - model
+      - stop_reason
+      - usage
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          const: message
+        role:
+          type: string
+          const: assistant
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnthropicContent'
+        model:
+          type: string
+        stop_reason:
+          anyOf:
+          - type: string
+            enum:
+            - end_turn
+            - max_tokens
+            - stop_sequence
+            - tool_use
+            - pause_turn
+            - refusal
+          - type: 'null'
+          description: 'Reason why the model stopped:
+
+            - end_turn: Natural completion
+
+            - max_tokens: Hit max_tokens limit
+
+            - stop_sequence: Hit a stop sequence
+
+            - tool_use: Model wants to use a tool
+
+            - pause_turn: Long-running task paused (extended thinking)
+
+            - refusal: Content policy violation
+
+            '
+        stop_sequence:
+          anyOf:
+          - type: string
+          - type: 'null'
+        usage:
+          type: object
+          required:
+          - input_tokens
+          - output_tokens
+          properties:
+            input_tokens:
+              type: integer
+              description: Number of input tokens used
+            cache_creation_input_tokens:
+              type: integer
+              description: Number of input tokens used to create cache entries (only
+                present if prompt caching is used)
+            cache_read_input_tokens:
+              type: integer
+              description: Number of input tokens read from cache (only present if
+                prompt caching is used)
+            output_tokens:
+              type: integer
+              description: Number of output tokens generated
+    AnthropicStreamEvent:
+      oneOf:
+      - $ref: '#/components/schemas/AnthropicMessageStart'
+      - $ref: '#/components/schemas/AnthropicContentBlockStart'
+      - $ref: '#/components/schemas/AnthropicContentBlockDelta'
+      - $ref: '#/components/schemas/AnthropicContentBlockStop'
+      - $ref: '#/components/schemas/AnthropicMessageDelta'
+      - $ref: '#/components/schemas/AnthropicStreamMessageStop'
+      - $ref: '#/components/schemas/AnthropicPing'
+      discriminator:
+        propertyName: type
+        mapping:
+          message_start: '#/components/schemas/AnthropicMessageStart'
+          content_block_start: '#/components/schemas/AnthropicContentBlockStart'
+          content_block_delta: '#/components/schemas/AnthropicContentBlockDelta'
+          content_block_stop: '#/components/schemas/AnthropicContentBlockStop'
+          message_delta: '#/components/schemas/AnthropicMessageDelta'
+          message_stop: '#/components/schemas/AnthropicStreamMessageStop'
+          ping: '#/components/schemas/AnthropicPing'
+    AnthropicMessageStart:
+      type: object
+      required:
+      - type
+      - message
+      properties:
+        type:
+          type: string
+          const: message_start
+        message:
+          type: object
+          required:
+          - id
+          - type
+          - role
+          - content
+          - model
+          - stop_reason
+          - stop_sequence
+          - usage
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+              const: message
+            role:
+              type: string
+              const: assistant
+            content:
+              type: array
+              items:
+                type: object
+            model:
+              type: string
+            stop_reason:
+              anyOf:
+              - type: string
+              - type: 'null'
+            stop_sequence:
+              anyOf:
+              - type: string
+              - type: 'null'
+            usage:
+              type: object
+              required:
+              - input_tokens
+              - output_tokens
+              properties:
+                input_tokens:
+                  type: integer
+                output_tokens:
+                  type: integer
+    AnthropicContentBlockStart:
+      type: object
+      required:
+      - type
+      - index
+      - content_block
+      properties:
+        type:
+          type: string
+          const: content_block_start
+        index:
+          type: integer
+        content_block:
+          type: object
+          required:
+          - type
+          properties:
+            type:
+              type: string
+              enum:
+              - text
+              - tool_use
+            text:
+              type: string
+            id:
+              type: string
+            name:
+              type: string
+            input:
+              type: object
+    AnthropicContentBlockDelta:
+      type: object
+      required:
+      - type
+      - index
+      - delta
+      properties:
+        type:
+          type: string
+          const: content_block_delta
+        index:
+          type: integer
+        delta:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - text_delta
+              - input_json_delta
+            text:
+              type: string
+            partial_json:
+              type: string
+    AnthropicContentBlockStop:
+      type: object
+      required:
+      - type
+      - index
+      properties:
+        type:
+          type: string
+          const: content_block_stop
+        index:
+          type: integer
+        content_block:
+          type: object
+          description: Optional content block metadata
+    AnthropicMessageDelta:
+      type: object
+      required:
+      - type
+      - delta
+      - usage
+      properties:
+        type:
+          type: string
+          const: message_delta
+        delta:
+          type: object
+          properties:
+            stop_reason:
+              anyOf:
+              - type: string
+              - type: 'null'
+        usage:
+          type: object
+          properties:
+            output_tokens:
+              type: integer
+    AnthropicStreamMessageStop:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: message_stop
+    AnthropicPing:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ping
+      description: SSE heartbeat event to keep connection alive

@@ -1,0 +1,36 @@
+openapi: 3.1.0
+components:
+  schemas:
+    Model:
+      type: object
+      required:
+      - id
+      - object
+      - created
+      - owned_by
+      properties:
+        id:
+          type: string
+          description: Model identifier
+        object:
+          type: string
+          const: model
+        created:
+          type: integer
+          description: Creation timestamp
+        owned_by:
+          type: string
+          description: Model owner
+    ModelListResponse:
+      type: object
+      required:
+      - object
+      - data
+      properties:
+        object:
+          type: string
+          const: list
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Model'

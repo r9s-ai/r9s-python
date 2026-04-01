@@ -1,7 +1,10 @@
-.PHONY: lint clean build publish publish-test check
+.PHONY: lint pre-commit clean build publish publish-test check install_dev
 
 lint:
 	python -m pyright
+
+pre-commit:
+	pre-commit run --all-files --show-diff-on-failure
 
 # Remove previous build artifacts
 clean:
