@@ -25,6 +25,11 @@ def test_chat_positional_bot_parses() -> None:
     assert args.command == "chat"
     assert args.agent == "support"
     assert args.var == ["company=Acme"]
+    assert args.agent_version is None
+
+    args = parser.parse_args(["chat", "--agent", "support", "--version", "1.0.0"])
+    assert args.agent == "support"
+    assert args.agent_version == "1.0.0"
 
 
 def test_chat_yes_flag() -> None:
