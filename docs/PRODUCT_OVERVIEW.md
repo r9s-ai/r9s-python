@@ -39,7 +39,7 @@ images = client.images.create(
 )
 ```
 
-**Features:** Async support, streaming, all modalities (chat, images, audio, embeddings)
+**Features:** Async support, streaming, parallel execution, all modalities (chat, images, audio, embeddings)
 
 ---
 
