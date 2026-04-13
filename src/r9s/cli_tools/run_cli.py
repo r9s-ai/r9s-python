@@ -17,14 +17,18 @@ from r9s.cli_tools.ui.terminal import FG_RED, error, info, prompt_text, warning
 def _require_model(args_model: Optional[str]) -> str:
     model = resolve_model(args_model)
     if not model:
-        raise SystemExit("Missing model: pass --model or set R9S_MODEL")
+        raise SystemExit(
+            "Missing model: pass --model, set R9S_MODEL, or put model in ~/.r9s/config.toml"
+        )
     return model
 
 
 def _require_api_key(args_api_key: Optional[str]) -> str:
     api_key = get_api_key(args_api_key)
     if not api_key:
-        raise SystemExit("Missing API key: set R9S_API_KEY or pass --api-key")
+        raise SystemExit(
+            "Missing API key: pass --api-key, set R9S_API_KEY, or put api_key in ~/.r9s/config.toml"
+        )
     return api_key
 
 

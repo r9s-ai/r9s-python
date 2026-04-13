@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 from r9s.sdk import R9S as _R9S
+from r9s.user_config import get_user_config_string
 
 
 class R9S(_R9S):
@@ -30,9 +31,15 @@ class R9S(_R9S):
     ) -> "R9S":
         api_key = (os.getenv(api_key_env) or "").strip()
         if not api_key:
-            raise ValueError(f"{api_key_env} is not set.")
+            api_key = get_user_config_string("api_key") or ""
+        if not api_key:
+            raise ValueError(
+                f"{api_key_env} is not set, and ~/.r9s/config.toml does not define api_key."
+            )
 
         base_url = (os.getenv(base_url_env) or "").strip()
+        if not base_url:
+            base_url = get_user_config_string("base_url") or ""
         if not base_url:
             base_url = (default_base_url or "").strip()
 

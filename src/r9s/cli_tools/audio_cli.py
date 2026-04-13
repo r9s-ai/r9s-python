@@ -9,7 +9,6 @@ from typing import Optional
 
 from r9s import R9S, errors
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_tts_model, resolve_stt_model
-from r9s.cli_tools.i18n import resolve_lang, t
 from r9s.cli_tools.ui.spinner import LoadingSpinner
 from r9s.cli_tools.ui.terminal import error, info, success
 
@@ -18,7 +17,7 @@ def _get_client(api_key: Optional[str], base_url: Optional[str]) -> R9S:
     """Create and return an R9S client."""
     key = get_api_key(api_key)
     if not key:
-        error("R9S_API_KEY is not set. Use --api-key or set the environment variable.")
+        error("R9S_API_KEY is not set. Use --api-key, set the environment variable, or put api_key in ~/.r9s/config.toml.")
         raise SystemExit(1)
     url = resolve_base_url(base_url)
     return R9S(api_key=key, server_url=url)

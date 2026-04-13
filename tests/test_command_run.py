@@ -141,3 +141,39 @@ def test_command_run_shows_spinner_in_stream_mode(
     handle_command_run(args)
     assert "start" in calls
     assert "stop" in calls
+
+
+def test_command_run_reads_api_key_and_model_from_user_config(
+    temp_home, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    save_command(CommandConfig(name="summarize3", prompt="Say {{args}}"))
+    config_path = temp_home / ".r9s" / "config.toml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text('api_key = "cfg-key"\nmodel = "cfg-model"\n', encoding="utf-8")
+    monkeypatch.delenv("R9S_API_KEY", raising=False)
+    monkeypatch.delenv("R9S_MODEL", raising=False)
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr("r9s.cli_tools.command_cli._read_stdin", lambda: "")
+
+    stub = _R9SStub()
+    monkeypatch.setattr("r9s.cli_tools.command_cli.R9S", lambda **_: stub)
+
+    args = type(
+        "Args",
+        (),
+        {
+            "name": "summarize3",
+            "args": ["hello"],
+            "lang": None,
+            "api_key": None,
+            "base_url": None,
+            "model": None,
+            "no_stream": True,
+            "yes": True,
+            "bot": None,
+        },
+    )()
+
+    handle_command_run(args)
+    call = stub.chat.calls[-1]
+    assert call["model"] == "cfg-model"

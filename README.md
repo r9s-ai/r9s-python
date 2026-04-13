@@ -51,6 +51,20 @@ export R9S_API_KEY="your_api_key"
 
 The CLI automatically loads `.env` from the current directory (SDK usage does not auto-load). Disable with `R9S_NO_DOTENV=1`.
 
+You can also put shared defaults in `~/.r9s/config.toml`:
+
+```toml
+api_key = "your_api_key"
+base_url = "https://api.r9s.ai/v1"
+model = "gpt-5-mini"
+image_model = "gpt-image-1.5"
+tts_model = "tts-1"
+stt_model = "whisper-1"
+system_prompt = "You are a helpful assistant."
+```
+
+Resolution priority is: command-line arguments > environment variables > `~/.r9s/config.toml` > built-in defaults.
+
 ## CLI usage
 
 Chat (interactive, streaming by default):
@@ -173,7 +187,7 @@ r9s run -h
 
 ## Python SDK usage
 
-Minimal example (reads `R9S_API_KEY` and optional `R9S_BASE_URL` from the environment):
+Minimal example (reads `R9S_API_KEY` / `R9S_BASE_URL` from the environment first, then falls back to `~/.r9s/config.toml`):
 
 ```python
 from r9s.client import R9S

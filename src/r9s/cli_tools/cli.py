@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
@@ -190,7 +189,7 @@ def resolve_api_key(preset: Optional[str]) -> str:
     env_or_arg = get_api_key(preset)
     if env_or_arg:
         return env_or_arg
-    key = prompt_secret("R9S_API_KEY is not set. Enter API key: ")
+    key = prompt_secret("R9S_API_KEY is not set and ~/.r9s/config.toml has no api_key. Enter API key: ")
     while not key:
         key = prompt_secret("API key cannot be empty. Enter API key: ", color=FG_RED)
     return key
@@ -212,7 +211,9 @@ def resolve_base_url_with_validation(preset: Optional[str]) -> str:
 
     # 3. Prompt user for manual input
     while True:
-        url = prompt_text("R9S_BASE_URL is not set or invalid. Enter base URL: ")
+        url = prompt_text(
+            "R9S_BASE_URL is not set or invalid, and ~/.r9s/config.toml has no usable base_url. Enter base URL: "
+        )
         if is_valid_url(url):
             return url.rstrip("/")
         error("Invalid URL format. Must start with http:// or https://")

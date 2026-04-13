@@ -10,7 +10,7 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from r9s.cli_tools.config import get_api_key, resolve_base_url, resolve_image_model, resolve_model
 from r9s.cli_tools.ui.spinner import LoadingSpinner
@@ -23,7 +23,7 @@ def get_client():
 
     api_key = get_api_key(None)
     if not api_key:
-        error("R9S_API_KEY is not set. Use --api-key or set the environment variable.")
+        error("R9S_API_KEY is not set. Use --api-key, set the environment variable, or put api_key in ~/.r9s/config.toml.")
         raise SystemExit(1)
 
     base_url = resolve_base_url(None)
@@ -150,7 +150,7 @@ def handle_image_generate(args: argparse.Namespace) -> None:
             edit_kwargs["output_format"] = args.output_format
 
         if getattr(args, "verbose", False):
-            info(f"Endpoint: POST /v1/images/edits")
+            info("Endpoint: POST /v1/images/edits")
             info(f"Model: {model}")
             info(f"Images: {len(reference_images)}")
             info(f"Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
@@ -195,7 +195,7 @@ def handle_image_generate(args: argparse.Namespace) -> None:
             kwargs["output_format"] = args.output_format
 
         if getattr(args, "verbose", False):
-            info(f"Endpoint: POST /v1/images/generations")
+            info("Endpoint: POST /v1/images/generations")
             info(f"Model: {model}")
             info(f"Prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
 
@@ -324,7 +324,7 @@ def handle_image_edit(args: argparse.Namespace) -> None:
     # Make API call
     client = get_client()
     if getattr(args, "verbose", False):
-        info(f"Endpoint: POST /v1/images/edits")
+        info("Endpoint: POST /v1/images/edits")
         info(f"Model: {model}")
         info(f"Image: {image_path.name}")
         if mask_data:
