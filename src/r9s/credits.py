@@ -10,28 +10,30 @@ from r9s.models.credits_models import CreditsUsageResponse, GetCreditsUsageReque
 from r9s.types import OptionalNullable, UNSET
 from r9s.utils.unmarshal_json_response import unmarshal_json_response
 
-_DEFAULT_MANAGE_BASE_URL = "https://portal-api.r9s.ai/api"
+_DEFAULT_MANAGE_BASE_URL = "https://portal-api.r9s.ai/api/v1"
 
 
 class Credits(BaseSDK):
     def _resolve_base_url(self, server_url: Optional[str]) -> str:
         if server_url:
-            normalized = server_url.rstrip("/")
-            return normalized[:-3] if normalized.endswith("/v1") else normalized
+            return server_url.rstrip("/")
         return _DEFAULT_MANAGE_BASE_URL
 
-    def _extract_manage_key(self) -> str:
-        manage_key = self.sdk_configuration.manage_key
+    def _extract_manage_key(self, manage_key: Optional[str] = None) -> str:
+        if manage_key is None:
+            manage_key = self.sdk_configuration.manage_key
         manage_key = str(manage_key or "").strip()
         if not manage_key:
             raise ValueError("manage_key is required for credits requests")
         return manage_key
 
     def _build_headers(
-        self, http_headers: Optional[Mapping[str, str]]
+        self,
+        http_headers: Optional[Mapping[str, str]],
+        manage_key: Optional[str] = None,
     ) -> dict[str, str]:
         headers = dict(http_headers or {})
-        headers["Authorization"] = f"Bearer {self._extract_manage_key()}"
+        headers["Authorization"] = f"Bearer {self._extract_manage_key(manage_key)}"
         return headers
 
     def _coerce_timestamp(
@@ -119,7 +121,7 @@ class Credits(BaseSDK):
             raise errors.BadRequestError(response_data, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.CreditsAuthenticationErrorData, http_res
             )
             raise errors.AuthenticationError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
@@ -148,7 +150,7 @@ class Credits(BaseSDK):
             raise errors.BadRequestError(response_data, http_res)
         if utils.match_response(http_res, "401", "application/json"):
             response_data = unmarshal_json_response(
-                errors.AuthenticationErrorData, http_res
+                errors.CreditsAuthenticationErrorData, http_res
             )
             raise errors.AuthenticationError(response_data, http_res)
         if utils.match_response(http_res, "403", "application/json"):
@@ -170,11 +172,12 @@ class Credits(BaseSDK):
 
         raise errors.R9SDefaultError("Unexpected response received", http_res)
 
-    def get(
+    def usage(
         self,
         *,
         start_time: int | float | str | datetime | date | None = None,
         end_time: int | float | str | datetime | date | None = None,
+        manage_key: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -192,7 +195,7 @@ class Credits(BaseSDK):
 
         req = self._build_request(
             method="GET",
-            path="/v1/portal/management/usage",
+            path="/portal/management/usage",
             base_url=base_url,
             url_variables=None,
             request=request,
@@ -201,7 +204,7 @@ class Credits(BaseSDK):
             request_has_query_params=True,
             user_agent_header="user-agent",
             accept_header_value="application/json",
-            http_headers=self._build_headers(http_headers),
+            http_headers=self._build_headers(http_headers, manage_key),
             security=None,
             allow_empty_value=None,
             timeout_ms=timeout_ms,
@@ -232,11 +235,12 @@ class Credits(BaseSDK):
 
         return self._handle_error_response(http_res)
 
-    async def get_async(
+    async def usage_async(
         self,
         *,
         start_time: int | float | str | datetime | date | None = None,
         end_time: int | float | str | datetime | date | None = None,
+        manage_key: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -254,7 +258,7 @@ class Credits(BaseSDK):
 
         req = self._build_request_async(
             method="GET",
-            path="/v1/portal/management/usage",
+            path="/portal/management/usage",
             base_url=base_url,
             url_variables=None,
             request=request,
@@ -263,7 +267,7 @@ class Credits(BaseSDK):
             request_has_query_params=True,
             user_agent_header="user-agent",
             accept_header_value="application/json",
-            http_headers=self._build_headers(http_headers),
+            http_headers=self._build_headers(http_headers, manage_key),
             security=None,
             allow_empty_value=None,
             timeout_ms=timeout_ms,

@@ -38,9 +38,9 @@ class AudioSDK(BaseSDK):
         input: str,
         voice: models.AudioSpeechRequestVoice,
         instructions: Optional[str] = None,
-        response_format: Optional[models.AudioSpeechRequestResponseFormat] = "mp3",
+        response_format: Optional[models.AudioSpeechRequestResponseFormat] = None,
         stream_format: Optional[str] = None,
-        speed: Optional[float] = 1,
+        speed: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -214,9 +214,9 @@ class AudioSDK(BaseSDK):
         input: str,
         voice: models.AudioSpeechRequestVoice,
         instructions: Optional[str] = None,
-        response_format: Optional[models.AudioSpeechRequestResponseFormat] = "mp3",
+        response_format: Optional[models.AudioSpeechRequestResponseFormat] = None,
         stream_format: Optional[str] = None,
-        speed: Optional[float] = 1,
+        speed: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -396,8 +396,8 @@ class AudioSDK(BaseSDK):
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranscriptionRequestResponseFormat
-        ] = "json",
-        temperature: Optional[float] = 0,
+        ] = None,
+        temperature: Optional[float] = None,
         stream: Optional[bool] = None,
         timestamp_granularities: Optional[List[models.TimestampGranularities]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -584,8 +584,8 @@ class AudioSDK(BaseSDK):
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranscriptionRequestResponseFormat
-        ] = "json",
-        temperature: Optional[float] = 0,
+        ] = None,
+        temperature: Optional[float] = None,
         stream: Optional[bool] = None,
         timestamp_granularities: Optional[List[models.TimestampGranularities]] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
@@ -770,8 +770,8 @@ class AudioSDK(BaseSDK):
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranslationRequestResponseFormat
-        ] = "json",
-        temperature: Optional[float] = 0,
+        ] = None,
+        temperature: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -929,8 +929,8 @@ class AudioSDK(BaseSDK):
         prompt: Optional[str] = None,
         response_format: Optional[
             models.AudioTranslationRequestResponseFormat
-        ] = "json",
-        temperature: Optional[float] = 0,
+        ] = None,
+        temperature: Optional[float] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,

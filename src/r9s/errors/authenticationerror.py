@@ -3,10 +3,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 import httpx
-from pydantic import model_serializer
+from pydantic import Field, model_serializer
 from r9s.errors import R9SError
 from r9s.types import BaseModel, Nullable, OptionalNullable, UNSET, UNSET_SENTINEL
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from typing_extensions import NotRequired, TypedDict
 
 
@@ -74,13 +74,24 @@ class AuthenticationErrorData(BaseModel):
     status: Optional[Status] = None
 
 
+class CreditsAuthenticationError(BaseModel):
+    message: str
+    request_id: Optional[str] = None
+    code: Optional[int | str] = None
+
+
+class CreditsAuthenticationErrorData(BaseModel):
+    error: CreditsAuthenticationError = Field(alias="meta")
+    data: Any = None
+
+
 @dataclass(unsafe_hash=True)
 class AuthenticationError(R9SError):
-    data: AuthenticationErrorData = field(hash=False)
+    data: AuthenticationErrorData | CreditsAuthenticationErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: AuthenticationErrorData,
+        data: AuthenticationErrorData | CreditsAuthenticationErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):

@@ -15,7 +15,7 @@ class Moderations(BaseSDK):
         input: Union[
             models.ModerationRequestInput, models.ModerationRequestInputTypedDict
         ],
-        model: Optional[str] = "omni-moderation-latest",
+        model: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
@@ -149,7 +149,7 @@ class Moderations(BaseSDK):
         input: Union[
             models.ModerationRequestInput, models.ModerationRequestInputTypedDict
         ],
-        model: Optional[str] = "omni-moderation-latest",
+        model: Optional[str] = None,
         retries: OptionalNullable[utils.RetryConfig] = UNSET,
         server_url: Optional[str] = None,
         timeout_ms: Optional[int] = None,
