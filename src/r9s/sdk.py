@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from r9s.models_ import Models
     from r9s.moderations import Moderations
     from r9s.responses import Responses
-    from r9s.search import Search
 
 
 class R9S(BaseSDK):
@@ -43,7 +42,6 @@ class R9S(BaseSDK):
     embeddings: "Embeddings"
     moderations: "Moderations"
     audio: "AudioSDK"
-    search: "Search"
     gemini: "Gemini"
     credits: "Credits"
     _sub_sdk_map = {
@@ -57,7 +55,6 @@ class R9S(BaseSDK):
         "embeddings": ("r9s.embeddings", "Embeddings"),
         "moderations": ("r9s.moderations", "Moderations"),
         "audio": ("r9s.audio_sdk", "AudioSDK"),
-        "search": ("r9s.search", "Search"),
         "gemini": ("r9s.gemini", "Gemini"),
         "credits": ("r9s.credits", "Credits"),
     }

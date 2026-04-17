@@ -42,7 +42,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -50,10 +50,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
@@ -134,7 +134,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -142,10 +142,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
@@ -210,7 +210,7 @@ class Responses(BaseSDK):
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
         max_tool_calls: Optional[int] = None,
-        stream: Optional[bool] = False,
+        stream: Optional[bool] = None,
         include: Optional[List[models.IncludeItem]] = None,
         conversation: Optional[
             Union[models.ConversationRef, models.ConversationRefTypedDict]
@@ -225,7 +225,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -233,10 +233,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
@@ -484,7 +484,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -492,10 +492,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
@@ -576,7 +576,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -584,10 +584,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,
@@ -652,7 +652,7 @@ class Responses(BaseSDK):
         top_p: Optional[float] = None,
         max_output_tokens: Optional[int] = None,
         max_tool_calls: Optional[int] = None,
-        stream: Optional[bool] = False,
+        stream: Optional[bool] = None,
         include: Optional[List[models.IncludeItem]] = None,
         conversation: Optional[
             Union[models.ConversationRef, models.ConversationRefTypedDict]
@@ -667,7 +667,7 @@ class Responses(BaseSDK):
                 models.ResponseRequestToolChoiceTypedDict,
             ]
         ] = None,
-        parallel_tool_calls: Optional[bool] = True,
+        parallel_tool_calls: Optional[bool] = None,
         text: Optional[Union[models.Text, models.TextTypedDict]] = None,
         previous_response_id: Optional[str] = None,
         prompt: Optional[Union[models.Prompt, models.PromptTypedDict]] = None,
@@ -675,10 +675,10 @@ class Responses(BaseSDK):
         prompt_cache_retention: Optional[str] = None,
         safety_identifier: Optional[str] = None,
         service_tier: Optional[models.ResponseRequestServiceTier] = None,
-        store: Optional[bool] = True,
-        background: Optional[bool] = False,
+        store: Optional[bool] = None,
+        background: Optional[bool] = None,
         reasoning: Optional[Union[models.Reasoning, models.ReasoningTypedDict]] = None,
-        truncation: Optional[models.Truncation] = "disabled",
+        truncation: Optional[models.Truncation] = None,
         stop: Optional[
             Union[models.ResponseRequestStop, models.ResponseRequestStopTypedDict]
         ] = None,

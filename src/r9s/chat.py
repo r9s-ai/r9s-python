@@ -206,7 +206,7 @@ class Chat(BaseSDK):
         seed: Optional[int] = None,
         service_tier: Optional[models.ServiceTier] = None,
         stop: Optional[Union[models.Stop, models.StopTypedDict]] = None,
-        stream: Optional[bool] = False,
+        stream: Optional[bool] = None,
         stream_options: Optional[
             Union[models.StreamOptions, models.StreamOptionsTypedDict]
         ] = None,
@@ -629,7 +629,7 @@ class Chat(BaseSDK):
         seed: Optional[int] = None,
         service_tier: Optional[models.ServiceTier] = None,
         stop: Optional[Union[models.Stop, models.StopTypedDict]] = None,
-        stream: Optional[bool] = False,
+        stream: Optional[bool] = None,
         stream_options: Optional[
             Union[models.StreamOptions, models.StreamOptionsTypedDict]
         ] = None,

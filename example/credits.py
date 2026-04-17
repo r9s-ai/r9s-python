@@ -1,6 +1,6 @@
 """
 Credits Usage API Examples
-Demonstrates how to query management usage records with r9s.credits.get.
+Demonstrates how to query management usage records with r9s.credits.usage.
 """
 
 from datetime import date, datetime, timedelta, timezone
@@ -26,7 +26,7 @@ def basic_usage_query():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.get(
+        res = r9s.credits.usage(
             start_time="2025-01-01T00:00:00+00:00",
             end_time="2025-01-08T00:00:00+00:00",
         )
@@ -52,7 +52,7 @@ def usage_query_with_defaults():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.get()
+        res = r9s.credits.usage()
         print(f"Total tokens: {res.data.total_tokens if res.data else None}")
 
 
@@ -73,7 +73,7 @@ def daily_usage_query():
             current_day = start_day + timedelta(days=offset)
             next_day = current_day + timedelta(days=1)
 
-            res = r9s.credits.get(
+            res = r9s.credits.usage(
                 start_time=current_day.isoformat(),
                 end_time=next_day.isoformat(),
             )
@@ -95,7 +95,7 @@ def usage_query_with_datetime_objects():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.get(start_time=start_time, end_time=end_time)
+        res = r9s.credits.usage(start_time=start_time, end_time=end_time)
         print(f"Total tokens: {res.data.total_tokens if res.data else None}")
 
 

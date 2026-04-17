@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import pytest
 
+from r9s import errors
 from r9s import R9S as GeneratedR9S
 from r9s.client import R9S
 
@@ -47,6 +48,7 @@ class _HttpClientStub:
 class _AsyncHttpClientStub:
     def __init__(self, response: httpx.Response) -> None:
         self.response = response
+        self.last_request: httpx.Request | None = None
 
     def build_request(self, method: str, url: Any, **kwargs: Any) -> httpx.Request:
         kwargs.pop("timeout", None)
@@ -55,6 +57,7 @@ class _AsyncHttpClientStub:
     async def send(
         self, request: httpx.Request, *, stream: bool = False, **_: Any
     ) -> httpx.Response:
+        self.last_request = request
         return httpx.Response(
             self.response.status_code,
             headers=self.response.headers,
@@ -92,7 +95,7 @@ def test_credits_get_uses_manage_key_and_default_portal_base_url() -> None:
     }
     r9s, client = _sdk(_json_response(200, payload))
 
-    response = r9s.credits.get(start_time=1735689600, end_time=1736294400)
+    response = r9s.credits.usage(start_time=1735689600, end_time=1736294400)
 
     assert client.last_request is not None
     assert (
@@ -110,7 +113,7 @@ def test_credits_get_uses_manage_key_and_default_portal_base_url() -> None:
 def test_credits_get_accepts_iso_time_strings() -> None:
     r9s, client = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
 
-    r9s.credits.get(
+    r9s.credits.usage(
         start_time="2025-01-01T00:00:00+00:00",
         end_time="2025-01-08T00:00:00+00:00",
     )
@@ -124,7 +127,7 @@ def test_credits_get_accepts_iso_time_strings() -> None:
 def test_credits_get_supports_server_url_override() -> None:
     r9s, client = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
 
-    r9s.credits.get(
+    r9s.credits.usage(
         start_time=1735689600,
         end_time=1736294400,
         server_url="https://example.com/api/v1",
@@ -140,7 +143,7 @@ def test_credits_get_uses_default_centered_seven_day_window_when_omitted() -> No
     r9s, client = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
 
     before = datetime.now().astimezone()
-    r9s.credits.get()
+    r9s.credits.usage()
     after = datetime.now().astimezone()
 
     assert client.last_request is not None
@@ -177,20 +180,20 @@ def test_credits_get_requires_manage_key() -> None:
     r9s, _ = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}), manage_key=None)
 
     with pytest.raises(ValueError, match="manage_key is required"):
-        r9s.credits.get(start_time=1735689600, end_time=1736294400)
+        r9s.credits.usage(start_time=1735689600, end_time=1736294400)
 
 
 def test_credits_get_rejects_partial_time_range() -> None:
     r9s, _ = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
 
     with pytest.raises(ValueError, match="must both be provided"):
-        r9s.credits.get(start_time=1735689600)
+        r9s.credits.usage(start_time=1735689600)
 
 
 def test_credits_get_accepts_datetime_objects() -> None:
     r9s, client = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
 
-    r9s.credits.get(
+    r9s.credits.usage(
         start_time=datetime(2025, 1, 1, tzinfo=timezone.utc),
         end_time=datetime(2025, 1, 8, tzinfo=timezone.utc),
     )
@@ -199,6 +202,35 @@ def test_credits_get_accepts_datetime_objects() -> None:
     parsed = parse_qs(urlparse(str(client.last_request.url)).query)
     assert parsed["start_time"] == ["1735689600"]
     assert parsed["end_time"] == ["1736294400"]
+
+
+def test_credits_usage_allows_manage_key_override() -> None:
+    r9s, client = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
+
+    r9s.credits.usage(
+        start_time=1735689600,
+        end_time=1736294400,
+        manage_key="sk_mg_override",
+    )
+
+    assert client.last_request is not None
+    assert client.last_request.headers["Authorization"] == "Bearer sk_mg_override"
+
+
+def test_credits_usage_manage_key_override_works_without_client_manage_key() -> None:
+    r9s, client = _sdk(
+        _json_response(200, {"data": {"records": [], "total_tokens": 0}}),
+        manage_key=None,
+    )
+
+    r9s.credits.usage(
+        start_time=1735689600,
+        end_time=1736294400,
+        manage_key="sk_mg_override",
+    )
+
+    assert client.last_request is not None
+    assert client.last_request.headers["Authorization"] == "Bearer sk_mg_override"
 
 
 def test_generated_r9s_exposes_credits_sub_sdk() -> None:
@@ -213,7 +245,72 @@ def test_generated_r9s_exposes_credits_sub_sdk() -> None:
         async_client=async_client,
     )
 
-    r9s.credits.get(start_time=1735689600, end_time=1736294400)
+    r9s.credits.usage(start_time=1735689600, end_time=1736294400)
 
     assert client.last_request is not None
     assert client.last_request.headers["Authorization"] == "Bearer sk_mg_secret"
+
+
+def test_credits_get_401_parses_portal_meta_auth_error_shape() -> None:
+    r9s, _ = _sdk(
+        _json_response(
+            401,
+            {
+                "meta": {
+                    "code": 401,
+                    "message": "API key not found",
+                    "request_id": "7Decb7JmukO2zxHeLMhkGtogj1vK9QJs",
+                },
+                "data": None,
+            },
+        )
+    )
+
+    with pytest.raises(errors.AuthenticationError) as exc_info:
+        r9s.credits.usage(start_time=1735689600, end_time=1736294400)
+
+    err = exc_info.value
+    assert err.message == "API key not found"
+    assert err.data.error.request_id == "7Decb7JmukO2zxHeLMhkGtogj1vK9QJs"
+    assert err.data.error.code == 401
+
+
+@pytest.mark.asyncio
+async def test_credits_get_async_401_parses_portal_meta_auth_error_shape() -> None:
+    r9s, _ = _sdk(
+        _json_response(
+            401,
+            {
+                "meta": {
+                    "code": 401,
+                    "message": "API key not found",
+                    "request_id": "7Decb7JmukO2zxHeLMhkGtogj1vK9QJs",
+                },
+                "data": None,
+            },
+        )
+    )
+
+    with pytest.raises(errors.AuthenticationError) as exc_info:
+        await r9s.credits.usage_async(start_time=1735689600, end_time=1736294400)
+
+    err = exc_info.value
+    assert err.message == "API key not found"
+    assert err.data.error.request_id == "7Decb7JmukO2zxHeLMhkGtogj1vK9QJs"
+    assert err.data.error.code == 401
+
+
+@pytest.mark.asyncio
+async def test_credits_usage_async_allows_manage_key_override() -> None:
+    r9s, _ = _sdk(_json_response(200, {"data": {"records": [], "total_tokens": 0}}))
+
+    await r9s.credits.usage_async(
+        start_time=1735689600,
+        end_time=1736294400,
+        manage_key="sk_mg_override",
+    )
+
+    async_client = r9s.sdk_configuration.async_client
+    assert async_client is not None
+    assert async_client.last_request is not None
+    assert async_client.last_request.headers["Authorization"] == "Bearer sk_mg_override"
