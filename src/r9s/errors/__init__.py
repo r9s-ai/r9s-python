@@ -8,9 +8,9 @@ import sys
 
 if TYPE_CHECKING:
     from .authenticationerror import (
+        AccountAuthenticationError,
+        AccountAuthenticationErrorData,
         AuthenticationError,
-        CreditsAuthenticationError,
-        CreditsAuthenticationErrorData,
         AuthenticationErrorData,
         Error,
         ErrorTypedDict,
@@ -71,8 +71,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AuthenticationError",
-    "CreditsAuthenticationError",
-    "CreditsAuthenticationErrorData",
+    "AccountAuthenticationError",
+    "AccountAuthenticationErrorData",
     "AuthenticationErrorData",
     "BadRequestError",
     "BadRequestErrorData",
@@ -120,8 +120,8 @@ __all__ = [
 
 _dynamic_imports: dict[str, str] = {
     "AuthenticationError": ".authenticationerror",
-    "CreditsAuthenticationError": ".authenticationerror",
-    "CreditsAuthenticationErrorData": ".authenticationerror",
+    "AccountAuthenticationError": ".authenticationerror",
+    "AccountAuthenticationErrorData": ".authenticationerror",
     "AuthenticationErrorData": ".authenticationerror",
     "Error": ".authenticationerror",
     "ErrorTypedDict": ".authenticationerror",
