@@ -74,24 +74,24 @@ class AuthenticationErrorData(BaseModel):
     status: Optional[Status] = None
 
 
-class CreditsAuthenticationError(BaseModel):
+class AccountAuthenticationError(BaseModel):
     message: str
     request_id: Optional[str] = None
     code: Optional[int | str] = None
 
 
-class CreditsAuthenticationErrorData(BaseModel):
-    error: CreditsAuthenticationError = Field(alias="meta")
+class AccountAuthenticationErrorData(BaseModel):
+    error: AccountAuthenticationError = Field(alias="meta")
     data: Any = None
 
 
 @dataclass(unsafe_hash=True)
 class AuthenticationError(R9SError):
-    data: AuthenticationErrorData | CreditsAuthenticationErrorData = field(hash=False)
+    data: AuthenticationErrorData | AccountAuthenticationErrorData = field(hash=False)
 
     def __init__(
         self,
-        data: AuthenticationErrorData | CreditsAuthenticationErrorData,
+        data: AuthenticationErrorData | AccountAuthenticationErrorData,
         raw_response: httpx.Response,
         body: Optional[str] = None,
     ):

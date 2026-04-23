@@ -1,6 +1,6 @@
 """
-Credits Usage API Examples
-Demonstrates how to query management usage records with r9s.credits.usage.
+Account API Examples
+Demonstrates how to query management usage records and balance data with r9s.account.
 """
 
 from datetime import date, datetime, timedelta, timezone
@@ -26,7 +26,7 @@ def basic_usage_query():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.usage(
+        res = r9s.account.usage(
             start_time="2025-01-01T00:00:00+00:00",
             end_time="2025-01-08T00:00:00+00:00",
         )
@@ -52,7 +52,7 @@ def usage_query_with_defaults():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.usage()
+        res = r9s.account.usage()
         print(f"Total tokens: {res.data.total_tokens if res.data else None}")
 
 
@@ -73,7 +73,7 @@ def daily_usage_query():
             current_day = start_day + timedelta(days=offset)
             next_day = current_day + timedelta(days=1)
 
-            res = r9s.credits.usage(
+            res = r9s.account.usage(
                 start_time=current_day.isoformat(),
                 end_time=next_day.isoformat(),
             )
@@ -95,8 +95,29 @@ def usage_query_with_datetime_objects():
         api_key=_get_required_env("R9S_API_KEY"),
         manage_key=_get_required_env("R9S_MANAGE_KEY"),
     ) as r9s:
-        res = r9s.credits.usage(start_time=start_time, end_time=end_time)
+        res = r9s.account.usage(start_time=start_time, end_time=end_time)
         print(f"Total tokens: {res.data.total_tokens if res.data else None}")
+
+
+def balance_query():
+    """Example 5: Query current balance information"""
+    print("\n" + "=" * 60)
+    print("Example 5: Balance Query")
+    print("=" * 60)
+
+    with R9S(
+        api_key=_get_required_env("R9S_API_KEY"),
+        manage_key=_get_required_env("R9S_MANAGE_KEY"),
+    ) as r9s:
+        res = r9s.account.balance()
+        data = res.data
+
+        print(f"Balance: {data.balance if data else None}")
+        print(f"Balance string: {data.balance_str if data else None}")
+        print(f"Coupon balance: {data.coupon_balance if data else None}")
+        print(f"Currency: {data.currency_code if data else None}")
+        print(f"Credit limit: {data.credit_limit if data else None}")
+        print(f"Total coupon amount: {data.total_coupon_amount if data else None}")
 
 
 if __name__ == "__main__":
@@ -104,3 +125,4 @@ if __name__ == "__main__":
     usage_query_with_defaults()
     daily_usage_query()
     usage_query_with_datetime_objects()
+    balance_query()

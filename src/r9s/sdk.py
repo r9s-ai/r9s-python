@@ -15,10 +15,10 @@ from typing import Any, Callable, Dict, Optional, TYPE_CHECKING, Union, cast
 import weakref
 
 if TYPE_CHECKING:
+    from r9s.account import Account
     from r9s.audio_sdk import AudioSDK
     from r9s.chat import Chat
     from r9s.completions import Completions
-    from r9s.credits import Credits
     from r9s.edits import Edits
     from r9s.embeddings import Embeddings
     from r9s.gemini import Gemini
@@ -43,7 +43,7 @@ class R9S(BaseSDK):
     moderations: "Moderations"
     audio: "AudioSDK"
     gemini: "Gemini"
-    credits: "Credits"
+    account: "Account"
     _sub_sdk_map = {
         "models": ("r9s.models_", "Models"),
         "chat": ("r9s.chat", "Chat"),
@@ -56,7 +56,7 @@ class R9S(BaseSDK):
         "moderations": ("r9s.moderations", "Moderations"),
         "audio": ("r9s.audio_sdk", "AudioSDK"),
         "gemini": ("r9s.gemini", "Gemini"),
-        "credits": ("r9s.credits", "Credits"),
+        "account": ("r9s.account", "Account"),
     }
 
     def __init__(
@@ -75,7 +75,7 @@ class R9S(BaseSDK):
         r"""Instantiates the SDK configuring it with the provided parameters.
 
         :param api_key: The api_key required for authentication
-        :param manage_key: Optional management key used by portal management endpoints such as r9s.credits.get
+        :param manage_key: Optional management key used by portal management endpoints such as r9s.account.balance
         :param server_idx: The index of the server to use for all methods
         :param server_url: The server URL to use for all methods
         :param url_params: Parameters to optionally template the server URL with
