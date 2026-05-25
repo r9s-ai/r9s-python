@@ -26,7 +26,7 @@ dependencies = [
     "prompt-toolkit >=3.0.0",
     "pydantic >=2.11.2",
     "pyyaml >=6.0",
-    "python-dotenv >=1.0.1",
+    "python-dotenv >=1.2.2",
     "tomli-w >=1.0.0",
 ]
 
@@ -41,7 +41,7 @@ r9s = "r9s.cli_tools.cli:main"
 
 [project.optional-dependencies]
 test = [
-    "pytest",
+    "pytest >=9.0.3",
     "pytest-asyncio",
 ]
 web = [
