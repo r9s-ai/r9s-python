@@ -539,7 +539,6 @@ def _stream_chat(
             assistant_parts.append(tail)
             print(tail, end="", flush=True)
         print()
-        assistant_text = "".join(assistant_parts)
         assistant_raw_text = "".join(assistant_parts_raw) + tail
         timing_result = timing_state.finalize(output_tokens=output_tokens)
         return ChatResult(

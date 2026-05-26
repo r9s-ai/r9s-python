@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import suppress
 from typing import Any, Dict, Iterator, Optional
 
 from r9s import models, utils
@@ -188,10 +189,8 @@ def _stream_chat_completions_request(
     try:
         yield from _stream_chat_completions_via_sse_response(response, protocol)
     finally:
-        try:
+        with suppress(Exception):
             response.close()
-        except Exception:
-            pass
 
 
 def _stream_anthropic_messages_request(

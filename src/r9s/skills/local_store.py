@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from r9s.skills.exceptions import InvalidSkillError, SkillNotFoundError
+from r9s.skills.exceptions import SkillNotFoundError
 from r9s.skills.models import ScriptPolicy, Skill
 from r9s.skills.parser import parse_skill_file, parse_skill_markdown
 from r9s.skills.validator import (

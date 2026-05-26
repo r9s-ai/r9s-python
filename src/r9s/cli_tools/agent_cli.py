@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import suppress
 from dataclasses import dataclass
 import json
 import os
@@ -396,10 +397,8 @@ def _copy_agent_bundle(src: Path, dest: Path, name_override: Optional[str]) -> s
 
 
 def _cleanup_agent_dir(name: str) -> None:
-    try:
+    with suppress(Exception):
         delete_agent(name)
-    except Exception:
-        pass
 
 
 def handle_agent_list(_: argparse.Namespace) -> None:

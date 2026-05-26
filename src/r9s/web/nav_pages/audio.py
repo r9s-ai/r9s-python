@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import Any, Dict, Tuple, cast
 
 import streamlit as st
@@ -51,17 +52,13 @@ def _extract_text_from_audio_response(response: Any) -> str:
     if response is None:
         return ""
     if hasattr(response, "text"):
-        try:
+        with suppress(Exception):
             text = getattr(response, "text")
             if isinstance(text, str):
                 return text
-        except Exception:
-            pass
     if hasattr(response, "model_dump_json"):
-        try:
+        with suppress(Exception):
             return response.model_dump_json(indent=2)
-        except Exception:
-            pass
     return str(response)
 
 

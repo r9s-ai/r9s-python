@@ -9,7 +9,6 @@ Supports installing skills from GitHub repositories using URLs like:
 from __future__ import annotations
 
 import io
-import os
 import re
 import shutil
 import stat

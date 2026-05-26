@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from contextlib import suppress
 from typing import Any, Dict, Optional
 
 import streamlit as st
@@ -105,13 +106,11 @@ def run(cfg: AppConfig) -> None:
 
             if url:
                 image_url = url
-                try:
+                with suppress(Exception):
                     import urllib.request
 
                     with urllib.request.urlopen(url, timeout=30) as resp:
                         image_data = resp.read()
-                except Exception:
-                    pass
             elif b64_json:
                 image_data = base64.b64decode(b64_json)
 
@@ -194,13 +193,11 @@ def run(cfg: AppConfig) -> None:
                     if edited_url:
                         st.image(edited_url)
                         st.code(edited_url)
-                        try:
+                        with suppress(Exception):
                             import urllib.request
 
                             with urllib.request.urlopen(edited_url, timeout=30) as resp:
                                 edited_data = resp.read()
-                        except Exception:
-                            pass
                     elif edited_b64:
                         edited_data = base64.b64decode(edited_b64)
                         st.image(edited_data)
@@ -211,4 +208,3 @@ def run(cfg: AppConfig) -> None:
                             "data": edited_data,
                             "model": selected_img.get("model"),
                         }
-

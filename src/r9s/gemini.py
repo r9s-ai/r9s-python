@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Mapping, NoReturn, Optional
 from urllib.parse import quote
 
-from r9s import errors, models, utils
+from r9s import errors, utils
 from r9s._hooks import HookContext
 from r9s.basesdk import BaseSDK
 from r9s.models.gemini_models import (
@@ -259,7 +259,7 @@ class Gemini(BaseSDK):
                 GeminiGenerateContentResponse, http_res, http_res_text
             )
 
-        self._handle_error_response(http_res)
+        return self._handle_error_response(http_res)
 
     def stream_generate_content(
         self,
@@ -372,7 +372,7 @@ class Gemini(BaseSDK):
                 http_res_text,
             )
 
-        self._handle_error_response(http_res)
+        return self._handle_error_response(http_res)
 
     async def generate_content_async(
         self,
@@ -472,7 +472,7 @@ class Gemini(BaseSDK):
                 GeminiGenerateContentResponse, http_res, http_res_text
             )
 
-        await self._handle_error_response_async(http_res)
+        return await self._handle_error_response_async(http_res)
 
     async def stream_generate_content_async(
         self,
@@ -585,4 +585,4 @@ class Gemini(BaseSDK):
                 http_res_text,
             )
 
-        await self._handle_error_response_async(http_res)
+        return await self._handle_error_response_async(http_res)
